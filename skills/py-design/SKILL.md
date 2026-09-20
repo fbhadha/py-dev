@@ -1,11 +1,6 @@
 ---
 name: py-design
 description: "Python craft reference: rules, the fault catalogue, three canonical repos to cite. Use when designing a module, class, function or layout, placing a seam or Protocol, or reviewing Python for structure faults."
-license: Apache-2.0
-metadata:
-  author: fbhadha
-  version: 0.1.0
-  tags: [python, design, architecture, review]
 ---
 
 # Python design
@@ -16,7 +11,7 @@ For the vocabulary (**module**, **interface**, **depth**, **seam**, **adapter**,
 
 ## The shape of a repo
 
-The live map of any real repo is Repowise (`codebase-exploration`); this is the target layout a new repo gets and an old one moves toward.
+The live map of any real repo is Repowise (`uv run repowise context <file>`); this is the target layout a new repo gets and an old one moves toward.
 
 ```
 src/<package>/
@@ -45,7 +40,7 @@ Names come from `CONTEXT.md`. The layering is enforced by import-linter, not req
 7. **Signatures that cannot be misread.** Keyword-only (`*`) after the first parameter whenever two parameters share a type. No boolean flag parameters; two functions or an enum instead. No mutable defaults. `X | None` only when absence means something; say what.
 8. **Modules are inert on import.** No client is constructed, no file is read, no logging is configured at import time. Configuration is one `pydantic-settings` class read once at the entrypoint, so a missing variable fails before any work starts and names itself. Log with `logging.getLogger(__name__)`; never `print`.
 9. **Small public surface.** `__all__` in every package `__init__`; a leading underscore on everything else; no barrel that re-exports a subtree. Several small entry points beat one giant one.
-10. **Search before you write.** Before adding a function or a type, search `CONTEXT.md` for the term and the index for the name (call the Skill tool with "codebase-exploration"). A second `normalize_date` because the first was not in context is the most common duplication.
+10. **Search before you write.** Before adding a function or a type, search `CONTEXT.md` for the term and the index for the name (`uv run repowise search <name>`). A second `normalize_date` because the first was not in context is the most common duplication.
 11. **No grab bags.** No directory or module named `utils`, `helpers`, `common`, `misc`. A function belongs to the domain concept it serves; if it serves none, it does not belong.
 12. **Comments say why.** A comment states something the code cannot: the constraint, the reason, the gotcha. A docstring states the contract when it is subtle (invariants, ordering, errors); it never restates the signature. A comment that reads like an instruction to a model is a defect.
 13. **The deletion test.** Before adding a layer, imagine deleting it. If the callers would simply call the next thing down with the same arguments, it was a pass-through.
@@ -61,6 +56,7 @@ Call the Skill tool with "tdd" for the loop. On top of it: expected values are l
 ## When reviewing or explaining
 
 - The faults to look for, each with its tell and its fix: [references/fault-catalogue.md](references/fault-catalogue.md).
+- Classifying tests the user does not trust, with evidence and one action per test: [references/test-audit.md](references/test-audit.md).
 - The three repos to cite by path when explaining a recommendation: [references/canonical-examples.md](references/canonical-examples.md). `requests` for depth, the *Architecture Patterns with Python* code for layering, `dlt` for the adapter-model-writer shape at scale.
 
 In guide mode, every recommendation carries one sentence on why, in the repo's own words.

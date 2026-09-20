@@ -1,6 +1,6 @@
 # Fault catalogue
 
-The faults LLM-written Python commits by default, each with its tell, the mechanism that catches it, and the fix. The tool named in the third column catches it mechanically; where the column says reviewer, nothing does, and `py-review` has to. Whole-repo signals (duplication, dead code, cohesion, I/O in loops, test hygiene) come from Repowise; line-level ones from ruff, pylint, mypy, import-linter. When a fault has a tool, do not spend review words on it.
+The faults LLM-written Python commits by default, each with its tell, the mechanism that catches it, and the fix. The tool named in the third column catches it mechanically; where the column says reviewer, nothing does, and the review's Craft axis (`agents/py-reviewer.md`) has to. Whole-repo signals (duplication, dead code, cohesion, I/O in loops, test hygiene) come from Repowise; line-level ones from ruff, pylint, mypy, import-linter. When a fault has a tool, do not spend review words on it.
 
 ## Shape
 
@@ -25,7 +25,7 @@ The faults LLM-written Python commits by default, each with its tell, the mechan
 | Symptom-level fixes | A null check where the value must never be null; a retry where the input was wrong. | Reviewer. | Fix the invariant; the check becomes unnecessary. |
 | Mutable defaults, `assert` as validation, `print` as logging, string-built SQL, secrets in code | | ruff `B006`, `B008`, `S101` (src only), `T201`, `S608`, `S105`/`S106`; `detect-secrets`. | `None` sentinel; raise `ValueError`; `logging`; parameters; `pydantic-settings` plus `.env.example`. |
 | Undefined names, unused imports, deprecated APIs, invented methods | | ruff `F`; mypy strict. | Read the source of the library before relying on a signature. |
-| Duplication under a new name | A second `normalize_date` because the first was not in context. | Reviewer: search `CONTEXT.md` terms before writing a function; Repowise `dry_violation` in `py-health` and in the CI change gate. | Reuse; if the two differ, name the difference. |
+| Duplication under a new name | A second `normalize_date` because the first was not in context. | Reviewer: search `CONTEXT.md` terms before writing a function; Repowise `dry_violation` in `repowise health` and in the CI change gate. | Reuse; if the two differ, name the difference. |
 | Excessive complexity | Nested conditionals, 80-line functions, six parameters. | ruff `C901`, `PLR0912`, `PLR0913`, `PLR0915`; Repowise `nested_complexity`, `brain_method`, `god_class`, `low_cohesion`. | Extract until each function reads as one sentence. |
 | `Any` and `dict[str, Any]` as domain objects | | mypy strict; reviewer: Primitive Obsession. | A named frozen dataclass or model from `CONTEXT.md`. |
 
@@ -33,8 +33,8 @@ The faults LLM-written Python commits by default, each with its tell, the mechan
 
 | Fault | Tell | Caught by | Fix |
 |---|---|---|---|
-| The tautological test | The expected value is computed the way the code computes it. | Reviewer; `mutmut` in `py-health`. | A literal from the spec or a worked example. |
-| The instruction-shaped test | `def test_x(): pass  # TODO`, a body that is a comment, `assert True`. | Repowise `assertion_free_test` (advisory marker, listed in the `py-health` report). | Write the behaviour or delete the test. |
+| The tautological test | The expected value is computed the way the code computes it. | Reviewer; `mutmut` on request. | A literal from the spec or a worked example. |
+| The instruction-shaped test | `def test_x(): pass  # TODO`, a body that is a comment, `assert True`. | Repowise `assertion_free_test` (advisory marker in `repowise health --format json`). | Write the behaviour or delete the test. |
 | The mock-only test | Every collaborator mocked; the test proves the mocks were called. | Reviewer; Repowise `mock_saturated_test`. | Test through the public interface with a real or in-memory adapter. |
 | The weakened test | A loosened assertion, a deleted test, a new `skip`, a hard-coded return for the known input. | Mutation-score ratchet; reviewer in a fresh context; `CODEOWNERS` on `tests/`. | Tests are read-only from red to green. An intended deletion needs the explicit override and a reason in the commit. |
 | The trivial test | A test of a one-line mapping that mirrors the code. | Reviewer. | Delete. Test at the seam. |

@@ -8,6 +8,8 @@ Accepted
 
 The agent needs to know a repo's structure, history, risk, health, dead code and decisions, and it needs one place to read each of those from and one place to write each of them to. Before this decision the design had two of several: a hand-written orientation page beside Repowise's structural wiki, a `docs/health/` folder beside Repowise's health history, ADRs beside Repowise's decision store, and an architecture document that repeated the import graph.
 
+Since 0.2.0 the agent reaches Repowise through its CLI only (design decision 28); the skill and tool names in the table below are the MCP surface, kept for reference.
+
 Verified on Repowise 0.52.0 (`docs/research/repowise.md`): the index builds in seconds with no model, it reads committed ADRs in Nygard format as accepted decisions, it re-extracts ADRs on `init` but not on `update`, and an ADR binds to files only through `repowise decision confirm --scope`.
 
 ## Decision
@@ -22,7 +24,7 @@ For every kind of codebase intelligence there is one read path and one write pat
 | Health score, worst files, refactoring targets, trend | Repowise index; coverage from `coverage.lcov` via `repowise coverage add` | `get_health` through the `code-health` skill; `repowise health` |
 | Duplication, dead code | Repowise index | `get_dead_code` through the `dead-code-cleanup` skill |
 | What a change put at risk, which tests it touches | Repowise index | `get_change_risk`, `impacted-tests` through the `change-review` skill; the CI gate `scripts/repowise_gate.py` |
-| Whether the docs still match the tree | Repowise index | `repowise doc-drift` in `py-health` |
+| Whether the docs still match the tree | Repowise index | `repowise doc-drift` in the health step |
 | Vocabulary | `CONTEXT.md`, by grilling | Read at session start |
 | Rules the checks enforce | `pyproject.toml` tool tables | Linters; `docs/architecture.md` explains them |
 | Tickets and scope | The tracker named in `docs/agents/issue-tracker.md` | Matt Pocock's ticket skills |

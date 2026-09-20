@@ -1,11 +1,6 @@
 ---
 name: py-baseline
 description: "The baseline every Python repo gets: layout, pyproject tool tables, pre-commit, CI, the Repowise change gate, agent docs. Use when setting up or checking a repo's tooling, checks or docs. Merges, never overwrites."
-license: Apache-2.0
-metadata:
-  author: fbhadha
-  version: 0.1.0
-  tags: [python, tooling, ci, pre-commit, setup]
 ---
 
 # Python baseline
@@ -36,7 +31,7 @@ The skeleton every repo this agent touches ends up with, so a junior reader can 
 
 ## The gates
 
-Two layers. Line-level tools run at commit on the changed files. Repowise (`docs/research/repowise.md` in this repo) runs whole-repo in `py-health` and once per CI pipeline as the change gate. Custom code: one script, the change gate, because Repowise's CLI cannot do it and its Python API can.
+Two layers. Line-level tools run at commit on the changed files. Repowise (`docs/research/repowise.md` in this repo) runs whole-repo in the persona's health step and once per CI pipeline as the change gate. Always its CLI, never its MCP tools. Custom code: one script, the change gate, because Repowise's CLI cannot do it and its Python API can.
 
 | Fault | Tool | Where it runs |
 |---|---|---|
@@ -54,20 +49,20 @@ Two layers. Line-level tools run at commit on the changed files. Repowise (`docs
 | Test with no assertion, mock-saturated test | `repowise health --format json`, advisory dimension (`assertion_free_test`, `mock_saturated_test`) | health; review |
 | Docs that name paths, links or commands the tree no longer has | `repowise doc-drift` | health |
 | Security | `bandit` (Repowise's 16-pattern scan is a floor, not a scanner) | health |
-| Fake tests (pass on any mutation) | `mutmut`; the score is reported by `py-health` and read by `py-review`, not stored | health |
-| Weakened test (assertion loosened, test deleted, skip added) | mutation-score ratchet, `py-review` in a fresh context, and a `CODEOWNERS` line on `tests/` requiring the owner's approval | health; review; platform |
+| Fake tests (pass on any mutation) | `mutmut`, on the module named; the score is reported in the health step and read at review, not stored | health |
+| Weakened test (assertion loosened, test deleted, skip added) | the review's Craft axis on the `tests/` diff, and a `CODEOWNERS` line on `tests/` requiring the owner's approval | review; platform |
 
 ## Where Repowise reads and writes (ADR 0005 in this repo)
 
 Reads: the source tree, git history, `docs/adr/*.md` (Nygard headings; `## Status` Accepted makes it govern, `## Scope` paths are bound by `scripts/adr_sync.py`), `# WHY:` / `# DECISION:` comments, and `coverage.lcov` when ingested with `repowise coverage add coverage.lcov`. Writes: `.repowise/` (gitignored, rebuilt anywhere in seconds) and the managed section between `REPOWISE:START` and `REPOWISE:END` in `AGENTS.md`. Nothing else. No `docs/health/`, no orientation page, no decisions store in git: the ADR files and the code are the truth and the index is derived from them.
 
-Repowise rules: every scripted call is `DO_NOT_TRACK=1 repowise <cmd> --no-editor-setup` where the flag exists; `.repowise/` is gitignored except `decisions.yaml`; the index is rebuilt in CI with `repowise init --no-prose --no-editor-setup -y` (under ten seconds on the repos tried). The editor wiring (`.mcp.json`, hooks in `~/.claude/settings.json`) is offered to the user as a separate step, never done by a skill.
+Repowise rules: every scripted call is `DO_NOT_TRACK=1 repowise <cmd> --no-editor-setup` where the flag exists; `.repowise/` is gitignored except `decisions.yaml`; the index is rebuilt in CI with `repowise init --no-prose --no-editor-setup -y` (under ten seconds on the repos tried). The editor wiring (`.mcp.json`, hooks in `~/.claude/settings.json`) is never done by a skill; the agent uses the CLI.
 
 ## Decisions baked into the templates
 
 - **Docstrings are not required** (`D1xx` ignored). Requiring them produces the signature-restating docstrings the prompt-comment gate exists to catch. When a docstring is present it must follow the Google convention.
 - **Tests are exempt** from `S101` (assert), `PLR2004` (magic values), `D`, `ARG` (fixtures), `FBT`.
-- **Strict from day one, changed lines only.** Pre-commit runs on staged files; CI runs pre-commit with `--from-ref origin/main --to-ref HEAD`, so old mess is tolerated and no new mess gets in. Whole-repo numbers come from `py-health`, not from the commit gate.
+- **Strict from day one, changed lines only.** Pre-commit runs on staged files; CI runs pre-commit with `--from-ref origin/main --to-ref HEAD`, so old mess is tolerated and no new mess gets in. Whole-repo numbers come from the health step, not from the commit gate.
 - **`filterwarnings = ["error"]`** in pytest. A deprecation is a failing test, so it gets fixed while it is one line.
 - **mypy strict on `src/`, not on `tests/`.** With the Pydantic plugin when Pydantic is a dependency.
 - **`uv run` for everything.** No activated virtualenvs in docs or scripts.

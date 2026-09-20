@@ -1,18 +1,13 @@
 # Pack template
 
-A pack is a reference-only skill named `pack-<domain>` under `skills/`. It changes nothing about how the agent works; it changes what the agent knows when the repo is of a kind. `py-intake` selects packs from `pyproject.toml` dependencies; `py-design` stays the general craft reference. The ADK pack is the pair `adk-build` and `adk-migrate` plus Google's own skills, because framework work needs procedures as well as reference; every other pack is one file in this shape.
+A pack is a reference-only skill named `pack-<domain>` under `skills/`. It changes nothing about how the agent works; it changes what the agent knows when the repo is of a kind. `py-intake` selects packs from `pyproject.toml` dependencies; `py-design` stays the general craft reference. `pack-adk` is one: it routes into Google's own skills and adds six rules. `adk-migrate` is not a pack but a procedure, because a migration has steps.
 
-Copy this file to `skills/pack-<domain>/SKILL.md`, add `agents/openai.yaml`, fill every section, run `python scripts/validate_skills.py`, and add the name to `.claude-plugin/plugin.json`.
+Copy this file to `skills/pack-<domain>/SKILL.md`, add `agents/openai.yaml`, fill every section, add the path to `skills` in `.claude-plugin/plugin.json`, and run `python scripts/check_plugin.py`.
 
 ```markdown
 ---
 name: pack-<domain>
-description: Knowledge pack for <domain> repos in Python (<the libraries>). Reference only. Use when the repo's dependencies match, or when designing or reviewing <the things this domain builds>. Selected automatically by py-intake from pyproject.toml.
-license: Apache-2.0
-metadata:
-  author: <you>
-  version: 0.1.0
-  tags: [python, <domain>, pack]
+description: "Knowledge pack for <domain> repos in Python (<the libraries>). Reference only. Use when the repo's dependencies match, or when designing or reviewing <the things this domain builds>. Selected by py-intake from pyproject.toml."
 ---
 
 # <Domain> pack

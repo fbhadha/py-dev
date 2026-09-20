@@ -1,3 +1,0 @@
-interface:
-  display_name: "ADK build"
-  short_description: "Build a Google ADK 2.x agent with Google's skills and this baseline"

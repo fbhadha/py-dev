@@ -160,17 +160,15 @@ The plugin is its own repository, `fbhadha/py-dev`, and its own marketplace. It 
 fbhadha/py-dev/                         THE AGENT PLUGIN (one repository, three loaders); Google's ADK skills are installed, not vendored (decision 23)
 ├── .claude-plugin/plugin.json          read by Claude Code natively, by Codex and Copilot as a legacy manifest
 ├── .claude-plugin/marketplace.json     makes the repo installable: marketplace `py-dev`, one plugin, source `./`
-├── agents/python-dev.md                the persona; body = system prompt (Claude Code and Copilot)
+├── agents/python-dev.md                the persona: session start, the routing table, build, review, health, Repowise policy (decisions 26 to 28)
 ├── agents/py-reviewer.md               craft-axis reviewer: Read/Grep/Glob/Bash only, no Agent tool (cannot recurse), no Edit
-├── skills/                             ask-dev, py-design, py-baseline, py-intake, py-implement, py-review,
-│                                       py-test-audit, py-health, adk-build, adk-migrate, pack-data-engineering (each with agents/openai.yaml)
+├── skills/                             py-intake, py-design, py-baseline, adk-migrate, pack-adk, pack-data-engineering (each with agents/openai.yaml)
 ├── hooks/hooks.json                    deny destructive git, stop-gate on red ruff
 ├── scripts/hooks/, scripts/find_skill.py   the hook scripts; the skill locator the door check uses
-├── upstream.json                       every upstream skill we call by name, pinned
+├── upstream.json                       every upstream skill we call by name, pinned (Matt Pocock's, Google's)
 ├── scripts/
-│   ├── validate_skills.py              frontmatter against schema/skill.schema.json
-│   ├── check_upstream_skills.py        every skill we call by name (Matt's, Repowise's, Google's) exists at the pinned commit with the invocation we assume
-│   └── check_invocation_sync.py        disable-model-invocation: true  <=>  openai.yaml policy.allow_implicit_invocation: false
+│   ├── check_plugin.py                 frontmatter, openai.yaml sync, manifests, the skills list
+│   └── check_upstream_skills.py        every skill we call by name exists at the pinned commit with the invocation we assume
 ├── CONTEXT.md                          this repo's own glossary
 └── docs/adr/                           this repo's own decisions
 ```
@@ -239,6 +237,10 @@ fbhadha/py-dev/                         THE AGENT PLUGIN (one repository, three 
 | 23 | **Google's ADK skills are installed from Google's repo, not vendored.** `npx skills@latest add google/adk-python -s adk-agent-builder,adk-architecture,adk-debug,adk-style` puts them in `.agents/skills/` where `find_skill.py` finds them; the other seven are for adk-python contributors. The `adk-skills` plugin and `sync_adk_skills.py` are dropped. `adk-build` routes into Google's skills and adds the baseline; `adk-migrate` detects 1.x mechanically and forces only what silently breaks. | Same rule as Matt's and Repowise's: one maintainer, one install, called by name. Verified 2026-09-20 against adk-python at d57c84f (ADK 2.9). |
 | 24 | **No rendered copies of the persona in this repo.** `py-intake` renders the Copilot agent file and the Codex `AGENTS.md` section in the target repo from the one persona file at intake time, so there is nothing here to drift and `render_harness_shells.py` is dropped. `check_upstream_skills.py` replaces `check_pocock_refs.py` and covers all three upstreams from `upstream.json`. | One persona file. CI clones the three upstreams at their pins on every change and reports drift on their default branches. |
 | 25 | **Context budget is a design constraint.** Always-loaded cost is the persona plus every skill's name and description; bodies and `references/` load on demand. The persona stays near a page, descriptions near 40 words, worked examples and long tables live in `references/`, the door check is one script call, and human explainers (`docs/how-python-dev-works.md`) live outside the plugin. Measured numbers in the plugin README. | Smaller models get a shorter prompt; the same files work for every harness. Repowise's MCP `lean` profile is the lever on its side. |
+| 26 | **Cut every skill that wrapped or duplicated an upstream** (2026-09-20, after the move to `fbhadha/py-dev`). `ask-dev`, `py-implement`, `py-review`, `py-health`, `py-test-audit` and `adk-build` are gone. Matt's `implement`, `tdd` and `code-review` are the procedures; Google's skills are the ADK procedure. What was ours in each (the Python build rules, the four-axis review recipe, the health commands, the test classes, the six ADK rules) moved into the persona, `py-design/references/test-audit.md` and `pack-adk`. | Six skills: `py-intake`, `py-design`, `py-baseline`, `adk-migrate`, `pack-adk`, `pack-data-engineering`. |
+| 27 | **The routing table lives in the persona, always loaded.** The main goal is that the agent knows at every turn when to invoke what and how to keep the repo good by its how-tos. A skill it must remember to call cannot guarantee that; the persona can. Written as numbered steps, tables and exact commands so a smaller model can follow it. | Persona grows to about 3,000 tokens (from about 1,650). Skill descriptions fall from eleven to six. Net always-loaded cost is roughly level. |
+| 28 | **Repowise through its CLI only, at named moments.** Its MCP surface is ten tool definitions per turn, the single largest context cost outside the plugin. The persona lists the moments Repowise may run (index behind HEAD, before editing a file, before naming something new, before review, health on request, intake orientation) and the exact command for each; never for browsing. Its six skills left `upstream.json`; intake no longer offers to wire `.mcp.json`. ADR 0005 stands: it is still the one store, reached one way. | Decision 20's "six skills called by name after a door check" is superseded on the access path only. |
+| 29 | **Independent of `fbhadha/Skills`.** Nothing from the skill library's governance carries over: no JSON schema, validator, code of conduct, CODEOWNERS, DCO or PR template. Skill frontmatter is `name` and `description`. One `scripts/check_plugin.py` checks the plugin. | The library is one person's archive of skills they like; this is a product with a target repo depending on it. |
 
 ## 15. Build order
 

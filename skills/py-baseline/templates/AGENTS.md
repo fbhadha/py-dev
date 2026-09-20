@@ -30,4 +30,4 @@ Modules under 400 lines, tests under 150. No `utils`/`helpers`/`common`/`misc` m
 
 ## Agent
 
-The `python-dev` persona (plugin `python-dev`, repo `fbhadha/py-dev`) is the intended session agent. Its skills: `py-design` (craft), `py-baseline` (this layout), `py-intake` (set up or re-orient), `ask-dev` (what to run next). Process skills come from Matt Pocock's plugin; codebase intelligence from the Repowise plugin. Both are called by name.
+The `python-dev` persona (plugin `python-dev`, repo `fbhadha/py-dev`) is the intended session agent. Its skills: `py-intake` (set up or re-orient), `py-design` (craft), `py-baseline` (this layout), the packs listed above. Process skills come from Matt Pocock's plugin, called by name; codebase intelligence from the Repowise CLI.

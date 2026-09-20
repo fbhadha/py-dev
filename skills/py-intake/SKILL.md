@@ -1,11 +1,6 @@
 ---
 name: py-intake
 description: "Set up a Python repo for python-dev or re-orient in one: explore, mode, tracker, baseline, Repowise index, brownfield read-back and grilling, the human docs, harness shells. Resumable. `py-intake later` reviews parked tickets."
-license: Apache-2.0
-metadata:
-  author: fbhadha
-  version: 0.1.0
-  tags: [python, setup, onboarding, brownfield, repowise]
 ---
 
 # Python intake
@@ -20,7 +15,7 @@ Run once per repo, and again whenever you come back after a long gap. Every step
 |---|---|---|
 | `uv`, `git` | on PATH | stop; say how to install |
 | `repowise` | `uv run repowise --version` or on PATH | `uv add --group dev repowise` (Python 3.11 or newer) |
-| Upstream skills | `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/find_skill.py" --door-check` prints nothing missing | it prints the install command per upstream; continue, but steps 3 and 6 wait for Matt Pocock's skills, and the Repowise skills fall back to the CLI (`repowise health`, `dead-code`, `context`, `why`) |
+| Upstream skills | `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/find_skill.py" --door-check` prints nothing missing | it prints the install command per upstream; continue, but steps 3 and 6 wait for Matt Pocock's skills |
 
 Never improvise a missing skill's behaviour.
 
@@ -35,8 +30,8 @@ Establish facts from the repo, never by guessing. Present them as one table and 
 | Python | `.python-version`, `pyproject.toml` `requires-python`, else `python3 --version` |
 | Package name | the directory under `src/` with an `__init__.py`, else `[project] name` |
 | Tooling present | `pyproject.toml` `[tool.*]` tables, `.pre-commit-config.yaml`, CI files, `uv.lock`, `requirements*.txt` |
-| ADK | `google-adk` in dependencies and its version: `1.x` means `adk-migrate` is the first ticket after intake; `2.x` means `adk-build` applies. Either way install Google's skills from their repo: `npx skills@latest add google/adk-python -s adk-agent-builder,adk-architecture,adk-debug,adk-style -a '*' -y` |
-| Packs | dependencies that select a knowledge pack (`pack-data-engineering`: dlt, pandas, polars, pyarrow, sqlalchemy, duckdb, dbt-core, pandera, pyspark, prefect, dagster, airflow). A selected pack's "extra checks" section is applied in step 4 and its name is written under `## Packs` in `AGENTS.md` |
+| ADK | `google-adk` in dependencies and its version: `1.x` means `adk-migrate` is the first ticket after intake; `2.x` means the `pack-adk` pack is selected. Either way install Google's skills from their repo: `npx skills@latest add google/adk-python -s adk-agent-builder,adk-architecture,adk-debug,adk-style -a '*' -y` |
+| Packs | dependencies that select a knowledge pack (`pack-adk`: google-adk 2.x; `pack-data-engineering`: dlt, pandas, polars, pyarrow, sqlalchemy, duckdb, dbt-core, pandera, pyspark, prefect, dagster, airflow). A selected pack's "extra checks" section is applied in step 4 and its name is written under `## Packs` in `AGENTS.md` |
 | Docs already there | `AGENTS.md`, `CLAUDE.md`, `CONTEXT.md`, `docs/adr/`, `docs/agents/`, `docs/howto/`, `README.md` |
 | Repowise state | `.repowise/` present? `AGENTS.md` has a `REPOWISE:START` marker? |
 
@@ -84,7 +79,7 @@ uv run python scripts/adr_sync.py --no-index
 
 Read the "Does the score find the bugs?" line `init` prints and repeat it to the user: it is the evidence that the health score means something on this repo, or that the repo is too young to say.
 
-Then one explicit question: "Wire Repowise into your editor now? That writes `.mcp.json` here and an entry in `~/.claude/settings.json`; it is what lets the agent skills call the index directly." Yes: `uv run repowise init -y` (or `repowise agents add --target=<id>` on Copilot and Codex). No: the CLI does everything the skills need; say so and move on.
+Do not wire Repowise into the editor (`.mcp.json`, `~/.claude/settings.json`). The agent uses the CLI for everything it needs; the MCP surface costs ten tool definitions every turn. Say so in one sentence. If the user asks for it anyway, the command is `uv run repowise init -y`, and it is theirs to run.
 
 ## 6. Orientation (brownfield only)
 
@@ -92,9 +87,9 @@ Done when `CONTEXT.md` has at least three terms from this repo and every decisio
 
 Read, in this order, and say nothing until you have all of it:
 
-1. The map: call the Skill tool with "codebase-exploration" (`get_overview`). Without MCP: the `AGENTS.md` managed section (architecture, key modules, entry points), then `uv run repowise context <file>` on each entry point. `context` takes files and symbols (`path.py::Name`), not directories.
-2. Health: "code-health" (`get_health(include=["refactoring"])`), or `uv run repowise health --refactoring-targets`.
-3. Dead code: "dead-code-cleanup", or `uv run repowise dead-code --safe-only`.
+1. The map: the `AGENTS.md` managed section (architecture, key modules, entry points), then `uv run repowise context <file>` on each entry point. `context` takes files and symbols (`path.py::Name`), not directories.
+2. Health: `uv run repowise health --refactoring-targets`.
+3. Dead code: `uv run repowise dead-code --safe-only`.
 4. Decisions: `uv run repowise decision candidates` and `uv run repowise decision health` (ungoverned hotspots).
 5. Doc drift: `uv run repowise doc-drift`.
 
@@ -134,8 +129,8 @@ Copilot's cloud agent cannot run intake or grilling; say so once. Codex has no h
 1. `uv run pre-commit run --all-files` and `uv run pytest -m "not eval"`; show the output; on brownfield, red is recorded as the first tickets, not fixed now.
 2. Commit in groups with messages that name the decision (`intake: baseline tool tables`, `intake: ADR 1, adapters never normalise`, ...). Never one commit called "setup".
 3. ADK 1.x found in step 1: say that `adk-migrate` is the first ticket and create it.
-4. End with the `ask-dev` answer shape and start the step: greenfield, `grill-with-docs` on the user's idea; brownfield, `improve-codebase-architecture` on the worst file, or the first `later` ticket the user wants back.
+4. Say in one line what comes next (the persona's table) and start it: greenfield, `grill-with-docs` on the user's idea; brownfield, `improve-codebase-architecture` on the worst file, or the first `later` ticket the user wants back.
 
 ## 10. `later`
 
-List the open tickets labelled `later` from the tracker in `docs/agents/issue-tracker.md`, oldest first, one line each. Ask, one at a time: keep, kill, or do now. Kill closes it with a comment saying why. Do now hands it to `py-implement`. Nothing else.
+List the open tickets labelled `later` from the tracker in `docs/agents/issue-tracker.md`, oldest first, one line each. Ask, one at a time: keep, kill, or do now. Kill closes it with a comment saying why. Do now: build it by the persona's build steps. Nothing else.

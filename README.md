@@ -1,139 +1,103 @@
 # python-dev
 
-A senior Python engineer as a selectable agent, in guide mode: it explains every step in plain words, builds by your repo's own how-tos, pushes back on scope creep, and keeps deterministic checks green. It runs the whole flow itself; you never type a skill name.
+A senior Python engineer as a selectable agent for Claude Code, in guide mode. It explains every step in plain words, builds by your repo's own how-tos, pushes back on scope creep, and keeps deterministic checks green. You talk; it runs the whole flow. You never type a skill name.
 
-This repository is the plugin and its Claude Code marketplace. It stands on three maintained upstreams, installed from their own repositories and called by name, never copied:
-
-| Upstream | Gives | Install |
-|---|---|---|
-| [Matt Pocock's skills](https://github.com/mattpocock/skills) | the process: grilling, spec, tickets, TDD, two-axis review, handoff | `/plugin marketplace add mattpocock/skills`, `/plugin install mattpocock-skills@mattpocock` |
-| [Repowise](https://github.com/repowise-dev/repowise) | codebase intelligence: structure, blast radius, why, health, dead code, change risk; the one store for everything derived from the code | `pip install repowise`; `/plugin marketplace add repowise-dev/repowise`, `/plugin install repowise@repowise` |
-| [Google's ADK skills](https://github.com/google/adk-python) | framework knowledge for Agent Development Kit repos | `py-intake` installs them when the repo depends on `google-adk` |
-
-What is ours: the persona, the Python craft rules and fault catalogue, the repo baseline (tool tables, commit gate, CI, docs a junior reader can continue from), the intake that orients in an existing repo and grills you on its undocumented decisions, the implement, review, test-audit and health flows, ADK build and 1.x to 2.x migration, and knowledge packs.
-
-How it all fits together: [docs/how-python-dev-works.md](docs/how-python-dev-works.md). Design and the decisions behind it: [docs/design/python-dev-agent.md](docs/design/python-dev-agent.md), [docs/adr/](docs/adr/), [docs/research/](docs/research/). The words this repo uses: [CONTEXT.md](CONTEXT.md).
+It is small on purpose. Process comes from [Matt Pocock's skills](https://github.com/mattpocock/skills), framework knowledge from [Google's ADK skills](https://github.com/google/adk-python), codebase intelligence from the [Repowise](https://github.com/repowise-dev/repowise) CLI. All three are installed from their maintainers' repositories and called by name, never copied. What is here is what none of them has: a persona that knows when to run what, the Python craft rules and fault catalogue, the baseline every repo gets, an intake that orients in an existing repo and grills you on its undocumented decisions, the ADK 1.x to 2.x migration, and knowledge packs.
 
 ## Install
 
-Prerequisites in every harness: `uv`, Python 3.11 or newer, Matt Pocock's skills, and Repowise (`pip install repowise` or `uv tool install repowise`, plus its agent plugin: `/plugin marketplace add repowise-dev/repowise` then `/plugin install repowise@repowise` on Claude Code; `repowise agents add --target=codex` or `--target=vscode` elsewhere). Repowise is the agent's only store for everything derived from the code (ADR 0005 in this repo).
+Prerequisites: `uv`, Python 3.11 or newer, and the two upstreams.
 
-| Harness | Install | Select the persona |
-|---|---|---|
-| Claude Code | `/plugin marketplace add fbhadha/py-dev` then `/plugin install python-dev@py-dev`; also `/plugin install mattpocock-skills@mattpocock` (his marketplace) | `claude --agent python-dev`, or set `"agent": "python-dev"` in the repo's `.claude/settings.json` (py-intake offers to) |
-| GitHub Copilot | `npx skills@latest add fbhadha/py-dev --all` and `npx skills@latest add mattpocock/skills --all` | py-intake writes `.github/agents/python-dev.agent.md`; pick it from the agent picker |
-| OpenAI Codex | same two `npx skills` commands | no persona picker; py-intake writes the persona into `AGENTS.md`, skills are `$py-intake`, `$ask-dev` |
+```
+/plugin marketplace add mattpocock/skills
+/plugin install mattpocock-skills@mattpocock
 
-Then, in the target repo, say what you want; the agent runs `py-intake` first if the repo is not set up. You never type a skill name: the agent runs Matt's flows too, by reading their skill files when the harness refuses to invoke them (`scripts/find_skill.py`). After `to-spec` and after `to-tickets` it writes a handoff document and tells you to open a fresh session with it; each ticket is one session. It applies the baseline (`skills/py-baseline`), sets up the tracker, writes the three human docs, and on an existing repo orients itself and grills you about the undocumented decisions.
+/plugin marketplace add fbhadha/py-dev
+/plugin install python-dev@py-dev
+```
 
-### How it works
+Repowise is a dev dependency of each target repo; intake adds it (`uv add --group dev repowise`). Google's ADK skills are installed by intake only when the repo depends on `google-adk`.
 
-- **You talk; it runs the flow.** At session start the persona decides the next step and starts it. Matt Pocock's flows it cannot invoke through the harness it runs by reading their skill files. You never type a skill name.
-- **Intake first.** On a repo it has not seen, it explores and shows you the facts, sets guide mode and the tracker (your remote decides), applies the baseline and proves each check bites, indexes with Repowise, and writes the docs a junior reader needs: `AGENTS.md` pointers, `CONTEXT.md` glossary, ADRs, how-tos, the rules-only architecture doc. On an existing repo it reads the codebase back to you in plain words and grills you on the undocumented decisions it found.
-- **Shapes and how-tos.** A how-to is the recipe for one kind of addition the repo makes, mirrored on an example that compiles. A ticket that fits a how-to is built by it; one that leaves its layers is a new shape and gets the interview first. Docs first, then code.
-- **One ticket, one session.** Grill, spec and tickets in one window; then a handoff document and a fresh session per ticket. Each ticket is built test-first, checked after every slice, gated by Repowise before review, reviewed on four axes, committed with the decision in the message.
-- **One store.** Everything derived from the code is read from Repowise. Decisions are written only as ADRs. Rules a machine can enforce live in `pyproject.toml`, not in prose.
+Then, in the repo you want to work on:
 
-## Try it from a clone
+```bash
+claude --agent python-dev
+```
 
-In the repo you want to work on:
+Or from a clone, without installing:
 
 ```bash
 claude --agent python-dev --plugin-dir /path/to/py-dev
 ```
 
-That loads the plugin for the session only and starts with the persona. Its first turn runs `ask-dev`, which runs `py-intake` when the repo is not set up. Matt Pocock's and Repowise's plugins still need to be installed as above; the door check names whatever is missing.
+Intake offers to write `"agent": "python-dev"` into the repo's `.claude/settings.json`, after which plain `claude` starts as it.
+
+Other harnesses: `npx skills@latest add fbhadha/py-dev --all` and `npx skills@latest add mattpocock/skills --all` install every skill in the Agent Skills format. Intake then writes the persona into `.github/agents/python-dev.agent.md` for GitHub Copilot and into `AGENTS.md` for OpenAI Codex. Both are from the docs, not yet exercised.
+
+## What happens
+
+**First session in a repo.** The persona sees no `docs/agents/mode.md` and runs `py-intake`. It shows you a table of facts about the repo and asks if anything is wrong. It sets guide mode, picks the tracker from your remote (GitHub Issues, GitLab Issues, or Backlog.md when there is none), applies the baseline and proves each check bites, indexes with Repowise, and writes the docs a junior reader needs: `AGENTS.md` pointers, a `CONTEXT.md` glossary, `docs/adr/`, `docs/howto/`, a rules-only `docs/architecture.md`. On an existing repo it first reads the codebase back to you in six plain paragraphs (what it does, how it is layered, the three worst files and why, what nothing uses, what keeps getting bug-fixed with no decision behind it, which docs point at things that no longer exist) and grills you on what it found. Every answer becomes a glossary term, an ADR, or a `later` ticket.
+
+**Every session after that.** The persona reads the repo's state, checks the upstream skills are installed, says in one line what comes next, and starts it. An idea gets Matt's `grill-with-docs`, then `to-spec` and `to-tickets` with a handoff and a fresh session between each. A ticket gets built: name the shape, ask Repowise what the files depend on, search before naming anything new, agree the seams, then Matt's `implement` with `tdd`, checks after every green, the change gate, a four-axis review, a commit that names the decision, a handoff. One ticket per session.
+
+**The rule underneath.** A **shape** is a kind of addition the repo already knows how to make, described by one how-to in `docs/howto/` and mirrored on an example package that compiles. A ticket that fits a how-to is built by it. A ticket that leaves the how-to's layers is a new shape: the agent grills you, extends the how-to and its example first, then builds. Docs first, then code.
 
 ## What is in the box
 
 | Path | What |
 |---|---|
-| `agents/python-dev.md` | the persona: identity, guide voice, two-tier pushback, the ask-first and never lists |
-| `agents/py-reviewer.md` | read-only craft reviewer used by `py-review` |
-| `skills/ask-dev` | which command comes next, from the repo's state |
-| `skills/py-design` | the craft rules, the fault catalogue, three canonical repos to cite |
-| `skills/py-baseline` | the layout, tool tables, commit gate, CI, docs every repo gets, plus templates |
-| `skills/py-intake` | set up a repo or re-orient in one: baseline, Repowise index, brownfield read-back and grill, the three human docs, harness shells; `py-intake later` reviews the parked list |
-| `skills/py-implement` | one ticket per session, test-first, by the how-to, with the Repowise pre-edit checks, review, commit, and a handoff to the next session |
-| `skills/py-review` | four-axis review: Standards and Spec (Matt's code-review), Change (Repowise), Craft (py-reviewer and the fault catalogue); report first |
-| `skills/py-test-audit` | classify every test with evidence from Repowise's test-quality markers and mutation testing; propose deletions and rewrites |
-| `skills/adk-build` | Google ADK 2.x work: routes into Google's own skills, installed from `google/adk-python`, and adds this baseline's layout, test tiers and craft rules |
-| `skills/adk-migrate` | ADK 1.x to 2.x: mechanical detection, force only what silently breaks, evals first, expand, migrate, contract |
-| `skills/pack-data-engineering` | knowledge pack for pipelines, sources, sinks and frames; `packs/TEMPLATE.md` is the shape for new packs |
-| `skills/py-health` | one report on where the repo is ugly and what to fix first, from Repowise and the linters; writes nothing |
-| `upstream.json` | the skills we call by name in Matt Pocock's, Repowise's and Google's repos, pinned; `scripts/check_upstream_skills.py` in this repo's CI verifies them |
-| `hooks/hooks.json` | in-session guards (below) |
-| `scripts/hooks/` | the hook scripts |
-| `scripts/find_skill.py` | locates an installed skill's `SKILL.md` by name across Claude Code, Copilot and Codex install directories; the door check and the persona use it |
+| `agents/python-dev.md` | The persona. Session start, the routing table (situation, what to run), how to build a ticket, how to review, health, session boundaries, the Repowise policy, voice, pushback, the ask-first list, where knowledge lives. Always loaded. |
+| `agents/py-reviewer.md` | Read-only craft reviewer the review step dispatches. Applies the fault catalogue to a diff. |
+| `skills/py-intake` | Set up a repo or re-orient in one. Resumable; never overwrites what a person wrote. `later` reviews the parked list. |
+| `skills/py-design` | The craft rules, the fault catalogue, three canonical repos to cite, the worked adapter-model-writer shape, the test-audit classes. |
+| `skills/py-baseline` | What every repo gets: tool tables, pre-commit, CI, the Repowise change gate, the standard docs. With the templates intake copies. |
+| `skills/adk-migrate` | Google ADK 1.x to 2.x: detect mechanically, force only what silently breaks, evals first, expand then migrate then contract. |
+| `skills/pack-adk` | Reference for ADK 2.x repos: which Google skill to open for which job, the six rules this baseline adds. |
+| `skills/pack-data-engineering` | Reference for pipeline repos: shapes, the canonical repo, extra checks, faults, tests. `packs/TEMPLATE.md` is the shape for new packs. |
+| `upstream.json` | Every upstream skill called by name, pinned to a commit. CI verifies them. |
+| `scripts/find_skill.py` | Finds an installed skill's `SKILL.md` by name across the harnesses' install directories. The door check and the persona use it to run Matt's user-invoked skills, which the Skill tool refuses. |
+| `hooks/hooks.json`, `scripts/hooks/` | In-session guards for Claude Code: deny force-push, hard reset, rebase, amend and `--no-verify`; stop the turn ending while ruff is red on files the session changed. Pre-commit and CI in your repo are the enforcement. |
 
-Version 0.1.0, a first release for testing on real repositories; see [CHANGELOG.md](CHANGELOG.md) for known gaps.
+## How the agent decides
 
-## Repository layout
+The persona carries one table: the situation the user is in, and what to run. Three kinds of thing can be run. A **Skill** is called through the harness's Skill tool: ours, Matt's model-invoked ones, Google's. A **File** is one of Matt's user-invoked skills (`grill-with-docs`, `to-spec`, `to-tickets`, `implement`, `handoff`, `improve-codebase-architecture`, `triage`, `wayfinder`, `wait-what`), which the Skill tool refuses; the persona locates the file with `find_skill.py`, reads it and follows it in the conversation. A **CLI** command is run and its output shown. The table is always loaded, so the agent never has to remember to ask what comes next.
 
-```
-.
-├── .claude-plugin/plugin.json        # the plugin manifest
-├── .claude-plugin/marketplace.json   # makes this repo installable with /plugin marketplace add
-├── agents/                           # the persona and the read-only reviewer
-├── skills/<name>/                    # the skills, each with agents/openai.yaml for Codex
-├── hooks/, scripts/hooks/            # in-session guards (Claude Code)
-├── scripts/find_skill.py             # locates an installed skill by name across harnesses
-├── scripts/                          # validate_skills.py, check_invocation_sync.py, check_upstream_skills.py
-├── schema/skill.schema.json          # frontmatter contract, enforced in CI
-├── packs/TEMPLATE.md                 # the shape of a knowledge pack
-├── upstream.json                     # the upstream skills we call by name, pinned
-├── docs/adr/, docs/design/, docs/research/   # decisions, the design, verified research
-├── docs/how-python-dev-works.md      # the long explainer
-├── CONTEXT.md                        # the words this repo uses
-└── .github/                          # CI, CODEOWNERS, PR template
-```
+## Repowise, and why it is CLI only
 
-## Contributing
+Repowise is the one store for everything derived from the code: structure, callers, blast radius, health, dead code, change risk, doc drift, which ADR governs which file. Its MCP server costs ten tool definitions every turn. The agent never uses it. Instead the persona names the only moments Repowise runs, and the command for each:
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Security reports: [SECURITY.md](SECURITY.md).
+| Moment | Command |
+|---|---|
+| Session start, when the index is behind HEAD | `uv run repowise update` |
+| Before editing a file | `uv run repowise why <file>`, `uv run repowise risk -t <file>` |
+| Before naming something new | `uv run repowise search <name>` |
+| Before review | `scripts/repowise_gate.py`, `repowise risk <range>`, `repowise impacted-tests <range>` |
+| Health, on request | `health --refactoring-targets`, `dead-code --safe-only`, `doc-drift`, `decision health` |
+| Orientation, at intake | `context`, `health`, `dead-code`, `decision candidates`, `doc-drift` |
 
-## Hooks (Claude Code)
-
-Best effort. Pre-commit and CI in the target repo are the enforcement; the hooks just shorten the loop.
-
-| Event | Script | Does |
-|---|---|---|
-| `PreToolUse` on Bash | `guard_command.py` | denies force-push, hard reset, rebase, amend, filter-branch, `--no-verify`, `branch -D`. Fails open on any parse error. |
-| `Stop` | `stop_gate.py` | blocks the turn ending while `ruff check` is red on the `.py` files changed this session. Only in repos with the baseline; never blocks twice in a row. |
-
-Copilot and Codex get the same guards as repo-level hook files written by `py-intake`; Copilot's hooks fail open on timeout, Codex's hook contract is unverified, so treat both as advisory.
-
-## Checks the baseline installs in a target repo
-
-One read path and one write path per kind of knowledge. Everything derived from the code (structure, callers, blast radius, why, health, dead code, change risk, doc drift) is read from Repowise through its six skills. Humans and the agent write only ADRs, `CONTEXT.md`, how-tos and tool tables; `scripts/adr_sync.py` binds each ADR to the paths it governs so Repowise warns whoever edits them.
-
-Line-level at commit: ruff (bugbear, blind except, security, print, commented-out code, prompt-shaped TODOs and docstrings, complexity, boolean flags, banned grab-bag modules), mypy strict on `src/`, import-linter layers, pylint module length, detect-secrets. Whole-repo and per-change: [Repowise](https://github.com/repowise-dev/repowise) health score, duplication, dead code, assertion-free tests, and a CI gate that fails when a diff makes a touched file worse. On demand: mutmut, bandit. Why this split: `docs/research/repowise.md`.
-
-Repowise is AGPL-3.0 and is used as a development tool only. Set `DO_NOT_TRACK=1` (the templates do) to switch off its telemetry.
+Never for browsing: to find or read code the agent greps and opens the file. Decisions are written only as ADR files in `docs/adr/`, bound to paths by `scripts/adr_sync.py`; Repowise reads them, nothing writes to it. Repowise is AGPL-3.0 and a development tool only; the templates set `DO_NOT_TRACK=1`.
 
 ## Context cost
 
-What a harness loads every turn from this plugin is the persona and every skill's name and description. Skill bodies load only when a skill runs, and `references/` files only when a skill opens them. Estimated at 3.6 characters per token:
+What a harness loads every turn from this plugin is the persona and six skill descriptions, about 3,300 tokens at 3.6 characters per token. Skill bodies load only when a skill runs (`py-intake`, the largest, about 3,000 tokens, once per repo); `references/` files only when a skill opens them. Matt's skills add their descriptions when installed. Google's four are installed only in ADK repos. Nothing here depends on a tool the harness might not have, and every step is a numbered instruction or a command, so a smaller model can follow it; what a smaller model does worse is the judgement in the review's Craft axis and in grilling, and the mechanical checks do not get weaker.
 
-| Always loaded | Tokens |
-|---|---|
-| Persona (`agents/python-dev.md`) | ~1,650 |
-| 11 skill descriptions | ~630 |
-| Total from this plugin | ~2,300 (was ~3,900 before the 0.1.0 trim) |
+## What the baseline installs in your repo
 
-| Loaded on demand | Tokens |
-|---|---|
-| The largest skill body (`py-intake`, runs once per repo) | ~3,200 |
-| A typical skill body | 800 to 1,500 |
-| `py-design` references (fault catalogue, canonical examples, worked example) | ~3,300, opened one at a time |
+Line-level at commit: ruff (bugbear, blind except, security, print, commented-out code, prompt-shaped TODOs and docstrings, complexity, boolean flags, banned grab-bag modules), mypy strict on `src/`, import-linter layers, pylint module length, detect-secrets. Whole-repo and per-change: the Repowise health score and a CI gate that fails when a diff makes a touched file worse. On demand: mutmut, bandit. Three scripts, copied once and never edited in the target repo: the change gate, the ADR binder, and a runner that executes the README's command blocks in CI so the README cannot rot.
 
-Levers, in order of effect:
+## Working on this repo
 
-1. **Repowise's MCP surface** is the biggest cost outside this plugin: ten tool definitions per session by default. Its `lean` profile trims that to six for tight budgets (see `docs/agent/INTEGRATIONS.md` in the Repowise repo). Without MCP the skills fall back to the CLI and cost nothing per turn.
-2. **Matt's and Google's skills** add their own descriptions when installed; only the four ADK skills are installed, and only in ADK repos.
-3. **Packs** are selected per repo; an unselected pack costs its description only.
-4. **Smaller models.** Everything here is plain steps and tables, nothing depends on a tool the harness might not have, and the persona fits in a page, so a smaller model can follow it. What a smaller model will do worse is the judgement in `py-review`'s Craft axis and in grilling; the mechanical checks (ruff, mypy, import-linter, the Repowise gate) do not get weaker.
+```
+pip install pyyaml
+python scripts/check_plugin.py            # frontmatter, openai.yaml sync, manifests, the skills list
+python scripts/check_upstream_skills.py   # every upstream skill exists at its pin with the invocation we assume
+claude plugin validate --strict .
+```
+
+Rules: one persona file, about a page of steps and tables, no craft knowledge in it. Skills carry `agents/openai.yaml` for Codex. Call upstream skills by name, never copy them; add the name to `upstream.json` and bump a pin in its own commit after reading the upstream changelog. One read path and one write path per kind of knowledge (ADR 0005): anything derived from the code comes from Repowise, by CLI. No custom gates; a check is an established tool's rule in `skills/py-baseline/templates/pyproject-tools.toml`. Verify before you write; `docs/research/` records what was checked and when. A knowledge pack is `skills/pack-<domain>/` in the shape of `packs/TEMPLATE.md`, reference only. Before a release: the three commands above, a `claude --agent python-dev --plugin-dir . -p` smoke test in a real repo, then the version in both manifests and a `CHANGELOG.md` entry.
+
+Why things are the way they are: [docs/how-python-dev-works.md](docs/how-python-dev-works.md) for the long explainer, [docs/design/python-dev-agent.md](docs/design/python-dev-agent.md) for the design and every decision, [docs/adr/](docs/adr/) for the ones that were hard to reverse, [docs/research/](docs/research/) for what was verified, [CONTEXT.md](CONTEXT.md) for the words.
 
 ## Licence
 
-Apache-2.0. See `NOTICE` for what is called or vendored from elsewhere.
+Apache-2.0. `NOTICE` lists what is called from elsewhere.

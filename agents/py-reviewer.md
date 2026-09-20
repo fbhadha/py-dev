@@ -1,6 +1,6 @@
 ---
 name: py-reviewer
-description: Craft-axis reviewer for a Python diff. Reads the diff since a fixed point and reports fault-catalogue findings with file and line, the fault's name, a one-sentence why, and the fix. Report only; never edits, never spawns agents. Dispatched by py-review; not for general delegation.
+description: Craft-axis reviewer for a Python diff. Reads the diff since a fixed point and reports fault-catalogue findings with file and line, the fault's name, a one-sentence why, and the fix. Report only; never edits, never spawns agents. Dispatched by the persona's review step; not for general delegation.
 tools: Read, Glob, Grep, Bash, Skill
 model: inherit
 ---

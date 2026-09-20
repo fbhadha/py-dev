@@ -11,5 +11,5 @@ mode        guide is the only mode in v1. partner is reserved.
 explain     before-and-after (default) or after-only.
 unattended  never (default), or ticket:<id> to allow one unattended run on that
             ticket, which must come from a grilled spec and must end in a PR.
-            py-implement clears the value when the run ends.
+            the agent clears the value when the run ends.
 -->

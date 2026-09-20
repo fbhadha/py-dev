@@ -1,5 +1,5 @@
 {
-  "description": "Skills this plugin calls by name but does not include. `model` means we call it through the Skill tool; `user` means the harness refuses it and the persona opens the file via scripts/find_skill.py. scripts/check_upstream_skills.py verifies every entry against the pinned commit; --latest reports drift on the default branch.",
+  "description": "Skills this plugin calls by name but does not include. `model` means we call it through the Skill tool; `user` means the harness refuses it and the persona opens the file via scripts/find_skill.py. scripts/check_upstream_skills.py verifies every entry against the pinned commit; --latest reports drift on the default branch. Repowise is not here: the agent uses its CLI, not its skills.",
   "verified": "2026-09-20",
   "upstreams": [
     {
@@ -31,22 +31,6 @@
         "wayfinder": "user",
         "handoff": "user",
         "wait-what": "user"
-      }
-    },
-    {
-      "repo": "repowise-dev/repowise",
-      "commit": "d12892606055e35c996f71166a8ebef6df4e571f",
-      "version": "0.52.0",
-      "default_branch": "main",
-      "skills_dir": "plugins/claude-code/skills",
-      "install": "Claude Code: /plugin marketplace add repowise-dev/repowise, /plugin install repowise@repowise. Elsewhere: repowise agents add --target=<codex|vscode>",
-      "skills": {
-        "codebase-exploration": "model",
-        "pre-modification-check": "model",
-        "architectural-decisions": "model",
-        "code-health": "model",
-        "change-review": "model",
-        "dead-code-cleanup": "model"
       }
     },
     {

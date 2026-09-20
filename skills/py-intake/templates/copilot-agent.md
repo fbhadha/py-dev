@@ -6,4 +6,4 @@ include-custom-instructions: true
 
 <!-- py-intake appends the body of ./agents/python-dev.md below this line,
      with that file's own frontmatter removed. Copilot runs this persona as a delegated
-     subagent; it has no initial prompt, so start by typing /ask-dev. -->
+     subagent; it has no initial prompt, so start by saying what you want and it runs its session-start steps. -->

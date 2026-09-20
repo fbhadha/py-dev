@@ -1,7 +1,7 @@
 {
   "name": "python-dev",
-  "version": "0.1.0",
-  "description": "Senior Python engineer agent in guide mode. Runs Matt Pocock's process skills by name, Google's ADK skills for framework work, and its own Python craft and deterministic gates. Select it as your session agent.",
+  "version": "0.2.0",
+  "description": "Senior Python engineer agent in guide mode. Runs Matt Pocock's process skills and Google's ADK skills by name, Repowise through its CLI, and its own Python craft, baseline and packs. Select it as your session agent.",
   "author": {
     "name": "Firdaush Bhadha"
   },
@@ -19,16 +19,11 @@
     "agent"
   ],
   "skills": [
-    "./skills/ask-dev",
+    "./skills/py-intake",
     "./skills/py-design",
     "./skills/py-baseline",
-    "./skills/py-intake",
-    "./skills/py-implement",
-    "./skills/py-review",
-    "./skills/py-test-audit",
-    "./skills/adk-build",
     "./skills/adk-migrate",
-    "./skills/pack-data-engineering",
-    "./skills/py-health"
+    "./skills/pack-adk",
+    "./skills/pack-data-engineering"
   ]
 }

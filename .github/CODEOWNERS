@@ -1,4 +1,0 @@
-# Code owners are auto-requested for review on matching paths.
-# Enable "Require review from Code Owners" in branch protection to enforce.
-
-*                       @fbhadha
