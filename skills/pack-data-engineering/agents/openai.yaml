@@ -1,0 +1,3 @@
+interface:
+  display_name: "Data engineering pack"
+  short_description: "Shapes, checks and faults for pipelines, sources, sinks and frames"

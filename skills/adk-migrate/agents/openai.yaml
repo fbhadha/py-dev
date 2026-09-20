@@ -1,0 +1,3 @@
+interface:
+  display_name: "ADK migrate"
+  short_description: "Move an ADK 1.x codebase to 2.x: detect, force what breaks, evals first"

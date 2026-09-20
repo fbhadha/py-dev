@@ -1,0 +1,141 @@
+# Tool tables merged into the target repo's pyproject.toml by py-intake.
+# Placeholders: {{PACKAGE}} (import name under src/), {{PYTHON}} (e.g. 3.12).
+# Existing keys in the target win; py-intake only adds what is missing and
+# reports every difference as a proposed change.
+
+[project]
+requires-python = ">={{PYTHON}}"
+
+[dependency-groups]
+dev = [
+  "ruff>=0.16",
+  "mypy>=2.3",
+  "pytest>=9",
+  "pytest-cov>=7",
+  "import-linter>=2.15",
+  "pylint>=4",
+  "pre-commit>=4.6",
+  "detect-secrets>=1.5",
+  "bandit>=1.9",
+  "mutmut>=3.8",
+  "repowise>=0.52",   # AGPL-3.0; development only, never a runtime dependency
+]
+
+# ---------------------------------------------------------------- ruff
+[tool.ruff]
+target-version = "py{{PYTHON_NODOT}}"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+  "F", "E", "W", "I", "UP", "N",        # correctness, style, imports, modernise, naming
+  "B", "BLE", "S", "T20", "ERA",        # bugbear, blind except, security, print, commented-out code
+  "C90", "PLR", "PLW", "PLC", "PLE",    # complexity, pylint refactor/warn/convention/error
+  "FBT", "ARG", "RET", "SIM", "PT",     # boolean flags, unused args, returns, simplify, pytest style
+  "D", "TD", "FIX", "TID", "TRY", "RUF",
+]
+ignore = [
+  "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107",  # docstrings are not required
+  "D203", "D213",                                                  # incompatible pydocstyle pairs
+  "TRY003",                                                        # long messages in raise are fine
+  "PLR2004",                                                       # magic values: too noisy in src too
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "PLR2004", "D", "ARG", "FBT", "PLR0913", "S105", "S106"]
+"**/conftest.py" = ["D", "ARG"]
+"scripts/**" = ["T201", "S603", "S607", "PLC0415"]   # scripts print, run subprocesses, and import lazily by design
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.pylint]
+max-args = 5
+max-branches = 10
+max-statements = 40
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"{{PACKAGE}}.utils".msg = "No grab bags. Move the function to the concept it serves."
+"{{PACKAGE}}.helpers".msg = "No grab bags. Move the function to the concept it serves."
+"{{PACKAGE}}.common".msg = "No grab bags. Move the function to the concept it serves."
+"{{PACKAGE}}.misc".msg = "No grab bags. Move the function to the concept it serves."
+
+# TD002 needs an author and TD003 an issue link: "# TODO(fb): ... see #123"
+
+[tool.ruff.format]
+docstring-code-format = true
+
+# ---------------------------------------------------------------- mypy
+[tool.mypy]
+python_version = "{{PYTHON}}"
+files = ["src"]
+strict = true
+warn_unreachable = true
+pretty = true
+# plugins = ["pydantic.mypy"]   # py-intake uncomments when pydantic is a dependency
+
+# ---------------------------------------------------------------- import-linter
+[tool.importlinter]
+root_package = "{{PACKAGE}}"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Layers: entrypoints -> application -> domain; adapters beside application"
+type = "layers"
+layers = [
+  "{{PACKAGE}}.entrypoints",
+  "{{PACKAGE}}.application | {{PACKAGE}}.adapters",
+  "{{PACKAGE}}.domain",
+]
+
+[[tool.importlinter.contracts]]
+name = "The domain owns no I/O"
+type = "forbidden"
+source_modules = ["{{PACKAGE}}.domain"]
+forbidden_modules = [
+  "requests", "httpx", "sqlalchemy", "psycopg", "boto3", "google", "pandas", "pyarrow",
+  "{{PACKAGE}}.adapters", "{{PACKAGE}}.entrypoints",
+]
+
+[[tool.importlinter.contracts]]
+name = "No grab-bag modules"
+type = "forbidden"
+source_modules = ["{{PACKAGE}}"]
+forbidden_modules = ["{{PACKAGE}}.utils", "{{PACKAGE}}.helpers", "{{PACKAGE}}.common", "{{PACKAGE}}.misc"]
+
+# ---------------------------------------------------------------- pylint (size only)
+[tool.pylint.main]
+disable = "all"
+enable = ["too-many-lines"]
+max-module-lines = 400
+
+# ---------------------------------------------------------------- pytest
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers --strict-config"
+filterwarnings = ["error"]
+markers = [
+  "eval: calls a live model; run on demand with `pytest -m eval`",
+]
+xfail_strict = true
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+
+[tool.coverage.report]
+skip_covered = true
+show_missing = true
+
+# ---------------------------------------------------------------- bandit
+[tool.bandit]
+exclude_dirs = ["tests"]
+
+# ---------------------------------------------------------------- mutmut
+[tool.mutmut]
+paths_to_mutate = ["src/"]
+tests_dir = ["tests/"]

@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/fbhadha/py-dev/schema/skill.schema.json",
+  "title": "Agent Skill frontmatter",
+  "description": "Validates the YAML frontmatter of a SKILL.md against the Agent Skills open standard (agentskills.io) plus this repo's conventions.",
+  "type": "object",
+  "required": ["name", "description"],
+  "additionalProperties": true,
+  "properties": {
+    "name": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "Lowercase letters, numbers and hyphens only. Must exactly match the skill's folder name. Must not contain 'anthropic' or 'claude'."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "description": "What the skill does AND when to use it. Written in the third person, with trigger terms."
+    },
+    "license": {
+      "type": "string",
+      "description": "SPDX identifier, e.g. Apache-2.0 or MIT."
+    },
+    "allowed-tools": {
+      "type": "string",
+      "description": "Space-delimited list of tools the skill may use."
+    },
+    "compatibility": {
+      "type": "string",
+      "description": "Environment requirements, if any."
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Free-form key/value pairs (author, version, tags, etc.).",
+      "additionalProperties": true
+    }
+  }
+}

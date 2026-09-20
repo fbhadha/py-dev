@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "py-dev",
+  "owner": {
+    "name": "Firdaush Bhadha"
+  },
+  "metadata": {
+    "description": "The python-dev agent: a senior Python engineer in guide mode, as a Claude Code plugin. This repository is the plugin and its marketplace.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "python-dev",
+      "description": "Senior Python engineer agent in guide mode: builds by the repo's how-tos, explains in plain words, pushes back on scope creep, keeps deterministic checks green. Calls Matt Pocock's skills by name.",
+      "source": "./",
+      "strict": false,
+      "category": "development",
+      "keywords": [
+        "python",
+        "agent",
+        "uv",
+        "ruff",
+        "mypy",
+        "tdd",
+        "adk"
+      ]
+    }
+  ]
+}

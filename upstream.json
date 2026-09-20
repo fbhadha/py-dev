@@ -1,0 +1,68 @@
+{
+  "description": "Skills this plugin calls by name but does not include. `model` means we call it through the Skill tool; `user` means the harness refuses it and the persona opens the file via scripts/find_skill.py. scripts/check_upstream_skills.py verifies every entry against the pinned commit; --latest reports drift on the default branch.",
+  "verified": "2026-09-20",
+  "upstreams": [
+    {
+      "repo": "mattpocock/skills",
+      "commit": "c55ee46073ed923f86ce59a5eb3b6d895095d1b7",
+      "version": "1.2.3",
+      "default_branch": "main",
+      "skills_dir": "skills",
+      "install": "Claude Code: /plugin marketplace add mattpocock/skills, /plugin install mattpocock-skills@mattpocock. Elsewhere: npx skills@latest add mattpocock/skills --all",
+      "skills": {
+        "grilling": "model",
+        "domain-modeling": "model",
+        "codebase-design": "model",
+        "tdd": "model",
+        "code-review": "model",
+        "diagnosing-bugs": "model",
+        "prototype": "model",
+        "research": "model",
+        "wizard": "model",
+        "resolving-merge-conflicts": "model",
+        "writing-for-agents": "model",
+        "grill-with-docs": "user",
+        "to-spec": "user",
+        "to-tickets": "user",
+        "implement": "user",
+        "improve-codebase-architecture": "user",
+        "setup-matt-pocock-skills": "user",
+        "triage": "user",
+        "wayfinder": "user",
+        "handoff": "user",
+        "wait-what": "user"
+      }
+    },
+    {
+      "repo": "repowise-dev/repowise",
+      "commit": "d12892606055e35c996f71166a8ebef6df4e571f",
+      "version": "0.52.0",
+      "default_branch": "main",
+      "skills_dir": "plugins/claude-code/skills",
+      "install": "Claude Code: /plugin marketplace add repowise-dev/repowise, /plugin install repowise@repowise. Elsewhere: repowise agents add --target=<codex|vscode>",
+      "skills": {
+        "codebase-exploration": "model",
+        "pre-modification-check": "model",
+        "architectural-decisions": "model",
+        "code-health": "model",
+        "change-review": "model",
+        "dead-code-cleanup": "model"
+      }
+    },
+    {
+      "repo": "google/adk-python",
+      "commit": "d57c84f13baf53cfd910c2155449f8c4254e01c5",
+      "version": "2.9.0",
+      "default_branch": "main",
+      "skills_dir": ".agents/skills",
+      "install": "npx skills@latest add google/adk-python -s adk-agent-builder,adk-architecture,adk-debug,adk-style -a '*' -y",
+      "skills": {
+        "adk-agent-builder": "model",
+        "adk-architecture": "model",
+        "adk-debug": "model",
+        "adk-style": "model"
+      },
+      "only_when_dependency": "google-adk"
+    }
+  ]
+}

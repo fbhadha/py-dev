@@ -1,0 +1,28 @@
+{
+  "description": "python-dev in-session guards. Best effort; pre-commit and CI are the enforcement.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/guard_command.py\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/stop_gate.py\"",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}

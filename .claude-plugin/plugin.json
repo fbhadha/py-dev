@@ -1,0 +1,34 @@
+{
+  "name": "python-dev",
+  "version": "0.1.0",
+  "description": "Senior Python engineer agent in guide mode. Runs Matt Pocock's process skills by name, Google's ADK skills for framework work, and its own Python craft and deterministic gates. Select it as your session agent.",
+  "author": {
+    "name": "Firdaush Bhadha"
+  },
+  "repository": "https://github.com/fbhadha/py-dev",
+  "license": "Apache-2.0",
+  "keywords": [
+    "python",
+    "uv",
+    "ruff",
+    "mypy",
+    "pytest",
+    "tdd",
+    "code-review",
+    "adk",
+    "agent"
+  ],
+  "skills": [
+    "./skills/ask-dev",
+    "./skills/py-design",
+    "./skills/py-baseline",
+    "./skills/py-intake",
+    "./skills/py-implement",
+    "./skills/py-review",
+    "./skills/py-test-audit",
+    "./skills/adk-build",
+    "./skills/adk-migrate",
+    "./skills/pack-data-engineering",
+    "./skills/py-health"
+  ]
+}

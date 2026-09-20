@@ -1,0 +1,19 @@
+python-dev
+Copyright 2026 Firdaush Bhadha
+Licensed under the Apache License, Version 2.0.
+
+This plugin calls, by name and at runtime, skills it does not include:
+
+- Matt Pocock's skills (https://github.com/mattpocock/skills), MIT licence.
+  Nothing from that repository is copied here; the user installs it separately.
+- Google's ADK skills (https://github.com/google/adk-python, .agents/skills/),
+  Apache-2.0. Installed from Google's repository with the skills.sh installer;
+  nothing from it is copied here.
+
+The baseline templates configure, but do not include, these tools in the
+target repository:
+
+- Repowise (https://github.com/repowise-dev/repowise), AGPL-3.0-or-later.
+  Used as a development tool in CI and in a developer's shell only.
+- ruff, mypy, import-linter, pylint, pytest, pre-commit, detect-secrets,
+  bandit, mutmut, uv: each under its own licence.

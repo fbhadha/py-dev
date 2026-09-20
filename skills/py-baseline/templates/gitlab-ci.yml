@@ -1,0 +1,53 @@
+# GitLab CI. Same three jobs as ci.yml.
+# Merge request pipelines only, plus main.
+stages: [gate, test, review]
+
+variables:
+  DO_NOT_TRACK: "1"
+  REPOWISE_SKIP_EDITOR_SETUP: "1"
+  UV_FROZEN: "1"
+  UV_CACHE_DIR: .uv-cache
+  GIT_DEPTH: "0"
+
+default:
+  image: ghcr.io/astral-sh/uv:python{{PYTHON}}-bookworm-slim
+  cache:
+    key: uv-$CI_COMMIT_REF_SLUG
+    paths: [.uv-cache]
+  before_script:
+    - uv sync --frozen
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+commit-gate:
+  stage: gate
+  script:
+    - BASE="${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$CI_COMMIT_BEFORE_SHA}"
+    - uv run pre-commit run --show-diff-on-failure --from-ref "$BASE" --to-ref HEAD
+
+tests:
+  stage: test
+  script:
+    - uv run pytest -m "not eval" --cov --cov-report=lcov:coverage.lcov --junitxml=report.xml
+  artifacts:
+    when: always
+    reports:
+      junit: report.xml
+    paths: [coverage.lcov]
+
+readme-commands:
+  stage: test
+  script:
+    - uv run python scripts/run_readme_blocks.py README.md
+
+change-gate:
+  stage: review
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  script:
+    - uv run repowise init --no-prose --no-editor-setup --no-save-key -y
+    - uv run python scripts/adr_sync.py --no-index
+    - uv run python scripts/repowise_gate.py "$CI_MERGE_REQUEST_DIFF_BASE_SHA..HEAD"

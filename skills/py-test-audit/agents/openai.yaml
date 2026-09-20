@@ -1,0 +1,3 @@
+interface:
+  display_name: "Python test audit"
+  short_description: "Classify every test, cite the evidence, propose deletions and rewrites"

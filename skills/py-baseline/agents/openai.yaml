@@ -1,0 +1,3 @@
+interface:
+  display_name: "Python baseline"
+  short_description: "Layout, toolchain, gates and docs every repo gets"

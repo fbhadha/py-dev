@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ask dev"
+  short_description: "Which command comes next in this Python repo"
+  default_prompt: "Use $ask-dev to tell me what to type next in this repo."

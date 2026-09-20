@@ -1,0 +1,3 @@
+interface:
+  display_name: "Python health"
+  short_description: "Where the repo is ugly and what to fix first, from Repowise and the linters"

@@ -1,0 +1,3 @@
+# `AGENTS.md` is the canonical instruction file in target repos; `CLAUDE.md` imports it
+
+Repos the agent sets up get an `AGENTS.md` of pointers only, and a one-line `CLAUDE.md` containing `@AGENTS.md`. Codex reads only `AGENTS.md`; Copilot reads both and deduplicates; Claude Code reads `CLAUDE.md` and follows the import (and reads `AGENTS.md` alone only when no `CLAUDE.md` exists, v2.1.277+). One canonical file with a one-line shim is the only layout all three load without duplication, and Matt Pocock's setup skill edits whichever file exists rather than creating the other, so it works with his tooling unchanged. The alternative, a full `CLAUDE.md` plus a symlink, breaks on Windows checkouts and on Codex plugin installs, which drop symlinks.

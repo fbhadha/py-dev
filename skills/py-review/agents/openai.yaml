@@ -1,0 +1,3 @@
+interface:
+  display_name: "Python review"
+  short_description: "Four-axis review of a diff: Standards, Spec, Change (Repowise), Craft"

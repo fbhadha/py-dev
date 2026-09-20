@@ -1,0 +1,72 @@
+# GitHub Actions. The GitLab equivalent is gitlab-ci.yml beside this file.
+# Three jobs: the commit gate on the diff, the test suite, the Repowise change gate.
+name: checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+env:
+  DO_NOT_TRACK: "1"
+  REPOWISE_SKIP_EDITOR_SETUP: "1"
+  UV_FROZEN: "1"
+
+jobs:
+  gate:
+    name: commit gate on the diff
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+      - name: pre-commit on the changed files
+        run: |
+          BASE="${{ github.event.pull_request.base.sha || github.event.before }}"
+          uv run pre-commit run --show-diff-on-failure --from-ref "$BASE" --to-ref HEAD
+
+  tests:
+    name: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: uv run pytest -m "not eval" --cov --cov-report=lcov:coverage.lcov
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.lcov
+
+  readme-commands:
+    name: README commands still run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen
+      - name: execute every ```bash ci``` block in README.md
+        run: uv run python scripts/run_readme_blocks.py README.md
+
+  change-gate:
+    name: Repowise change gate
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen
+      - name: index (no model, nothing written outside .repowise/)
+        run: uv run repowise init --no-prose --no-editor-setup --no-save-key -y
+      - name: bind accepted ADRs to the paths they govern
+        run: uv run python scripts/adr_sync.py --no-index
+      - name: no touched file got worse
+        run: uv run python scripts/repowise_gate.py "origin/${{ github.base_ref }}..HEAD"
