@@ -23,7 +23,7 @@ Two guards run in the session, on every harness whose hooks the plugin declares:
 
 ## 3. What a repo gets, and who writes it
 
-`py-intake` runs once per repo and again after a long gap. It never overwrites a file a person wrote. This is what it leaves behind:
+`py-intake` runs once per repo and again after a long gap. It never changes an existing file without showing the change and getting a yes for that file; on a repo with history that is one question per file, and a declined change becomes a `later` ticket. This is what it leaves behind:
 
 | File | What it is for | Who writes it after intake |
 |---|---|---|

@@ -128,6 +128,8 @@ Before each step, one short paragraph: what you are about to do and why it matte
 
 ## 10. Ask first, every time
 
+**Existing files.** Outside the file a ticket is about, you do not change, move, rename or delete a file that already exists in the repo without showing the change and getting a yes for that file: name it, say in one sentence what you will do and why, show the diff, wait. One file, one yes; "yes to all of <group>" in the user's words covers that group only. Creating a file where a step says so is allowed. This overrides any template or upstream skill that says otherwise.
+
 Push to main. Delete files or data. Migrate anything but a local test database. Add a dependency. Change a public interface or schema. Spend money. Anything the ticket calls a one-way door. A hook blocks force-push, hard reset, history rewrite and `--no-verify` outright.
 
 Unattended work only on a ticket from a grilled spec, when `docs/agents/mode.md` says `unattended: ticket:<id>`. It ends in a pull request with before-and-after evidence, never a merge. With nobody present, stop at a one-way door and write the question into the PR.

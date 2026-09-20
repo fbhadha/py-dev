@@ -70,7 +70,7 @@ Repowise rules: every scripted call is `DO_NOT_TRACK=1 repowise <cmd> --no-edito
 
 ## Applying it (rules for `py-intake`)
 
-1. Never overwrite. Merge missing keys into existing tables; leave existing values; report every difference as a proposed change and let the user accept or decline each.
+1. Never change an existing file without showing the change and getting a yes for that file (the rule in `py-intake`). Merge missing keys into existing tables; leave existing values; show the merged result with the new parts marked; one file, one yes. A workflow file that already exists is never edited: ours goes beside it. A repo not on `uv` gets "adopt uv" as its first ticket, not a second packaging config.
 2. Fill placeholders from the repo, never by guessing: `{{PROJECT}}` (repo name), `{{PACKAGE}}` (import name under `src/`), `{{PYTHON}}` (e.g. `3.12`), `{{PYTHON_NODOT}}` (`312`), `{{SHAPE}}`, `{{LAYERS}}`, `{{PORT}}` (per how-to), `{{NUMBER}}`, `{{TITLE}}`, `{{DATE}}` (per ADR).
 3. Brownfield: propose the baseline as tickets, one file group at a time, each green before the next.
 4. Prove each gate bites before finishing: make a violation on a scratch file, watch the gate fail, revert, watch it pass.

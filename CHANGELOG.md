@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0 (2026-09-20)
+
+- **Hard rule, in the persona and in intake: no change to an existing file without showing the change and getting a yes for that file.** Name it, one sentence on what and why, the diff, wait. One file, one yes. It overrides templates and upstream skills.
+- **Brownfield intake.** New step 3 consolidates agent files before anything else: content from an existing `CLAUDE.md` or `.github/copilot-instructions.md` moves under a heading in `AGENTS.md`, the originals become one-line includes, each move approved; `.cursorrules` and the like are left alone and named. Every carried-over prose rule becomes a grilling question (enforced by a check: delete it; not enforced: should it be?). An existing CI workflow is never edited; ours goes beside it. A repo on `setup.py`, `requirements.txt`, Pipenv or Poetry gets "adopt uv" as its first ticket instead of a second packaging config. Steps renumbered.
+- Matt Pocock's setup skill now always finds an `AGENTS.md` to write into, because agent files are consolidated before the tracker step.
+
 ## 0.4.0 (2026-09-20)
 
 Laid out the way plugins are laid out for both harnesses, after reading GitHub's Copilot CLI plugin reference. 0.3.0's "ship everything inside py-intake" is undone.
