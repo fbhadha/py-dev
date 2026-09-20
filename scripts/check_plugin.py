@@ -5,12 +5,14 @@
     the folder, whose `description` is non-empty and at most 1024 characters,
     and whose name contains neither 'anthropic' nor 'claude'
   - .claude-plugin/plugin.json lists exactly the skill folders that exist
-  - plugin.json and marketplace.json carry the same version
+  - the three manifests (plugin.json for Copilot, .claude-plugin/plugin.json for
+    Claude Code, .claude-plugin/marketplace.json) carry the same name and version
+  - .github/plugin/marketplace.json (Copilot's path) is identical to
+    .claude-plugin/marketplace.json (Claude Code's path)
   - every agents/<name>.md has frontmatter with `name` and `description`
-  - the rendered Copilot agent files under skills/py-intake/templates/copilot/
-    match what scripts/render_agents.py would write
-  - plugin.json, marketplace.json, hooks/hooks.json,
-    skills/py-intake/upstream.json and the Copilot hooks template parse
+  - the rendered Copilot agents under com.github.copilot/agents/ match what
+    scripts/render_agents.py would write
+  - every JSON file (manifests, both hooks files, upstream.json) parses
 
 Exit code is non-zero on any failure.
 
@@ -31,11 +33,13 @@ ROOT = Path(__file__).resolve().parent.parent
 FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
 RESERVED = ("anthropic", "claude")
 JSON_FILES = (
+    "plugin.json",
     ".claude-plugin/plugin.json",
     ".claude-plugin/marketplace.json",
+    ".github/plugin/marketplace.json",
     "hooks/hooks.json",
-    "skills/py-intake/upstream.json",
-    "skills/py-intake/templates/copilot/hooks.json",
+    "com.github.copilot/hooks/hooks.json",
+    "upstream.json",
 )
 
 
@@ -89,7 +93,7 @@ def check_rendered_agents() -> list[str]:
         check=False,
     )
     if result.returncode == 0:
-        print("ok  skills/py-intake/templates/copilot/*.agent.md (rendered from agents/)")
+        print("ok  com.github.copilot/agents/*.agent.md (rendered from agents/)")
         return []
     return [line.strip() for line in result.stdout.splitlines() if line.strip()]
 
@@ -131,11 +135,20 @@ def main() -> int:
             problems.append(
                 f"plugin.json skills {listed} do not match the folders under skills/ {present}"
             )
-    if plugin is not None and marketplace is not None:
-        pv = plugin.get("version")
-        mv = (marketplace.get("metadata") or {}).get("version")
-        if pv != mv:
-            problems.append(f"plugin.json version {pv!r} and marketplace.json version {mv!r} differ")
+    copilot = parsed.get("plugin.json")
+    if plugin is not None and marketplace is not None and copilot is not None:
+        versions = {
+            ".claude-plugin/plugin.json": plugin.get("version"),
+            "plugin.json": copilot.get("version"),
+            ".claude-plugin/marketplace.json": (marketplace.get("metadata") or {}).get("version"),
+        }
+        if len(set(versions.values())) != 1:
+            problems.append(f"manifest versions differ: {versions}")
+        if plugin.get("name") != copilot.get("name"):
+            problems.append("plugin.json and .claude-plugin/plugin.json name differ")
+    copilot_market = parsed.get(".github/plugin/marketplace.json")
+    if marketplace is not None and copilot_market is not None and marketplace != copilot_market:
+        problems.append(".github/plugin/marketplace.json must be identical to .claude-plugin/marketplace.json")
 
     if problems:
         print("\nPLUGIN CHECK FAILED:")

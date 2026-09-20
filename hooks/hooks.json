@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/skills/py-intake/scripts/hooks/guard_command.py\"",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/guard_command.py\"",
             "timeout": 5
           }
         ]
@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/skills/py-intake/scripts/hooks/stop_gate.py\"",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/stop_gate.py\"",
             "timeout": 60
           }
         ]

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.0 (2026-09-20)
+
+Laid out the way plugins are laid out for both harnesses, after reading GitHub's Copilot CLI plugin reference. 0.3.0's "ship everything inside py-intake" is undone.
+
+- **One plugin, two manifests, shared skills.** `plugin.json` at the root (Agent Plugins 1.0, what Copilot CLI reads first) and `.claude-plugin/plugin.json` (Claude Code). `skills/` is shared. Claude Code's agents and hooks stay at `agents/` and `hooks/hooks.json`; Copilot's live under `com.github.copilot/agents/` (`*.agent.md`, rendered from `agents/` by `scripts/render_agents.py`) and `com.github.copilot/hooks/hooks.json` (camelCase events, `${PLUGIN_ROOT}`). `check_plugin.py` fails when the three manifests disagree or a rendered agent is stale.
+- **Marketplace at both conventional paths**, `.claude-plugin/marketplace.json` and `.github/plugin/marketplace.json`, identical, CI-checked. Copilot CLI reads the Claude path as a fallback anyway; the second file is for people browsing the repo.
+- **Install on Copilot is the plugin route**: `copilot plugin marketplace add fbhadha/py-dev`, `copilot plugin install python-dev@py-dev`, and the same for Matt Pocock's marketplace. `npx skills add` is no longer the documented way to get this plugin. Scripts and `upstream.json` are back at the plugin root; `${PLUGIN_ROOT}` is set for plugin hooks on Copilot and `${CLAUDE_PLUGIN_ROOT}` is accepted as its alias.
+- **Intake step 8 shrinks**: the plugin delivers the Copilot agents and hooks, so the repo needs only the Claude Code `settings.json` pointer; on Copilot the user selects the agent.
+- Copilot agent frontmatter follows the current reference: `python-dev` has `disable-model-invocation: true` (user-selected), `py-reviewer` has `user-invocable: false` (model-dispatched). `include-custom-instructions` is not in the reference and is gone.
+- The persona's File legend gains a one-line fallback for finding `find_skill.py` when the plugin-root variable is not in the shell.
+
+Verified against `github/docs` on 2026-09-20: manifest and marketplace resolution order, component locations, hook event names and payloads, variable expansion. Not verified: a live Copilot session. The bash tool's argument key in Copilot's `preToolUse` payload is assumed to be `command`; the guard fails open if it is not.
+
 ## 0.3.0 (2026-09-20)
 
 Copilot first. Claude Code and GitHub Copilot are the two harnesses; Codex support is dropped for now.

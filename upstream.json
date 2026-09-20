@@ -1,5 +1,5 @@
 {
-  "description": "Skills this plugin calls by name but does not include. `model` means we call it through the Skill tool; `user` means the harness refuses it and the persona opens the file via scripts/find_skill.py beside this file. scripts/check_upstream_skills.py at the repo root verifies every entry against the pinned commit; --latest reports drift on the default branch. Repowise is not here: the agent uses its CLI, not its skills.",
+  "description": "Skills this plugin calls by name but does not include. `model` means we call it through the Skill tool; `user` means the harness refuses it and the persona opens the file via scripts/find_skill.py. scripts/check_upstream_skills.py verifies every entry against the pinned commit; --latest reports drift on the default branch. Repowise is not here: the agent uses its CLI, not its skills.",
   "verified": "2026-09-20",
   "upstreams": [
     {

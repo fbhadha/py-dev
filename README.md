@@ -8,18 +8,20 @@ It is small on purpose. Process comes from [Matt Pocock's skills](https://github
 
 Prerequisites: `uv`, Python 3.11 or newer. Repowise is added to each target repo as a dev dependency by intake. Google's ADK skills are installed by intake only when the repo depends on `google-adk`.
 
-### GitHub Copilot
+This repository is one plugin with a manifest for each harness and one marketplace, so the install is the same shape on both.
 
-In the repo you want to work on:
+### GitHub Copilot CLI
 
-```bash
-npx skills@latest add mattpocock/skills --all
-npx skills@latest add fbhadha/py-dev --all
+```
+copilot plugin marketplace add mattpocock/skills
+copilot plugin install mattpocock-skills@mattpocock
+copilot plugin marketplace add fbhadha/py-dev
+copilot plugin install python-dev@py-dev
 ```
 
-That puts every skill under `.agents/skills/`, linked into `.github/skills/`. Then start Copilot CLI and type `/py-intake` once. Intake sets the repo up and writes `.github/agents/python-dev.agent.md`, `.github/agents/py-reviewer.agent.md` and `.github/hooks/python-dev.json`. From the next session, `copilot --agent python-dev`, or pick it from the agent picker.
+Then, in the repo you want to work on, `copilot --agent python-dev`, or pick `python-dev` from the agent picker. The first session runs intake. Copilot's agents and hooks for this plugin live under `com.github.copilot/`; the agent files there are rendered from the Claude Code ones and regenerated in CI, so there is one hand-written persona.
 
-The agent files are rendered copies of the persona, shipped inside the `py-intake` skill and regenerated in CI so they cannot drift from the source. Everything the persona runs on Copilot (`find_skill.py`, the git guard) ships the same way. None of this has been exercised on Copilot yet; the agent file and hook formats follow GitHub's docs, and the hook fails open. The first session is the test.
+Nothing has been run on Copilot yet. The layout, hook format and agent frontmatter were checked against GitHub's plugin reference on 2026-09-20; the first live session is the test.
 
 ### Claude Code
 
@@ -44,18 +46,19 @@ Then `claude --agent python-dev` in the repo, or from a clone without installing
 
 | Path | What |
 |---|---|
-| `agents/python-dev.md` | The persona, and the only hand-written copy. Session start, the routing table (situation, what to run), how to build a ticket, how to review, health, session boundaries, the Repowise policy, voice, pushback, the ask-first list, where knowledge lives. Always loaded. |
+| `agents/python-dev.md` | The persona for Claude Code, and the only hand-written copy. Session start, the routing table (situation, what to run), how to build a ticket, how to review, health, session boundaries, the Repowise policy, voice, pushback, the ask-first list, where knowledge lives. Always loaded. |
 | `agents/py-reviewer.md` | Read-only craft reviewer the review step dispatches. Applies the fault catalogue to a diff. |
-| `skills/py-intake` | Set up a repo or re-orient in one. Resumable; never overwrites what a person wrote. `later` reviews the parked list. Carries everything the other harnesses need: `scripts/find_skill.py`, the hook scripts, `upstream.json`, and the rendered Copilot agent files and hooks under `templates/copilot/`. |
+| `skills/py-intake` | Set up a repo or re-orient in one. Resumable; never overwrites what a person wrote. `later` reviews the parked list. |
 | `skills/py-design` | The craft rules, the fault catalogue, three canonical repos to cite, the worked adapter-model-writer shape, the test-audit classes. |
 | `skills/py-baseline` | What every repo gets: tool tables, pre-commit, CI, the Repowise change gate, the standard docs. With the templates intake copies. |
 | `skills/adk-migrate` | Google ADK 1.x to 2.x: detect mechanically, force only what silently breaks, evals first, expand then migrate then contract. |
 | `skills/pack-adk` | Reference for ADK 2.x repos: which Google skill to open for which job, the six rules this baseline adds. |
 | `skills/pack-data-engineering` | Reference for pipeline repos: shapes, the canonical repo, extra checks, faults, tests. `packs/TEMPLATE.md` is the shape for new packs. |
-| `hooks/hooks.json` | Claude Code's hook manifest for the two guards: deny force-push, hard reset, rebase, amend and `--no-verify`; stop the turn ending while ruff is red on files the session changed. Copilot gets the first as `.github/hooks/python-dev.json`, written by intake. Pre-commit and CI in your repo are the enforcement. |
+| `com.github.copilot/` | Copilot CLI's view of the same plugin: `agents/*.agent.md` rendered from `agents/`, and `hooks/hooks.json` in Copilot's event names. |
+| `plugin.json`, `.claude-plugin/`, `.github/plugin/` | The manifests: Agent Plugins 1.0 for Copilot, Claude Code's plugin and marketplace, and the marketplace again at Copilot's path. CI keeps them in step. |
+| `hooks/hooks.json`, `scripts/hooks/` | The two guards, for Claude Code: deny force-push, hard reset, rebase, amend and `--no-verify`; stop the turn ending while ruff is red on files the session changed. Copilot runs the same scripts from its own manifest. Pre-commit and CI in your repo are the enforcement. |
+| `upstream.json`, `scripts/find_skill.py` | Every upstream skill called by name, pinned; and the locator that finds an installed skill's `SKILL.md` across both harnesses' install directories. |
 | `scripts/` | `check_plugin.py`, `check_upstream_skills.py`, `render_agents.py`: the checks CI runs. |
-
-Why the scripts and rendered files live inside `py-intake`: `npx skills add` installs skill folders and nothing else. A file that is not inside a skill never reaches a Copilot user.
 
 ## How the agent decides
 
@@ -94,7 +97,7 @@ python scripts/check_upstream_skills.py   # every upstream skill exists at its p
 claude plugin validate --strict .
 ```
 
-Rules: `agents/python-dev.md` is the only hand-written persona; the Copilot copies are generated and CI fails when they are stale. Keep it steps and tables; craft knowledge goes in skills. Anything a Copilot user needs outside a `SKILL.md` lives inside `skills/py-intake/`. Call upstream skills by name, never copy them; add the name to `skills/py-intake/upstream.json` and bump a pin in its own commit after reading the upstream changelog. One read path and one write path per kind of knowledge (ADR 0005): anything derived from the code comes from Repowise, by CLI. No custom gates; a check is an established tool's rule in `skills/py-baseline/templates/pyproject-tools.toml`. Verify before you write; `docs/research/` records what was checked and when. A knowledge pack is `skills/pack-<domain>/` in the shape of `packs/TEMPLATE.md`, reference only. Before a release: the four commands above, a smoke test in a real repo on each harness, then the version in both manifests and a `CHANGELOG.md` entry.
+Rules: `agents/python-dev.md` is the only hand-written persona; the Copilot copies under `com.github.copilot/agents/` are generated and CI fails when they are stale. Keep it steps and tables; craft knowledge goes in skills. Call upstream skills by name, never copy them; add the name to `upstream.json` and bump a pin in its own commit after reading the upstream changelog. One read path and one write path per kind of knowledge (ADR 0005): anything derived from the code comes from Repowise, by CLI. No custom gates; a check is an established tool's rule in `skills/py-baseline/templates/pyproject-tools.toml`. Verify before you write; `docs/research/` records what was checked and when. A knowledge pack is `skills/pack-<domain>/` in the shape of `packs/TEMPLATE.md`, reference only. Before a release: the four commands above, a smoke test in a real repo on each harness, then the version in both manifests and a `CHANGELOG.md` entry.
 
 Why things are the way they are: [docs/how-python-dev-works.md](docs/how-python-dev-works.md) for the long explainer, [docs/design/python-dev-agent.md](docs/design/python-dev-agent.md) for the design and every decision, [docs/adr/](docs/adr/) for the ones that were hard to reverse, [docs/research/](docs/research/) for what was verified, [CONTEXT.md](CONTEXT.md) for the words.
 

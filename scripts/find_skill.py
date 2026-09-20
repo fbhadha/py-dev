@@ -15,8 +15,9 @@ Exit codes: 0 every name was found; 1 at least one was not (the missing names
 and the directories searched go to stderr).
 
 Search order, first hit wins: Claude Code's installed plugin cache (the version
-marked in use), then project and user skill directories for Claude Code, the
-Agent Skills standard and Copilot, then Claude Code's marketplace clones.
+marked in use), then project and user skill directories for Claude Code and the
+Agent Skills standard, then everything under ~/.copilot (Copilot CLI's installed
+plugins and skills), then Claude Code's marketplace clones.
 A match is a directory named <name>, or any SKILL.md whose frontmatter `name:`
 is <name> (some skills live in a directory named differently).
 """
@@ -38,7 +39,7 @@ ROOTS: list[Path] = [
     CWD / ".agents" / "skills",
     HOME / ".agents" / "skills",
     CWD / ".github" / "skills",
-    HOME / ".copilot" / "skills",
+    HOME / ".copilot",  # Copilot CLI: installed plugins and user skills live under here
     HOME / ".claude" / "plugins" / "marketplaces",
 ]
 NAME_RE = re.compile(r"^name:\s*['\"]?([^'\"\n]+)", re.MULTILINE)
@@ -88,7 +89,7 @@ def find(name: str) -> Path | None:
 
 def door_check() -> int:
     """Check the skills in upstream.json; print what is missing and how to install it."""
-    manifest = Path(__file__).resolve().parent.parent / "upstream.json"  # skills/py-intake/upstream.json
+    manifest = Path(__file__).resolve().parent.parent / "upstream.json"
     data = json.loads(manifest.read_text(encoding="utf-8"))
     missing = 0
     pyproject = CWD / "pyproject.toml"

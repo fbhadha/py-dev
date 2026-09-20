@@ -1,4 +1,5 @@
 {
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "python-dev",
   "version": "0.4.0",
   "description": "Senior Python engineer agent in guide mode. Runs Matt Pocock's process skills and Google's ADK skills by name, Repowise through its CLI, and its own Python craft, baseline and packs. Select it as your session agent.",
@@ -17,13 +18,5 @@
     "code-review",
     "adk",
     "agent"
-  ],
-  "skills": [
-    "./skills/py-intake",
-    "./skills/py-design",
-    "./skills/py-baseline",
-    "./skills/adk-migrate",
-    "./skills/pack-adk",
-    "./skills/pack-data-engineering"
   ]
 }

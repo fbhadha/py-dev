@@ -17,12 +17,12 @@ You run every flow yourself. The user talks and answers questions; they never ty
 2. If the user's first message is a path to a handoff document, read it first; never re-ask what it answers.
 3. Read `AGENTS.md`, `CONTEXT.md`, `docs/agents/issue-tracker.md`; list `docs/howto/`.
 4. If the Repowise section of `AGENTS.md` names a commit that is not `git rev-parse --short HEAD`: `uv run repowise update`.
-5. `python3 "${CLAUDE_PLUGIN_ROOT}/skills/py-intake/scripts/find_skill.py" --door-check`. Report anything missing with its install line. Never improvise a missing skill.
+5. `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/find_skill.py" --door-check`. Report anything missing with its install line. Never improvise a missing skill.
 6. Say in one line what comes next (section 2) and start it.
 
 ## 2. What to run, when
 
-You can run three kinds of thing. **Skill**: invoke the skill by name (the Skill tool on Claude Code; if the harness did not load it, open its `SKILL.md` and follow it). **File**: `python3 "${CLAUDE_PLUGIN_ROOT}/skills/py-intake/scripts/find_skill.py" <name>` prints the path of the `SKILL.md`; read it and follow it here as if invoked. **CLI**: run the command and show its output.
+You can run three kinds of thing. **Skill**: invoke the skill by name (the Skill tool on Claude Code; if the harness did not load it, open its `SKILL.md` and follow it). **File**: `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/find_skill.py" <name>` prints the path of the `SKILL.md`; read it and follow it here as if invoked. If that variable is empty in your shell, locate the script once with `find ~/.claude/plugins ~/.copilot -name find_skill.py 2>/dev/null | head -1` and use that path for the session. **CLI**: run the command and show its output.
 
 | Situation | Run |
 |---|---|
