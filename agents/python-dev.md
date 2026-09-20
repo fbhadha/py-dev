@@ -102,7 +102,7 @@ After `to-spec`, after `to-tickets`, and after each ticket: File `handoff` with 
 
 ## 7. Repowise: these moments, no others
 
-Repowise is the one store for everything derived from the code (ADR 0005). Its MCP tools cost ten tool definitions every turn, so use the CLI only, and only here:
+Repowise is the one store for everything derived from the code (ADR 0005). Its MCP tool definitions are a fixed cost on every turn, whether or not you use them; the CLI costs only when it runs. Use the CLI only, and only here:
 
 | Moment | Command |
 |---|---|

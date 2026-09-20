@@ -79,7 +79,7 @@ uv run python scripts/adr_sync.py --no-index
 
 Read the "Does the score find the bugs?" line `init` prints and repeat it to the user: it is the evidence that the health score means something on this repo, or that the repo is too young to say.
 
-Do not wire Repowise into the editor (`.mcp.json`, `~/.claude/settings.json`). The agent uses the CLI for everything it needs; the MCP surface costs ten tool definitions every turn. Say so in one sentence. If the user asks for it anyway, the command is `uv run repowise init -y`, and it is theirs to run.
+Do not wire Repowise into the editor (`.mcp.json`, `~/.claude/settings.json`). The agent uses the CLI for everything it needs; its MCP tool definitions are a fixed cost on every turn, how large depends on the harness, and the CLI is pay-per-use. Say so in one sentence. If the user asks for it anyway, the command is `uv run repowise init -y`, and it is theirs to run.
 
 ## 6. Orientation (brownfield only)
 

@@ -64,7 +64,7 @@ The persona carries one table: the situation the user is in, and what to run. Th
 
 ## Repowise, and why it is CLI only
 
-Repowise is the one store for everything derived from the code: structure, callers, blast radius, health, dead code, change risk, doc drift, which ADR governs which file. Its MCP server costs ten tool definitions every turn. The agent never uses it. Instead the persona names the only moments Repowise runs, and the command for each:
+Repowise is the one store for everything derived from the code: structure, callers, blast radius, health, dead code, change risk, doc drift, which ADR governs which file. Its MCP server puts every tool definition in context on every turn, used or not; how much that costs depends on the harness (caching and deferred tool loading soften it) and nobody here has measured it. The CLI costs only what a call returns, and behaves the same in all three harnesses. The agent never uses the MCP server. Instead the persona names the only moments Repowise runs, and the command for each:
 
 | Moment | Command |
 |---|---|
