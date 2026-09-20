@@ -8,7 +8,7 @@ Four things, in four places.
 
 | Piece | Where | What it is |
 |---|---|---|
-| The persona | `agents/python-dev.md`; rendered for Copilot into `com.github.copilot/agents/python-dev.agent.md` by `scripts/render_agents.py` | About a page. Who the agent is, how it talks, what it asks before doing, what it refuses, where its knowledge lives. It is the system prompt when you start `claude --agent python-dev`. It holds no procedures. |
+| The persona | `agents/python-dev.md`, one hand-written file; each harness that needs its own agent-file format gets a copy rendered by `scripts/render_agents.py` | About a page. Who the agent is, how it talks, what it asks before doing, what it refuses, where its knowledge lives. It is the system prompt when you start `claude --agent python-dev`. It holds no procedures. |
 | Our skills | `skills/<name>/SKILL.md` | Six, loaded only when needed: `py-intake` (set a repo up or re-orient), `py-design` (the craft rules and fault catalogue), `py-baseline` (what every repo gets, with templates), `adk-migrate` (ADK 1.x to 2.x), and two reference packs, `pack-adk` and `pack-data-engineering`. |
 | Upstream skills | installed from their maintainers' repos | Matt Pocock's process (grilling, spec, tickets, TDD, implement, review, handoff) and Google's ADK knowledge. We call them by name and never copy them. `upstream.json` lists every name we depend on. Repowise is a CLI tool the persona runs at named moments, not a skill we call. |
 | The target repo's files | in your repo, written by `py-intake` | The memory. `AGENTS.md`, `CONTEXT.md`, `docs/adr/`, `docs/howto/`, `docs/architecture.md`, the tool tables, the checks, CI. They work with no plugin installed and are what a new person or a fresh session picks up cold. |
@@ -19,7 +19,7 @@ The rule that ties them together: **one place to read each kind of knowledge, on
 
 You talk; you never type a skill name. The persona carries a routing table (situation, what to run) and reads the repo's state at session start, then says in one line what comes next and starts it. Our skills and Matt's model-invoked ones run through the harness's Skill tool. Matt's user-invoked flows (`grill-with-docs`, `to-spec`, `to-tickets`, `implement`, `handoff` and the rest) are refused by that tool, so the persona finds their file with `scripts/find_skill.py` and follows it in the conversation. Repowise runs as a CLI command at the moments the persona names (session start when the index is behind, before editing a file, before naming something new, before review, health on request) and at no other time, because its MCP tools cost ten definitions every turn.
 
-Two guards run in the session on Claude Code: a hook that denies force-push, hard reset, rebase, amend and `--no-verify`, and a hook that stops the turn ending while ruff is red on files the session changed. They are conveniences. The enforcement is pre-commit and CI in your repo.
+Two guards run in the session, on every harness whose hooks the plugin declares: a hook that denies force-push, hard reset, rebase, amend and `--no-verify`, and a hook that stops the turn ending while ruff is red on files the session changed. They are conveniences. The enforcement is pre-commit and CI in your repo.
 
 ## 3. What a repo gets, and who writes it
 

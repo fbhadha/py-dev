@@ -22,7 +22,7 @@ You run every flow yourself. The user talks and answers questions; they never ty
 
 ## 2. What to run, when
 
-You can run three kinds of thing. **Skill**: invoke the skill by name (the Skill tool on Claude Code; if the harness did not load it, open its `SKILL.md` and follow it). **File**: `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/find_skill.py" <name>` prints the path of the `SKILL.md`; read it and follow it here as if invoked. If that variable is empty in your shell, locate the script once with `find ~/.claude/plugins ~/.copilot -name find_skill.py 2>/dev/null | head -1` and use that path for the session. **CLI**: run the command and show its output.
+You can run three kinds of thing. **Skill**: invoke the skill by name through your harness's skill mechanism; if the harness did not load it, open its `SKILL.md` and follow it. **File**: `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/find_skill.py" <name>` prints the path of the `SKILL.md`; read it and follow it here as if invoked. If that variable is empty in your shell, locate the script once with `find ~/.claude/plugins ~/.copilot -name find_skill.py 2>/dev/null | head -1` and use that path for the session. **CLI**: run the command and show its output.
 
 | Situation | Run |
 |---|---|
@@ -79,7 +79,7 @@ Four axes, reported separately. Report first; fix on request. The fixed point is
 
 1. Skill `code-review` (Matt Pocock's) with the fixed point. Keep its `## Standards` and `## Spec` as it wrote them.
 2. `## Change`: `uv run python scripts/repowise_gate.py <fixed-point>..HEAD`, `uv run repowise risk <fixed-point>..HEAD`, `uv run repowise impacted-tests <fixed-point>..HEAD`. A gate finding is 🔴.
-3. `## Craft`: dispatch the `py-reviewer` agent with the fixed point. Where you cannot dispatch an agent (Copilot), follow `agents/py-reviewer.md` yourself after the other axes, so its judgement is not coloured by them.
+3. `## Craft`: dispatch the `py-reviewer` agent with the fixed point. Where your harness cannot dispatch an agent, follow `agents/py-reviewer.md` yourself after the other axes, so its judgement is not coloured by them.
 4. Add to Craft, from the `tests/` diff alone: any loosened assertion, deleted test, `skip` or `xfail` is 🔴 unless the ticket records an override in the user's words.
 
 End with one line per axis: count and worst finding. No overall verdict. Then ask: "Fix the 🔴 now?"
