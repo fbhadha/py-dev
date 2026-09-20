@@ -5,8 +5,10 @@ Denied outright (no asking): force-push, hard reset, history rewrite, --no-verif
 Everything else passes through untouched; the persona's "ask first" list is a
 conversation rule, not a hook.
 
-Reads the Claude Code hook payload on stdin. Any failure to parse it exits 0
-with no output, so a broken hook can never block ordinary work.
+Reads the hook payload on stdin: Claude Code's (`tool_input.command`) or Copilot's
+(`toolArgs` / `tool_args`, object or JSON string, with a `command`). The answer
+carries both harnesses' decision keys. Any failure to parse exits 0 with no
+output, so a broken hook can never block ordinary work.
 """
 
 from __future__ import annotations
@@ -34,10 +36,23 @@ DENY: list[tuple[re.Pattern[str], str]] = [
 ]
 
 
+def extract_command(payload: dict) -> str:
+    for key in ("tool_input", "toolArgs", "tool_args"):
+        args = payload.get(key)
+        if isinstance(args, str):
+            try:
+                args = json.loads(args)
+            except ValueError:
+                return ""
+        if isinstance(args, dict) and args.get("command"):
+            return str(args["command"])
+    return ""
+
+
 def main() -> int:
     try:
         payload = json.load(sys.stdin)
-        command = str(payload.get("tool_input", {}).get("command", ""))
+        command = extract_command(payload)
     except Exception:  # noqa: BLE001 - a hook must fail open
         return 0
     if not command:
@@ -52,6 +67,8 @@ def main() -> int:
             )
             json.dump(
                 {
+                    "permissionDecision": "deny",
+                    "permissionDecisionReason": reason,
                     "hookSpecificOutput": {
                         "hookEventName": "PreToolUse",
                         "permissionDecision": "deny",

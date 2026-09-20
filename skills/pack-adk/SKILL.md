@@ -13,7 +13,7 @@ Google maintains the ADK skills in `google/adk-python` under `.agents/skills/`. 
 
 ## Door check
 
-`python3 "${CLAUDE_PLUGIN_ROOT}/scripts/find_skill.py" adk-agent-builder adk-architecture adk-debug adk-style` must print four paths. If not: `npx skills@latest add google/adk-python -s adk-agent-builder,adk-architecture,adk-debug,adk-style -a '*' -y` in the repo (installs to `.agents/skills/`, symlinked for Claude Code, Codex and Copilot). The other seven ADK skills are for people contributing to adk-python itself; do not install them.
+`python3 "${CLAUDE_PLUGIN_ROOT}/skills/py-intake/scripts/find_skill.py" adk-agent-builder adk-architecture adk-debug adk-style` must print four paths. If not: `npx skills@latest add google/adk-python -s adk-agent-builder,adk-architecture,adk-debug,adk-style -a '*' -y` in the repo (installs to `.agents/skills/`, symlinked for Claude Code and Copilot). The other seven ADK skills are for people contributing to adk-python itself; do not install them.
 
 Never improvise what one of Google's skills would say; open it. Their references were checked against a stated `google-adk` version (the skill's head says which); when the installed version is newer, read `src/google/adk/` in the installed package before relying on a signature, as their skill tells you to.
 

@@ -4,12 +4,13 @@
   - every skills/<name>/SKILL.md starts with YAML frontmatter whose `name` equals
     the folder, whose `description` is non-empty and at most 1024 characters,
     and whose name contains neither 'anthropic' nor 'claude'
-  - every skill has agents/openai.yaml (Codex reads it), and its
-    `policy.allow_implicit_invocation` agrees with `disable-model-invocation`
   - .claude-plugin/plugin.json lists exactly the skill folders that exist
   - plugin.json and marketplace.json carry the same version
   - every agents/<name>.md has frontmatter with `name` and `description`
-  - plugin.json, marketplace.json, hooks/hooks.json and upstream.json parse
+  - the rendered Copilot agent files under skills/py-intake/templates/copilot/
+    match what scripts/render_agents.py would write
+  - plugin.json, marketplace.json, hooks/hooks.json,
+    skills/py-intake/upstream.json and the Copilot hooks template parse
 
 Exit code is non-zero on any failure.
 
@@ -20,6 +21,7 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -32,7 +34,8 @@ JSON_FILES = (
     ".claude-plugin/plugin.json",
     ".claude-plugin/marketplace.json",
     "hooks/hooks.json",
-    "upstream.json",
+    "skills/py-intake/upstream.json",
+    "skills/py-intake/templates/copilot/hooks.json",
 )
 
 
@@ -67,18 +70,6 @@ def check_skill(skill_md: Path) -> list[str]:
         problems.append(f"{rel}: description is required")
     elif len(description) > 1024:
         problems.append(f"{rel}: description is {len(description)} characters; the limit is 1024")
-
-    openai_yaml = skill_md.parent / "agents" / "openai.yaml"
-    if not openai_yaml.exists():
-        problems.append(f"{rel}: missing agents/openai.yaml")
-    else:
-        data = yaml.safe_load(openai_yaml.read_text(encoding="utf-8")) or {}
-        implicit = (data.get("policy") or {}).get("allow_implicit_invocation", True)
-        user_only = bool(fm.get("disable-model-invocation", False))
-        if user_only and implicit:
-            problems.append(f"{rel}: user-invoked but openai.yaml allows implicit invocation")
-        if not user_only and implicit is False:
-            problems.append(f"{rel}: model-invoked but openai.yaml forbids implicit invocation")
     return problems
 
 
@@ -88,6 +79,19 @@ def check_agent(agent_md: Path) -> list[str]:
     if isinstance(fm, str):
         return [f"{rel}: {fm}"]
     return [f"{rel}: frontmatter needs '{key}'" for key in ("name", "description") if not fm.get(key)]
+
+
+def check_rendered_agents() -> list[str]:
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "render_agents.py"), "--check"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode == 0:
+        print("ok  skills/py-intake/templates/copilot/*.agent.md (rendered from agents/)")
+        return []
+    return [line.strip() for line in result.stdout.splitlines() if line.strip()]
 
 
 def main() -> int:
@@ -109,11 +113,14 @@ def main() -> int:
         if not found:
             print(f"ok  {skill_md.relative_to(ROOT)}")
 
-    for agent_md in sorted(ROOT.glob("agents/*.md")):
+    agent_files = sorted(ROOT.glob("agents/*.md"))
+    for agent_md in agent_files:
         found = check_agent(agent_md)
         problems += found
         if not found:
             print(f"ok  {agent_md.relative_to(ROOT)}")
+
+    problems += check_rendered_agents()
 
     plugin = parsed.get(".claude-plugin/plugin.json")
     marketplace = parsed.get(".claude-plugin/marketplace.json")
@@ -135,7 +142,7 @@ def main() -> int:
         for problem in problems:
             print(f"  - {problem}")
         return 1
-    print(f"\nplugin ok: {len(skill_files)} skills, {len(list(ROOT.glob('agents/*.md')))} agents")
+    print(f"\nplugin ok: {len(skill_files)} skills, {len(agent_files)} agents")
     return 0
 
 

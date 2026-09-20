@@ -15,7 +15,7 @@ Run once per repo, and again whenever you come back after a long gap. Every step
 |---|---|---|
 | `uv`, `git` | on PATH | stop; say how to install |
 | `repowise` | `uv run repowise --version` or on PATH | `uv add --group dev repowise` (Python 3.11 or newer) |
-| Upstream skills | `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/find_skill.py" --door-check` prints nothing missing | it prints the install command per upstream; continue, but steps 3 and 6 wait for Matt Pocock's skills |
+| Upstream skills | `python3 "${CLAUDE_PLUGIN_ROOT}/skills/py-intake/scripts/find_skill.py" --door-check` prints nothing missing | it prints the install command per upstream; continue, but steps 3 and 6 wait for Matt Pocock's skills |
 
 Never improvise a missing skill's behaviour.
 
@@ -45,7 +45,7 @@ Done when `docs/agents/issue-tracker.md` exists.
 
 The remote decides. GitHub remote: GitHub Issues. GitLab remote: GitLab Issues. No remote: Backlog.md. A public repo gets a warning that its planning will be public and the offer of Backlog.md instead.
 
-Matt Pocock's `setup-matt-pocock-skills` writes the tracker file, `docs/agents/domain.md` and the `## Agent skills` block. It is user-invoked, so the Skill tool refuses it: run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/find_skill.py" setup-matt-pocock-skills`, read the `SKILL.md` it prints, and follow it here. You already know its answers from step 1: tracker from the remote (GitHub, GitLab, or **Other: "Backlog.md, see docs/agents/issue-tracker.md"**), default triage labels, single-context, edit `AGENTS.md`. Ask the user only what step 1 did not settle, and show the draft files before writing, as it says.
+Matt Pocock's `setup-matt-pocock-skills` writes the tracker file, `docs/agents/domain.md` and the `## Agent skills` block. It is user-invoked, so the Skill tool refuses it: run `python3 "${CLAUDE_PLUGIN_ROOT}/skills/py-intake/scripts/find_skill.py" setup-matt-pocock-skills`, read the `SKILL.md` it prints, and follow it here. You already know its answers from step 1: tracker from the remote (GitHub, GitLab, or **Other: "Backlog.md, see docs/agents/issue-tracker.md"**), default triage labels, single-context, edit `AGENTS.md`. Ask the user only what step 1 did not settle, and show the draft files before writing, as it says.
 
 Then, for the Backlog.md case: run `npx backlog.md init --defaults --no-git` if `backlog/config.yml` is missing, and replace `docs/agents/issue-tracker.md` with `templates/issue-tracker-backlog-md.md` (the "Other" file is freeform prose; ours carries the commands the skills need). Say the file was replaced and why.
 
@@ -114,15 +114,17 @@ Done when `README.md` has at least one ```bash ci``` block that runs, `docs/arch
 
 ## 8. Harness shells
 
-Done when each file below exists for the harnesses the user names (ask; default is all three).
+Done when each file below exists for the harnesses the user names (ask; default is both). On Copilot this plugin arrives by `npx skills@latest add fbhadha/py-dev --all`, which installs skill folders only, so everything a harness needs outside a `SKILL.md` ships inside this skill: the scripts under `scripts/`, the rendered agent files and hooks under `templates/copilot/`.
 
 | Harness | File | From |
 |---|---|---|
 | Claude Code | `.claude/settings.json` with `"agent": "python-dev"` merged in | `templates/claude-settings.json` |
-| GitHub Copilot | `.github/agents/python-dev.agent.md`: the frontmatter from `templates/copilot-agent.md`, then the body of this plugin's `../../agents/python-dev.md` with its own frontmatter removed | both files |
-| OpenAI Codex | a `## Agent: python-dev` section in `AGENTS.md` (below the pointers, above the Repowise markers) holding the same persona body | `../../agents/python-dev.md` |
+| GitHub Copilot | `.github/agents/python-dev.agent.md` and `.github/agents/py-reviewer.agent.md` | `templates/copilot/python-dev.agent.md`, `templates/copilot/py-reviewer.agent.md`, copied as they are (they are generated from the persona files by `scripts/render_agents.py` in the plugin repo; never edit them in the target repo) |
+| GitHub Copilot | `.github/hooks/python-dev.json`: the git guard as a `preToolUse` hook | `templates/copilot/hooks.json`. Its shape follows Copilot's hooks documentation and is UNVERIFIED on a live run; it fails open, so a wrong shape costs the guard, never the session |
 
-Copilot's cloud agent cannot run intake or grilling; say so once. Codex has no hook contract we have verified; the git guard there is pre-commit and CI, nothing in-session.
+The rendered Copilot files expect the skills at `.agents/skills/` (where `npx skills add` puts them, symlinked into `.github/skills/`). If they are somewhere else in this repo, say so and fix the paths in the copied files, not the templates.
+
+Copilot's cloud agent cannot run intake or grilling and reads only the repo's files; say so once. Nothing here has been exercised on Copilot yet: the agent file format and the hooks file are from the docs. The first session there is the test.
 
 ## 9. Finish
 

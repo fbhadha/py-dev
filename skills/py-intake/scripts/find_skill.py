@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Print the path of an installed skill's SKILL.md, by name.
 
-The Skill tool refuses skills marked `disable-model-invocation: true`, and Codex
-and Copilot have no Skill tool at all. Reading the file is refused nowhere, so
+The Skill tool refuses skills marked `disable-model-invocation: true`, and Copilot
+has no Skill tool at all. Reading the file is refused nowhere, so
 the persona locates the file with this script, reads it, and follows it. The
 door check uses it too: a skill is installed when this finds it.
 
@@ -16,7 +16,7 @@ and the directories searched go to stderr).
 
 Search order, first hit wins: Claude Code's installed plugin cache (the version
 marked in use), then project and user skill directories for Claude Code, the
-Agent Skills standard, Copilot and Codex, then Claude Code's marketplace clones.
+Agent Skills standard and Copilot, then Claude Code's marketplace clones.
 A match is a directory named <name>, or any SKILL.md whose frontmatter `name:`
 is <name> (some skills live in a directory named differently).
 """
@@ -39,8 +39,6 @@ ROOTS: list[Path] = [
     HOME / ".agents" / "skills",
     CWD / ".github" / "skills",
     HOME / ".copilot" / "skills",
-    CWD / ".codex" / "skills",
-    HOME / ".codex" / "skills",
     HOME / ".claude" / "plugins" / "marketplaces",
 ]
 NAME_RE = re.compile(r"^name:\s*['\"]?([^'\"\n]+)", re.MULTILINE)
@@ -90,7 +88,7 @@ def find(name: str) -> Path | None:
 
 def door_check() -> int:
     """Check the skills in upstream.json; print what is missing and how to install it."""
-    manifest = Path(__file__).resolve().parent.parent / "upstream.json"
+    manifest = Path(__file__).resolve().parent.parent / "upstream.json"  # skills/py-intake/upstream.json
     data = json.loads(manifest.read_text(encoding="utf-8"))
     missing = 0
     pyproject = CWD / "pyproject.toml"

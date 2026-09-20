@@ -8,7 +8,7 @@ Four things, in four places.
 
 | Piece | Where | What it is |
 |---|---|---|
-| The persona | `agents/python-dev.md` | About a page. Who the agent is, how it talks, what it asks before doing, what it refuses, where its knowledge lives. It is the system prompt when you start `claude --agent python-dev`. It holds no procedures. |
+| The persona | `agents/python-dev.md`; rendered for Copilot into `skills/py-intake/templates/copilot/python-dev.agent.md` by `scripts/render_agents.py` | About a page. Who the agent is, how it talks, what it asks before doing, what it refuses, where its knowledge lives. It is the system prompt when you start `claude --agent python-dev`. It holds no procedures. |
 | Our skills | `skills/<name>/SKILL.md` | Six, loaded only when needed: `py-intake` (set a repo up or re-orient), `py-design` (the craft rules and fault catalogue), `py-baseline` (what every repo gets, with templates), `adk-migrate` (ADK 1.x to 2.x), and two reference packs, `pack-adk` and `pack-data-engineering`. |
 | Upstream skills | installed from their maintainers' repos | Matt Pocock's process (grilling, spec, tickets, TDD, implement, review, handoff) and Google's ADK knowledge. We call them by name and never copy them. `upstream.json` lists every name we depend on. Repowise is a CLI tool the persona runs at named moments, not a skill we call. |
 | The target repo's files | in your repo, written by `py-intake` | The memory. `AGENTS.md`, `CONTEXT.md`, `docs/adr/`, `docs/howto/`, `docs/architecture.md`, the tool tables, the checks, CI. They work with no plugin installed and are what a new person or a fresh session picks up cold. |
@@ -68,4 +68,4 @@ Before each step the agent says in one plain paragraph what it is about to do an
 | Domain knowledge for a kind of repo | a new `skills/pack-<domain>/` in the shape of `packs/TEMPLATE.md` |
 | Why something is the way it is | `docs/design/python-dev-agent.md` and `docs/adr/` in this repository |
 
-Before a release: `python scripts/check_plugin.py`, `python scripts/check_upstream_skills.py`, `claude plugin validate --strict .`, and a `claude --agent python-dev --plugin-dir . -p` smoke test.
+Before a release: `python scripts/render_agents.py`, `python scripts/check_plugin.py`, `python scripts/check_upstream_skills.py`, `claude plugin validate --strict .`, and a `claude --agent python-dev --plugin-dir . -p` smoke test.

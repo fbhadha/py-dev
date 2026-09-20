@@ -157,17 +157,17 @@ Verified 2026-09-20 against the Claude Code docs (CLI 2.1.278), the GitHub Copil
 The plugin is its own repository, `fbhadha/py-dev`, and its own marketplace. It was built under `plugins/python-dev/` in `fbhadha/Skills` and moved out once it had a release; the skill library there is unrelated to it.
 
 ```
-fbhadha/py-dev/                         THE AGENT PLUGIN (one repository, three loaders); Google's ADK skills are installed, not vendored (decision 23)
+fbhadha/py-dev/                         THE AGENT PLUGIN (one repository, two loaders: Claude Code, Copilot); Google's ADK skills are installed, not vendored (decision 23)
 ├── .claude-plugin/plugin.json          read by Claude Code natively, by Codex and Copilot as a legacy manifest
 ├── .claude-plugin/marketplace.json     makes the repo installable: marketplace `py-dev`, one plugin, source `./`
 ├── agents/python-dev.md                the persona: session start, the routing table, build, review, health, Repowise policy (decisions 26 to 28)
 ├── agents/py-reviewer.md               craft-axis reviewer: Read/Grep/Glob/Bash only, no Agent tool (cannot recurse), no Edit
-├── skills/                             py-intake, py-design, py-baseline, adk-migrate, pack-adk, pack-data-engineering (each with agents/openai.yaml)
-├── hooks/hooks.json                    deny destructive git, stop-gate on red ruff
-├── scripts/hooks/, scripts/find_skill.py   the hook scripts; the skill locator the door check uses
-├── upstream.json                       every upstream skill we call by name, pinned (Matt Pocock's, Google's)
+├── skills/                             py-intake, py-design, py-baseline, adk-migrate, pack-adk, pack-data-engineering
+│   └── py-intake/                      also carries scripts/find_skill.py, scripts/hooks/, upstream.json and templates/copilot/ (rendered agent files, hooks): everything Copilot needs outside a SKILL.md (decision 30)
+├── hooks/hooks.json                    Claude Code's hook manifest: deny destructive git, stop-gate on red ruff
 ├── scripts/
-│   ├── check_plugin.py                 frontmatter, openai.yaml sync, manifests, the skills list
+│   ├── check_plugin.py                 frontmatter, manifests, the skills list, rendered copies current
+│   ├── render_agents.py                agents/*.md -> skills/py-intake/templates/copilot/*.agent.md (decision 31)
 │   └── check_upstream_skills.py        every skill we call by name exists at the pinned commit with the invocation we assume
 ├── CONTEXT.md                          this repo's own glossary
 └── docs/adr/                           this repo's own decisions
@@ -241,6 +241,8 @@ fbhadha/py-dev/                         THE AGENT PLUGIN (one repository, three 
 | 27 | **The routing table lives in the persona, always loaded.** The main goal is that the agent knows at every turn when to invoke what and how to keep the repo good by its how-tos. A skill it must remember to call cannot guarantee that; the persona can. Written as numbered steps, tables and exact commands so a smaller model can follow it. | Persona grows to about 3,000 tokens (from about 1,650). Skill descriptions fall from eleven to six. Net always-loaded cost is roughly level. |
 | 28 | **Repowise through its CLI only, at named moments.** Its MCP surface is a fixed per-turn cost (every tool definition, used or not) whose size depends on the harness and is unmeasured here; the CLI is pay-per-use and identical across harnesses. The persona lists the moments Repowise may run (index behind HEAD, before editing a file, before naming something new, before review, health on request, intake orientation) and the exact command for each; never for browsing. Its six skills left `upstream.json`; intake no longer offers to wire `.mcp.json`. ADR 0005 stands: it is still the one store, reached one way. | Decision 20's "six skills called by name after a door check" is superseded on the access path only. |
 | 29 | **Independent of `fbhadha/Skills`.** Nothing from the skill library's governance carries over: no JSON schema, validator, code of conduct, CODEOWNERS, DCO or PR template. Skill frontmatter is `name` and `description`. One `scripts/check_plugin.py` checks the plugin. | The library is one person's archive of skills they like; this is a product with a target repo depending on it. |
+| 30 | **Copilot first; Claude Code and Copilot are the two harnesses; Codex dropped for now** (2026-09-20). `npx skills add` installs skill folders only, so everything a Copilot user needs outside a `SKILL.md` lives inside `skills/py-intake/`: `find_skill.py`, the hook scripts, `upstream.json`, the rendered agent files and hooks under `templates/copilot/`. | Paths in the persona are `${CLAUDE_PLUGIN_ROOT}/skills/py-intake/...`; the Copilot render substitutes `.agents/skills/py-intake/...`. `agents/openai.yaml` and the Codex `AGENTS.md` section are gone. |
+| 31 | **Rendered Copilot copies of the two persona files ship in this repo, generated by `scripts/render_agents.py`, checked by CI.** Reverses decision 24. Without a copy Copilot has no persona until intake runs, and intake needs the persona to run. A copy CI regenerates on every change cannot drift, which was decision 24's only reason. | `skills/py-intake/templates/copilot/python-dev.agent.md`, `py-reviewer.agent.md`; `check_plugin.py` runs `render_agents.py --check`. |
 
 ## 15. Build order
 

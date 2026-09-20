@@ -33,7 +33,7 @@ The short, always-loaded file that defines the agent: identity, guide voice, the
 _Avoid_: system prompt (harness term), CLAUDE.md (one container it can live in, not the thing)
 
 **Harness**:
-The program that runs the model and its tools: Claude Code, GitHub Copilot, OpenAI Codex. The agent runs inside a harness; the harness decides how a persona is selected, how skills are invoked, and which hooks fire.
+The program that runs the model and its tools: Claude Code, GitHub Copilot. The agent runs inside a harness; the harness decides how a persona is selected, how skills are invoked, and which hooks fire.
 _Avoid_: platform, IDE, runtime
 
 **Agent**:

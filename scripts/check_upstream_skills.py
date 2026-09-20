@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check that every upstream skill this plugin calls by name still exists upstream.
 
-Reads upstream.json at the repo root: for each upstream repository, the pinned commit,
+Reads skills/py-intake/upstream.json: for each upstream repository, the pinned commit,
 the directory its skills live under, and the skill names we depend on with the
 invocation we assume (`model` = we call it through the Skill tool, `user` = the
 harness refuses it and we open the file). Clones each repository at the pinned
@@ -97,9 +97,9 @@ def check_upstream(upstream: dict, latest: bool, workdir: Path) -> list[str]:
 
 def main(argv: list[str]) -> int:
     latest = "--latest" in argv
-    manifests = [ROOT / "upstream.json"]
+    manifests = [ROOT / "skills" / "py-intake" / "upstream.json"]
     if not manifests[0].exists():
-        print("no upstream.json found at the repo root")
+        print("no skills/py-intake/upstream.json found")
         return 0
     problems: list[str] = []
     with tempfile.TemporaryDirectory() as tmp:
