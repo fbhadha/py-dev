@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.6.0 (2026-09-20)
+
+The no-unapproved-change rule is enforced by hooks.
+
+- **Pre-tool `ask`.** `guard_edit.py` answers `ask` when the agent is about to edit, write or create over a git-tracked protected file (every tracked file before intake has written `docs/agents/mode.md`; the protected list after). `guard_command.py` does the same for shell commands that would write one (`sed -i`, redirection, `tee`, `cp`, `mv`, `uv add|init|lock`, `uv python pin`, `repowise generate-claude-md`), and keeps its outright denials of destructive git. The harness's own permission prompt is the yes.
+- **One yes per file per session.** `record_edit.py` (post-tool) remembers the paths an approved edit or command touched, in a per-session file under the temp directory, so later edits to the same file pass without a prompt.
+- **The turn cannot end with an unapproved change.** `stop_gate.py` now checks `git status` for modified protected files without a recorded approval and blocks, naming them, before its ruff check.
+- **Commit gate in the target repo.** New baseline template `scripts/check_protected_commit.py`, a commit-msg hook: a commit touching a protected file needs `approved: <files>` in the message. Installed by the pre-commit template, which already installs the commit-msg stage.
+- **On by default, and visible.** `session_start.py` prints `python-dev guards active` with the guard's mode; the persona's first step checks for it. `docs/agents/mode.md` gains `protect-existing-files: on`; `off` there (a protected edit, so the harness asks) or `PYTHON_DEV_GUARD=off` for one session turns the file guard off. Intake's last step tells the user this.
+- Both hook manifests gain SessionStart, the edit-tool PreToolUse and PostToolUse. `scripts/test_hooks.py` drives every hook decision against a scratch git repo, in both payload shapes; CI runs it.
+
+Unverified live: the argument key Copilot's edit and shell tools use (`path`, `file_path`, `command` are all read; anything else fails open) and whether Copilot's `agentStop` block reaches the model the way Claude Code's `Stop` does.
+
 ## 0.5.0 (2026-09-20)
 
 - **Hard rule, in the persona and in intake: no change to an existing file without showing the change and getting a yes for that file.** Name it, one sentence on what and why, the diff, wait. One file, one yes. It overrides templates and upstream skills.

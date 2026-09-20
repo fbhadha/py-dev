@@ -17,6 +17,7 @@ The skeleton every repo this agent touches ends up with, so a junior reader can 
 | `.github/workflows/ci.yml` (or the GitLab equivalent) | pre-commit on the files the PR changed, the whole test suite, then the Repowise change gate | `templates/ci.yml`, `templates/gitlab-ci.yml` |
 | `scripts/repowise_gate.py` | the CI change gate over Repowise's Python API | `templates/repowise_gate.py` |
 | `scripts/run_readme_blocks.py` | executes every ```bash ci``` block in `README.md` in CI | `templates/run_readme_blocks.py` |
+| `scripts/check_protected_commit.py` | commit-msg hook: a commit that changes a protected file must carry `approved: <files>` | `templates/check_protected_commit.py` |
 | `.secrets.baseline` | detect-secrets baseline, created by `uv run detect-secrets scan > .secrets.baseline` | created by `detect-secrets` |
 | `.env.example` | every key the code reads, with a comment, no values | `templates/env.example` |
 | `AGENTS.md` | pointers only, under 40 lines, above the Repowise managed section (`repowise generate-claude-md --output AGENTS.md`) | `templates/AGENTS.md` |
@@ -40,6 +41,7 @@ Two layers. Line-level tools run at commit on the changed files. Repowise (`docs
 | Prompt-shaped docstrings and comments | ruff `D401` (non-imperative docstring), `TD002`/`TD003` (a TODO must name an author and an issue), `FIX002` (no TODO left in code), `ERA001` (commented-out code) | commit |
 | Swallowed exceptions, mutable defaults, prints, string SQL, secrets | ruff `BLE`, `B`, `T20`, `S`; `detect-secrets` | commit |
 | Complexity, flags, too many parameters | ruff `C901`, `PLR091x`, `FBT` | commit |
+| An existing protected file changed without the human's yes | in-session: the plugin's hooks make the harness ask, once per file per session, and refuse to end a turn with an unapproved change; at commit: `scripts/check_protected_commit.py` needs `approved: <files>` in the message | session; commit |
 | Layering | `import-linter` layers contract | commit |
 | Types | `mypy --strict` on `src/` | commit |
 | A change made a touched file worse (new nesting, god class, I/O in a loop, duplication, swallowed exception) | `scripts/repowise_gate.py`: `ChangeReviewService.review()` on `origin/main..HEAD`, fails when `introduced_total > 0` | CI |

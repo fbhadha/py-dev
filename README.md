@@ -40,7 +40,7 @@ The plugin has been checked against both harnesses' plugin references (2026-09-2
 | `skills/adk-migrate` | Google ADK 1.x to 2.x: detect mechanically, force only what silently breaks, evals first, expand then migrate then contract. |
 | `skills/pack-adk` | Reference for ADK 2.x repos: which Google skill to open for which job, the six rules this baseline adds. |
 | `skills/pack-data-engineering` | Reference for pipeline repos: shapes, the canonical repo, extra checks, faults, tests. `packs/TEMPLATE.md` is the shape for new packs. |
-| `hooks/`, `scripts/hooks/` | Two guards, the same scripts on every harness: deny force-push, hard reset, rebase, amend and `--no-verify`; stop the turn ending while ruff is red on files the session changed. Pre-commit and CI in your repo are the enforcement. |
+| `hooks/`, `com.github.copilot/hooks/`, `scripts/hooks/` | The guards, the same scripts on every harness (below). |
 | `upstream.json`, `scripts/find_skill.py` | Every upstream skill called by name, pinned; and the locator that finds an installed skill's `SKILL.md` wherever a harness put it. |
 | `scripts/` | `check_plugin.py`, `check_upstream_skills.py`, `render_agents.py`: the checks CI runs. |
 
@@ -54,6 +54,20 @@ The skills are shared; they are plain `SKILL.md` folders every harness reads. Wh
 | GitHub Copilot CLI | `plugin.json` (Agent Plugins 1.0), `.github/plugin/marketplace.json` | `com.github.copilot/agents/*.agent.md`, rendered from `agents/` | `com.github.copilot/hooks/hooks.json` |
 
 `scripts/render_agents.py` produces the rendered agent files and `scripts/check_plugin.py` fails CI when they are stale or the manifests disagree, so there is still one persona to edit. Adding a harness is one more row: a manifest, a render rule, a hooks file.
+
+## Guards
+
+The persona says it will not change an existing file without showing you the change and getting a yes. That instruction is the top of a stack; three mechanical layers under it do not depend on the model's cooperation.
+
+| Layer | Mechanism | What it catches |
+|---|---|---|
+| Ask the human, not the model | A pre-tool hook answers `ask` when the agent is about to edit a git-tracked file on the protected list (agent files, packaging, checks, CI, standard docs), or any tracked file while intake is running. The harness's own permission prompt shows you the file; approving is the one yes for that file this session, recorded by a post-tool hook. Shell commands that write those files (`sed -i`, redirection, `uv add`, `repowise generate-claude-md`) get the same prompt. | The model editing something it should have asked about |
+| The turn cannot end with an unapproved change | The stop hook runs `git status`; a modified protected file with no recorded approval blocks the turn, naming the files, until they are reverted or redone through the edit tool. | Anything the first layer's shell heuristic missed |
+| The commit gate in your repo | A commit-msg hook from the baseline refuses a commit that changes a protected file unless the message carries `approved: <files>`. Harness-independent. | Anything that reaches a commit without a visible approval |
+
+Plus the original two: destructive git (`push --force`, `reset --hard`, `rebase`, `--amend`, `--no-verify`) is denied outright, and the turn cannot end while ruff is red on files the session changed.
+
+The guards are on by default, active as soon as the plugin is installed, and a session-start hook prints `python-dev guards active` so the persona can tell when they are not. To turn the file guard off: `protect-existing-files: off` in `docs/agents/mode.md` (a protected edit, so the harness asks you to confirm), or `PYTHON_DEV_GUARD=off` for one session. The hooks fail open on any error of their own, and `scripts/test_hooks.py` drives every one of them against a scratch repo in CI.
 
 ## How the agent decides
 
@@ -88,11 +102,12 @@ Line-level at commit: ruff (bugbear, blind except, security, print, commented-ou
 pip install pyyaml
 python scripts/render_agents.py           # after editing agents/*.md: regenerate the per-harness copies
 python scripts/check_plugin.py            # frontmatter, manifests in step, the skills list, rendered copies current
+python scripts/test_hooks.py              # every hook decision against a scratch git repo
 python scripts/check_upstream_skills.py   # every upstream skill exists at its pin with the invocation we assume
 claude plugin validate --strict .
 ```
 
-Rules: `agents/python-dev.md` is the only hand-written persona; every other copy is generated and CI fails when it is stale. Keep it steps and tables; craft knowledge goes in skills. Call upstream skills by name, never copy them; add the name to `upstream.json` and bump a pin in its own commit after reading the upstream changelog. One read path and one write path per kind of knowledge (ADR 0005): anything derived from the code comes from Repowise, by CLI. No custom gates; a check is an established tool's rule in `skills/py-baseline/templates/pyproject-tools.toml`. Verify before you write; `docs/research/` records what was checked and when. A knowledge pack is `skills/pack-<domain>/` in the shape of `packs/TEMPLATE.md`, reference only. Before a release: the four commands above, a smoke test in a real repo on each harness, then the version in every manifest and a `CHANGELOG.md` entry.
+Rules: `agents/python-dev.md` is the only hand-written persona; every other copy is generated and CI fails when it is stale. Keep it steps and tables; craft knowledge goes in skills. Call upstream skills by name, never copy them; add the name to `upstream.json` and bump a pin in its own commit after reading the upstream changelog. One read path and one write path per kind of knowledge (ADR 0005): anything derived from the code comes from Repowise, by CLI. No custom code-quality gates; a check is an established tool's rule in `skills/py-baseline/templates/pyproject-tools.toml`. The four scripts the baseline copies into a repo (change gate, ADR binder, README runner, protected-commit check) are process, not lint. Verify before you write; `docs/research/` records what was checked and when. A knowledge pack is `skills/pack-<domain>/` in the shape of `packs/TEMPLATE.md`, reference only. Before a release: the five commands above, a smoke test in a real repo on each harness, then the version in every manifest and a `CHANGELOG.md` entry.
 
 Why things are the way they are: [docs/how-python-dev-works.md](docs/how-python-dev-works.md) for the long explainer, [docs/design/python-dev-agent.md](docs/design/python-dev-agent.md) for the design and every decision, [docs/adr/](docs/adr/) for the ones that were hard to reverse, [docs/research/](docs/research/) for what was verified, [CONTEXT.md](CONTEXT.md) for the words.
 

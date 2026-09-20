@@ -1,21 +1,24 @@
 #!/usr/bin/env python3
-"""PreToolUse guard for Bash: deny the git commands the persona says are never allowed.
+"""PreToolUse guard for the shell tool.
 
-Denied outright (no asking): force-push, hard reset, history rewrite, --no-verify.
-Everything else passes through untouched; the persona's "ask first" list is a
-conversation rule, not a hook.
+Denied outright (no asking): force-push, hard reset, history rewrite, --no-verify,
+force-deleting a branch. These are on the persona's never list.
 
-Reads the hook payload on stdin: Claude Code's (`tool_input.command`) or Copilot's
-(`toolArgs` / `tool_args`, object or JSON string, with a `command`). The answer
-carries both harnesses' decision keys. Any failure to parse exits 0 with no
-output, so a broken hook can never block ordinary work.
+Asked (the harness prompts the human): a command that would write a protected,
+tracked file without going through the edit tool: a redirection, `sed -i`, `tee`,
+`cp`, `mv`, `rm`, `uv add`, `uv init`, `uv python pin`, `repowise
+generate-claude-md`, and so on. Once approved, record_edit.py remembers the
+paths for the session. This is a heuristic; stop_gate.py catches what it misses.
+
+Reads either harness's payload. Any failure exits 0 with no output.
 """
 
 from __future__ import annotations
 
-import json
 import re
 import sys
+
+import _common as c
 
 DENY: list[tuple[re.Pattern[str], str]] = [
     (
@@ -36,48 +39,47 @@ DENY: list[tuple[re.Pattern[str], str]] = [
 ]
 
 
-def extract_command(payload: dict) -> str:
-    for key in ("tool_input", "toolArgs", "tool_args"):
-        args = payload.get(key)
-        if isinstance(args, str):
-            try:
-                args = json.loads(args)
-            except ValueError:
-                return ""
-        if isinstance(args, dict) and args.get("command"):
-            return str(args["command"])
-    return ""
-
-
 def main() -> int:
     try:
-        payload = json.load(sys.stdin)
-        command = extract_command(payload)
+        payload = c.read_payload()
+        name = c.tool_name(payload).lower()
+        if name and not ("bash" in name or "shell" in name or "terminal" in name or name == "run"):
+            return 0
+        command = str(c.tool_args(payload).get("command", ""))
+        if not command:
+            return 0
+
+        for pattern, label in DENY:
+            if pattern.search(command):
+                c.decision(
+                    "deny",
+                    f"python-dev blocks {label}. This is on the never list: it destroys history "
+                    "the user or a teammate may depend on. Make a new commit instead, or ask the "
+                    "user to run it themselves.",
+                )
+                return 0
+
+        root = c.repo_root()
+        if root is None:
+            return 0
+        mode = c.guard_mode()
+        if mode == "off":
+            return 0
+        pending = sorted(
+            rel
+            for rel in c.command_targets(command, root)
+            if c.needs_approval(rel, mode) and rel not in c.approved(c.session_id(payload))
+        )
+        if pending:
+            c.decision(
+                "ask",
+                "python-dev: this command writes existing protected file(s): "
+                + ", ".join(f"`{rel}`" for rel in pending)
+                + ". The agent must have shown you what will change and why before you approve. "
+                "Approving is the one yes for these files this session.",
+            )
     except Exception:  # noqa: BLE001 - a hook must fail open
         return 0
-    if not command:
-        return 0
-
-    for pattern, label in DENY:
-        if pattern.search(command):
-            reason = (
-                f"python-dev blocks {label}. This is on the never list: it destroys history "
-                "the user or a teammate may depend on. Make a new commit instead, or ask the "
-                "user to run it themselves."
-            )
-            json.dump(
-                {
-                    "permissionDecision": "deny",
-                    "permissionDecisionReason": reason,
-                    "hookSpecificOutput": {
-                        "hookEventName": "PreToolUse",
-                        "permissionDecision": "deny",
-                        "permissionDecisionReason": reason,
-                    }
-                },
-                sys.stdout,
-            )
-            return 0
     return 0
 
 

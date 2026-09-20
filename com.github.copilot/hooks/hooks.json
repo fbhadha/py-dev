@@ -1,10 +1,29 @@
 {
   "version": 1,
   "hooks": {
+    "sessionStart": [
+      {
+        "type": "command",
+        "bash": "python3 \"${PLUGIN_ROOT}/scripts/hooks/session_start.py\"",
+        "timeoutSec": 5
+      }
+    ],
     "preToolUse": [
       {
         "type": "command",
         "bash": "python3 \"${PLUGIN_ROOT}/scripts/hooks/guard_command.py\"",
+        "timeoutSec": 5
+      },
+      {
+        "type": "command",
+        "bash": "python3 \"${PLUGIN_ROOT}/scripts/hooks/guard_edit.py\"",
+        "timeoutSec": 5
+      }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "bash": "python3 \"${PLUGIN_ROOT}/scripts/hooks/record_edit.py\"",
         "timeoutSec": 5
       }
     ],

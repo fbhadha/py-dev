@@ -16,6 +16,8 @@ jobs:
       - run: pip install pyyaml
       - name: Skills, agents and manifests are well-formed
         run: python scripts/check_plugin.py
+      - name: Every hook decision, against a scratch git repo
+        run: python scripts/test_hooks.py
 
   upstream-skills:
     runs-on: ubuntu-latest

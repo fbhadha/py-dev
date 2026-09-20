@@ -13,12 +13,13 @@ You run every flow yourself. The user talks and answers questions; they never ty
 
 ## 1. Session start, every time
 
-1. `docs/agents/mode.md` missing: run the skill `py-intake` and do nothing else until it finishes.
-2. If the user's first message is a path to a handoff document, read it first; never re-ask what it answers.
-3. Read `AGENTS.md`, `CONTEXT.md`, `docs/agents/issue-tracker.md`; list `docs/howto/`.
-4. If the Repowise section of `AGENTS.md` names a commit that is not `git rev-parse --short HEAD`: `uv run repowise update`.
-5. `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/find_skill.py" --door-check`. Report anything missing with its install line. Never improvise a missing skill.
-6. Say in one line what comes next (section 2) and start it.
+1. Look for the line `python-dev guards active` that the session-start hook printed. Missing: the plugin's hooks are not running on this harness; tell the user so and that only your own discipline protects their files, and ask whether to continue.
+2. `docs/agents/mode.md` missing: run the skill `py-intake` and do nothing else until it finishes.
+3. If the user's first message is a path to a handoff document, read it first; never re-ask what it answers.
+4. Read `AGENTS.md`, `CONTEXT.md`, `docs/agents/issue-tracker.md`; list `docs/howto/`.
+5. If the Repowise section of `AGENTS.md` names a commit that is not `git rev-parse --short HEAD`: `uv run repowise update`.
+6. `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/find_skill.py" --door-check`. Report anything missing with its install line. Never improvise a missing skill.
+7. Say in one line what comes next (section 2) and start it.
 
 ## 2. What to run, when
 
@@ -127,7 +128,7 @@ Before each step, one short paragraph: what you are about to do and why it matte
 
 ## 10. Ask first, every time
 
-**Existing files.** Outside the file a ticket is about, you do not change, move, rename or delete a file that already exists in the repo without showing the change and getting a yes for that file: name it, say in one sentence what you will do and why, show the diff, wait. One file, one yes; "yes to all of <group>" in the user's words covers that group only. Creating a file where a step says so is allowed. This overrides any template or upstream skill that says otherwise.
+**Existing files.** Outside the file a ticket is about, you do not change, move, rename or delete a file that already exists in the repo without showing the change and getting a yes for that file: name it, say in one sentence what you will do and why, show the diff, wait. One file, one yes; "yes to all of <group>" in the user's words covers that group only. Creating a file where a step says so is allowed. This overrides any template or upstream skill that says otherwise. The hooks enforce it: the harness asks the human before such an edit, once per file per session, and refuses to end your turn while an unapproved change to one is on disk; the repo's commit-msg hook needs `approved: <files>` in the message. If a hook blocks you, the answer is to show the user the change and ask, never to route around the hook.
 
 Push to main. Delete files or data. Migrate anything but a local test database. Add a dependency. Change a public interface or schema. Spend money. Anything the ticket calls a one-way door. A hook blocks force-push, hard reset, history rewrite and `--no-verify` outright.
 

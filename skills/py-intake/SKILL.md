@@ -17,7 +17,7 @@ This holds for every step below and overrides anything a template or an upstream
 
 1. Name the file and say in one sentence what you will do to it and why (merge these keys, append this section, move this content to that file, replace the body with a one-line include).
 2. Show the change: the diff, or for a merge the resulting file with the new parts marked.
-3. Wait for a yes. No yes, no change; record the file under `later` and move on. The user may say "yes to all of <group>" in their own words; that covers the group they named and nothing else.
+3. Wait for a yes. The harness will ask as well when you make the edit: that prompt is the mechanical yes, this one is where you explain. No yes, no change; record the file under `later` and move on. The user may say "yes to all of <group>" in their own words; that covers the group they named and nothing else.
 4. After the change, say what changed, in one line.
 
 A repo is "existing" when it has any commit before this session. In a repo with none, create freely and still show what you wrote. Never batch changes to several existing files behind one question, and never let a step "just fix" a file because a later step needs it that way: stop, explain, ask.
@@ -91,8 +91,8 @@ Call the Skill tool with "py-baseline" and follow its application rules: merge, 
 
 1. **Packaging.** No `pyproject.toml` and no other packaging: `uv init --package`, `uv python pin <version>`. Already on uv: nothing. On something else (`setup.py`, `requirements*.txt`, `Pipfile`, `poetry.lock`): do not touch it. Adopting uv is a decision, so it becomes the first baseline ticket, with the migration steps in the body (`uv init` beside the existing config, `uv add` from the requirements, `uv lock`, run the suite, then remove the old files), and the rest of this step waits until that ticket is done. Say so.
 2. `[tool.*]` tables from `templates/pyproject-tools.toml`; `[dependency-groups] dev` from the same file; `uv sync`. Existing tables: merge missing keys only, show the result.
-3. `.pre-commit-config.yaml`, `uv run pre-commit install`, `uv run detect-secrets scan > .secrets.baseline`. An existing pre-commit config gets our hooks appended, shown first.
-4. `scripts/repowise_gate.py`, `scripts/adr_sync.py`, `scripts/run_readme_blocks.py`.
+3. `.pre-commit-config.yaml`, `uv run pre-commit install` (the template installs the pre-commit and commit-msg stages), `uv run detect-secrets scan > .secrets.baseline`. An existing pre-commit config gets our hooks appended, shown first.
+4. `scripts/repowise_gate.py`, `scripts/adr_sync.py`, `scripts/run_readme_blocks.py`, `scripts/check_protected_commit.py`.
 5. **CI.** No workflow yet: `.github/workflows/ci.yml` on a GitHub remote, `.gitlab-ci.yml` on GitLab, both when there is no remote. A workflow already exists: never edit it. Add ours beside it as `.github/workflows/python-dev-checks.yml`, or on GitLab a `python-dev-checks.yml` that the user includes from `.gitlab-ci.yml` (that one-line include is a change to their file: show it, ask). Their pipeline keeps running; ours adds pre-commit on changed lines and the change gate.
 6. `.env.example`; `.gitignore` gets `.env`, `.repowise/`, `coverage.lcov`, `.mutmut-cache/`; `.secrets.baseline` stays tracked. An existing `.gitignore` is a change: show the lines you will add.
 7. `CONTEXT.md` from the template if absent; `docs/adr/` with the template as `docs/adr/README.md`.
@@ -165,7 +165,8 @@ Copilot's cloud agent on github.com cannot run intake or grilling and installs n
 1. `uv run pre-commit run --all-files` and `uv run pytest -m "not eval"`; show the output; on brownfield, red is recorded as the first tickets, not fixed now.
 2. Commit in groups with messages that name the decision (`intake: baseline tool tables`, `intake: ADR 1, adapters never normalise`, ...). Never one commit called "setup". Every existing file the commit touches was approved by name; the message says so (`approved: pyproject.toml, .gitignore`).
 3. ADK 1.x found in step 1: say that `adk-migrate` is the first ticket and create it.
-4. Say in one line what comes next (the persona's table) and start it: greenfield, `grill-with-docs` on the user's idea; brownfield, `improve-codebase-architecture` on the worst file, or the first `later` ticket the user wants back.
+4. Say this once, in these words or close to them: "The protected-file guard stays on. From now on the harness asks you before I change an agent file, packaging, a check, CI or a doc, once per file per session, and a commit touching one must name it as approved. To turn it off, tell me and I will change `protect-existing-files` to `off` in `docs/agents/mode.md`; the harness will ask you to confirm that edit. `PYTHON_DEV_GUARD=off` turns it off for one session without changing the repo."
+5. Say in one line what comes next (the persona's table) and start it: greenfield, `grill-with-docs` on the user's idea; brownfield, `improve-codebase-architecture` on the worst file, or the first `later` ticket the user wants back.
 
 ## 11. `later`
 

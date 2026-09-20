@@ -1,11 +1,18 @@
 #!/usr/bin/env python3
-"""Stop hook: do not let the turn end while ruff is red on the Python files this session changed.
+"""Stop hook: the turn does not end with unapproved changes to protected files, or with red ruff.
 
-Runs `uv run ruff check` on the modified and untracked .py files. If it fails,
-blocks the stop with the first lines of output so the agent fixes them. Runs
-only in a repo that has a pyproject.toml with a [tool.ruff] table (the baseline),
-never blocks twice in a row (honours stop_hook_active), and exits 0 silently on
-any error of its own.
+Two checks, in this order:
+
+1. `git status` lists a tracked, protected file (every tracked file while intake
+   is running) as modified, deleted or renamed, and no approved edit to it was
+   recorded this session. Block, naming the files: revert them, or redo the change
+   through the edit tool so the harness can ask the human.
+2. `uv run ruff check` is red on the .py files this session changed, in a repo
+   that has the baseline ([tool.ruff] in pyproject.toml). Block with the first
+   lines of output.
+
+Honours stop_hook_active (Claude Code) so it never blocks twice in a row; Copilot
+caps block loops itself. Exits 0 silently on any error of its own.
 """
 
 from __future__ import annotations
@@ -15,8 +22,10 @@ import subprocess
 import sys
 from pathlib import Path
 
+import _common as c
 
-def changed_python_files() -> list[str]:
+
+def status_lines() -> list[str]:
     out = subprocess.run(
         ["git", "status", "--porcelain", "--untracked-files=all"],
         capture_output=True,
@@ -24,8 +33,26 @@ def changed_python_files() -> list[str]:
         timeout=10,
         check=False,
     ).stdout
+    return out.splitlines()
+
+
+def unapproved_protected(lines: list[str], session: str, mode: str) -> list[str]:
+    if mode == "off":
+        return []
+    done = c.approved(session)
+    found: list[str] = []
+    for line in lines:
+        code, path = line[:2], line[3:].split(" -> ")[-1].strip()
+        if code.strip() in ("", "??"):
+            continue  # untracked: creating files is allowed
+        if c.needs_approval(path, mode) and path not in done:
+            found.append(path)
+    return sorted(found)
+
+
+def changed_python_files(lines: list[str]) -> list[str]:
     files = []
-    for line in out.splitlines():
+    for line in lines:
         path = line[3:].split(" -> ")[-1].strip()
         if path.endswith(".py") and Path(path).exists():
             files.append(path)
@@ -46,15 +73,36 @@ def run_ruff(prefix: list[str], files: list[str]) -> subprocess.CompletedProcess
         return None
 
 
+def block(reason: str) -> None:
+    json.dump({"decision": "block", "reason": reason}, sys.stdout)
+
+
 def main() -> int:
     try:
-        payload = json.load(sys.stdin)
+        payload = c.read_payload()
         if payload.get("stop_hook_active"):
             return 0
+        if c.repo_root() is None:
+            return 0
+        lines = status_lines()
+
+        pending = unapproved_protected(lines, c.session_id(payload), c.guard_mode())
+        if pending:
+            block(
+                "python-dev: these existing protected files were changed without the human's "
+                "approval this session:\n  " + "\n  ".join(pending) + "\n"
+                "Do not end the turn like this. For each file: revert it "
+                "(`git checkout -- <file>`) and, if the change is wanted, show the user what "
+                "will change and why, then make it through the edit tool so the harness can "
+                "ask them. A command that must write the file (`uv add`, "
+                "`repowise generate-claude-md`) is run only after that explanation."
+            )
+            return 0
+
         pyproject = Path("pyproject.toml")
         if not pyproject.exists() or "[tool.ruff" not in pyproject.read_text(encoding="utf-8"):
             return 0
-        files = changed_python_files()
+        files = changed_python_files(lines)
         if not files:
             return 0
         result = run_ruff(["uv", "run", "--no-sync", "ruff"], files)
@@ -63,16 +111,12 @@ def main() -> int:
         if result is None or result.returncode != 1 or not result.stdout.strip():
             return 0  # clean, or ruff itself could not run: never block on our own failure
         head = "\n".join(result.stdout.splitlines()[:15])
+        block(
+            "ruff is red on files changed this session. Fix these before stopping "
+            "(never with --no-verify or by editing the rule):\n" + head
+        )
     except Exception:  # noqa: BLE001 - a hook must fail open
         return 0
-    json.dump(
-        {
-            "decision": "block",
-            "reason": "ruff is red on files changed this session. Fix these before stopping "
-            "(never with --no-verify or by editing the rule):\n" + head,
-        },
-        sys.stdout,
-    )
     return 0
 
 
