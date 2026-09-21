@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.1 (2026-09-21)
+
+- **Voice, for a user who does not code.** Persona section 8 rewritten as rules: one sentence before a step and one after, nothing when nothing changed; a technical word gets a plain word beside it once; a command's result is a verdict, not pasted output; a question is one line with the recommended answer and its cost; a number only when it changes a decision; no preamble, praise or menus. The persona's opening and description say who the user is. Intake's read-back is one message, one or two sentences per item, instead of six paragraphs.
+
 ## 0.8.0 (2026-09-21)
 
 The branch is the guard. The per-file guard is gone.

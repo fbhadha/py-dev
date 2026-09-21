@@ -5,7 +5,7 @@ description: "Set up a Python repo for python-dev or re-orient in one: explore, 
 
 # Python intake
 
-Run once per repo, and again whenever you come back after a long gap. Every step has a "done when" test, so re-running skips what is already there. Guide voice throughout: before each step, one plain paragraph on what you are about to do and why; after it, one on what changed.
+Run once per repo, and again whenever you come back after a long gap. Every step has a "done when" test, so re-running skips what is already there. Voice throughout (persona section 8): before each step, one sentence on what and why; after it, one on what changed.
 
 `py-intake later`: skip to step 11.
 
@@ -43,7 +43,7 @@ Establish facts from the repo, never by guessing. Present them as one table and 
 
 ## 2. Mode
 
-Done when `docs/agents/mode.md` exists. Write it from `../py-baseline/templates/mode.md`. Say in one sentence what guide mode means: you explain before and after every step, and nothing runs unattended until a ticket earns it.
+Done when `docs/agents/mode.md` exists. Write it from `../py-baseline/templates/mode.md`. Say in one sentence what guide mode means: one line before and after each step on what and why, and nothing runs unattended until a ticket earns it.
 
 ## 3. Agent files
 
@@ -120,7 +120,7 @@ Read, in this order, and say nothing until you have all of it:
 4. Decisions: `uv run repowise decision candidates` and `uv run repowise decision health` (ungoverned hotspots).
 5. Doc drift: `uv run repowise doc-drift`.
 
-Then tell the user what the repo is, in six short paragraphs, using its own names: what it does and where a run starts; how it is layered, or that it is not; the three worst files and the one marker that makes each bad, in plain words ("this file talks to the database inside a loop, once per row"); what nothing uses; which files keep getting bug-fixed and have no decision governing them; which docs point at things that no longer exist. No scores without the sentence that explains them.
+Then tell the user what the repo is, in one message, one or two sentences per item, using its own names: what it does and where a run starts; how it is layered, or that it is not; the three worst files and the one marker that makes each bad, in plain words ("this file talks to the database inside a loop, once per row"); what nothing uses; which files keep getting bug-fixed and have no decision governing them; which docs point at things that no longer exist. No scores without the sentence that explains them.
 
 Now the grill. Call the Skill tool with "grilling". The questions come from what Repowise surfaced and from step 3, one at a time, each with your recommended answer and its cost:
 
