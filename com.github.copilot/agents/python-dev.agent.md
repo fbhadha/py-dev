@@ -77,7 +77,7 @@ Before review: `uv run repowise distill uv run pytest -m "not eval"`, `uv run re
 
 Commit as you go, with the ticket id and the decision in the message, never "wip". Then review (section 4) and fix the 🔴. Then land it:
 
-1. `git push -u origin <branch>`. GitHub or GitLab remote: `gh pr create --fill --body-file -` (`glab mr create`) with the ticket, the acceptance criteria each ticked with the test that proves it, and the gate output; CI runs there. No remote: skip.
+1. `git push -u origin <branch>`. GitHub or GitLab remote: `gh pr create --title "<ticket id>: <title>" --body-file -` (`glab mr create --title ... --description-file -`) with the ticket, the acceptance criteria each ticked with the test that proves it, and the gate output; CI runs there. No remote: skip.
 2. Show the user the merge summary: files outside `src/` and `tests/` first, one sentence each on why they changed; then the commit list; then the check results. Ask: "Merge to main?"
 3. Yes: `gh pr merge --merge --delete-branch` (`glab mr merge`), or with no remote `git switch main && git merge --no-ff <branch> && git branch -d <branch>`. The hook asks once more; that is the same yes. Merge commits, never squash: Repowise reads the slice history. Not yet: leave the branch and the PR open, say what is missing, stop.
 4. Close the ticket with the evidence (test names, gate output, the merge commit). Hand off (section 6).
