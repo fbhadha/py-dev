@@ -13,6 +13,10 @@
   - the rendered Copilot agents under com.github.copilot/agents/ match what
     scripts/render_agents.py would write
   - every JSON file (manifests, both hooks files, upstream.json) parses
+  - agents/python-dev.md stays under PERSONA_MAX_CHARS: it is the router, loaded
+    every turn, and every step list belongs in a skill it names
+  - every folder under skills/ is named by a routing row in agents/python-dev.md,
+    so nothing moved out of the persona can become unreachable
 
 Exit code is non-zero on any failure.
 
@@ -96,6 +100,35 @@ def check_rendered_agents() -> list[str]:
         print("ok  com.github.copilot/agents/*.agent.md (rendered from agents/)")
         return []
     return [line.strip() for line in result.stdout.splitlines() if line.strip()]
+
+PERSONA = ROOT / "agents" / "python-dev.md"
+PERSONA_MAX_CHARS = 10_000  # about 2,800 tokens at 3.6 characters per token, loaded every turn
+
+
+def check_persona_budget() -> list[str]:
+    """The persona is the router; the steps live in skills. CI holds that line."""
+    text = PERSONA.read_text(encoding="utf-8")
+    problems: list[str] = []
+    if len(text) > PERSONA_MAX_CHARS:
+        problems.append(
+            f"agents/python-dev.md is {len(text):,} characters; the ceiling is "
+            f"{PERSONA_MAX_CHARS:,} (about {round(PERSONA_MAX_CHARS / 3.6):,} tokens, loaded "
+            "every turn). Grow a skill, not the persona."
+        )
+    named = set(re.findall(r"Skill `([a-z0-9-]+)`", text))
+    for folder in sorted(d.name for d in (ROOT / "skills").iterdir() if d.is_dir()):
+        if folder not in named:
+            problems.append(
+                f"skills/{folder} is not named by any routing row in agents/python-dev.md, "
+                "so nothing runs it"
+            )
+    if not problems:
+        print(
+            f"ok  agents/python-dev.md: {len(text):,} of {PERSONA_MAX_CHARS:,} characters; "
+            "every skill reachable"
+        )
+    return problems
+
 
 REF_RE = re.compile(r"`?((?:templates|references|scripts)/[A-Za-z0-9_.-]+\.[a-z]+)`?")
 CALL_RE = re.compile(r"(?:Skill|File) `([a-z][a-z0-9-]+)`|Skill tool with \"([a-z][a-z0-9-]+)\"")
@@ -184,6 +217,7 @@ def main() -> int:
             print(f"ok  {agent_md.relative_to(ROOT)}")
 
     problems += check_rendered_agents()
+    problems += check_persona_budget()
     for doc in [*skill_files, *agent_files]:
         problems += check_references(doc)
 

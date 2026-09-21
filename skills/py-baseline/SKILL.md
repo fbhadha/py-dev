@@ -1,6 +1,6 @@
 ---
 name: py-baseline
-description: "The baseline every Python repo gets: layout, pyproject tool tables, pre-commit, CI, the Repowise change gate, agent docs. Use when setting up or checking a repo's tooling, checks or docs. Merges, never overwrites."
+description: "The baseline every Python repo gets: layout, pyproject tool tables, pre-commit, CI, the Repowise change gate, agent docs; and the whole-repo health step. Use when setting up or checking a repo's tooling, checks or docs, or when asked where the repo is ugly. Merges, never overwrites."
 ---
 
 # Python baseline
@@ -75,10 +75,22 @@ Repowise rules: every scripted call is `DO_NOT_TRACK=1 repowise <cmd> --no-edito
 - **`uv run` for everything.** No activated virtualenvs in docs or scripts.
 - **Repowise is a dev dependency, never a runtime one.** It is AGPL-3.0; the gate script imports it in CI and nowhere else. `DO_NOT_TRACK=1` is set in CI and listed in `.env.example`.
 
+## Health, on request
+
+```bash
+DO_NOT_TRACK=1 uv run repowise init --no-prose --no-editor-setup --no-save-key -y
+uv run repowise health --refactoring-targets
+uv run repowise dead-code --safe-only
+uv run repowise doc-drift
+uv run repowise decision health
+```
+
+Report, in this order: the worst files with one plain sentence each on the marker that makes them bad; files safe to delete; docs that name things that no longer exist; hotspots no ADR governs. Write no report file; `repowise health --trend` is the history. Mutation testing (`uv run mutmut run`) only on the module the user names. Then refresh the map: `uv run repowise generate-claude-md --stdout | sed -n '/REPOWISE:START/,/REPOWISE:END/p' > docs/agents/repowise-map.md`; Repowise is the only writer of that file, and it lands with the next merge. When the user wants the refactor, File `improve-codebase-architecture` on the worst file.
+
 ## Applying it (rules for `py-intake`)
 
 1. Work on the intake branch; say which existing file you are about to change and why, then show the result (the branch rule in `py-intake`). Merge missing keys into existing tables; leave existing values; show the merged result with the new parts marked. The user's yes is the merge. A workflow file that already exists is never edited: ours goes beside it. A repo not on `uv` gets "adopt uv" as its first ticket, not a second packaging config.
 2. Fill placeholders from the repo, never by guessing: `{{PROJECT}}` (repo name), `{{PACKAGE}}` (import name under `src/`), `{{PYTHON}}` (e.g. `3.12`), `{{PYTHON_NODOT}}` (`312`), `{{SHAPE}}`, `{{LAYERS}}`, `{{PORT}}` (per how-to), `{{NUMBER}}`, `{{TITLE}}`, `{{DATE}}` (per ADR).
 3. Brownfield: propose the baseline as tickets, one file group at a time, each green before the next.
 4. Prove each gate bites before finishing: make a violation on a scratch file, watch the gate fail, revert, watch it pass.
-5. Never `pre-commit uninstall` and never `--no-verify` (both denied by the hook). A check that blocks a commit it should not is a placement defect: file it (persona section 11) and move the check to CI in that repo, with the user's yes.
+5. Never `pre-commit uninstall` and never `--no-verify` (both denied by the hook). A check that blocks a commit it should not is a placement defect: file it (persona section 8) and move the check to CI in that repo, with the user's yes.

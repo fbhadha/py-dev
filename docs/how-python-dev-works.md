@@ -8,8 +8,8 @@ Four things, in four places.
 
 | Piece | Where | What it is |
 |---|---|---|
-| The persona | `agents/python-dev.md`, one hand-written file; each harness that needs its own agent-file format gets a copy rendered by `scripts/render_agents.py` | About a page. Who the agent is, how it talks, what it asks before doing, what it refuses, where its knowledge lives. It is the system prompt when you start `claude --agent python-dev`. It holds no procedures. |
-| Our skills | `skills/<name>/SKILL.md` | Six, loaded only when needed: `py-intake` (set a repo up or re-orient), `py-design` (the craft rules and fault catalogue), `py-baseline` (what every repo gets, with templates), `adk-migrate` (ADK 1.x to 2.x), and two reference packs, `pack-adk` and `pack-data-engineering`. |
+| The persona | `agents/python-dev.md`, one hand-written file; each harness that needs its own agent-file format gets a copy rendered by `scripts/render_agents.py` | About a page. Who the agent is, how it talks, what it asks before doing, what it refuses, where its knowledge lives. It is the system prompt when you start `claude --agent python-dev`. It holds no procedures, and CI keeps it under 10,000 characters. |
+| Our skills | `skills/<name>/SKILL.md` | Nine, loaded only when needed: `py-intake` (set a repo up or re-orient), `py-shape` (an idea to its ticket), `py-build` (a ticket to its merge), `py-review` (the four axes), `py-design` (the craft rules and fault catalogue), `py-baseline` (what every repo gets, with templates, and the health step), `adk-migrate` (ADK 1.x to 2.x), and two reference packs, `pack-adk` and `pack-data-engineering`. |
 | Upstream skills | installed from their maintainers' repos | Matt Pocock's process (grilling, research, prototype, wayfinder, spec, tickets, TDD, implement, review, handoff, wizard, teach) and Google's ADK knowledge. We call them by name and never copy them. `upstream.json` lists every name we depend on, and the entries of his AI Coding Dictionary the persona links to. Repowise is a CLI tool the persona runs at named moments, not a skill we call. |
 | The target repo's files | in your repo, written by `py-intake` | The memory. `AGENTS.md`, `CONTEXT.md`, `docs/adr/`, `docs/howto/`, `docs/architecture.md`, the tool tables, the checks, CI. They work with no plugin installed and are what a new person or a fresh session picks up cold. |
 
@@ -49,9 +49,9 @@ A **shape** is a kind of addition this repo already knows how to make: another s
 
 **An existing repo.** Same intake, with two differences. The baseline lands as tickets, one file group at a time, because turning strict checks on over ten thousand lines at once never lands. And before anything else the agent reads the repo back to you from Repowise in six plain paragraphs (what it does, how it is layered, the three worst files and why, what nothing uses, what keeps getting bug-fixed with no decision covering it, which docs point at things that no longer exist) and then grills you on what it found. Every answer becomes a term, an ADR, a dismissed candidate, or a `later` ticket.
 
-**One ticket.** The persona's build steps: name the shape and check the scope; `repowise why` and `repowise risk` on the files to be touched; search before naming anything new; agree the seams; then Matt's `implement` with `tdd` slices, tests read-only from red to green and the checks after every green; the full suite, pre-commit and the change gate before review; the review on four axes (Matt's Standards and Spec, Repowise's Change, our Craft through the `py-reviewer` agent); a commit that names the ticket and the decision; the ticket closed; a handoff for the next.
+**One ticket.** `py-build`: name the shape and check the scope; `repowise why` and `repowise risk` on the files to be touched; search before naming anything new; agree the seams; then Matt's `implement` with `tdd` slices, tests read-only from red to green and the checks after every green; the full suite, pre-commit and the change gate before review; the review on four axes (`py-review`: Matt's Standards and Spec, Repowise's Change, our Craft through the `py-reviewer` agent); a commit that names the ticket and the decision; the ticket closed; a handoff for the next.
 
-**Upkeep.** The health step is five Repowise commands and one report in plain words, pointing at the first refactoring target. Tests the user does not trust are classified by `py-design/references/test-audit.md`, with evidence, one action per test. Nothing writes a file; Repowise keeps the history.
+**Upkeep.** The health step, in `py-baseline`, is five Repowise commands and one report in plain words, pointing at the first refactoring target. Tests the user does not trust are classified by `py-design/references/test-audit.md`, with evidence, one action per test. Nothing writes a file; Repowise keeps the history.
 
 ## 5. What guide mode means
 
@@ -64,7 +64,8 @@ Before each step the agent says in one plain paragraph what it is about to do an
 | How the agent talks or what it refuses | `agents/python-dev.md` |
 | What every repo gets | `skills/py-baseline/SKILL.md` and its `templates/` |
 | The craft rules or the fault catalogue | `skills/py-design/` |
-| What the agent does at session start, how it builds, reviews, measures health, when it runs Repowise | `agents/python-dev.md`, sections 1 to 7 |
+| What the agent does at session start, and when it runs what | `agents/python-dev.md`, sections 1 and 2 |
+| How it shapes an idea, builds a ticket, reviews a diff, measures health | `skills/py-shape`, `skills/py-build`, `skills/py-review`, `skills/py-baseline` (its health step) |
 | Intake or the ADK migration | that skill's `SKILL.md` |
 | Which upstream skills we depend on | `upstream.json`, then `python scripts/check_upstream_skills.py` |
 | Domain knowledge for a kind of repo | a new `skills/pack-<domain>/` in the shape of `packs/TEMPLATE.md` |

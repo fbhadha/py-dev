@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.10.0 (2026-09-21)
+
+The persona had grown to 23,400 characters, about 6,500 tokens loaded on every turn, three quarters of what the plugin side loads at all. Grilled and decided (design decision 46):
+
+- **The persona is the router again.** It keeps identity, voice, pushback, session start, the routing table, the branch rules, session boundaries, the Repowise policy and three lines on filing a defect; it no longer carries a step list, a repeated command or a description of what the hook enforces anyway. Under 10,000 characters, about 2,800 tokens.
+- **Three skills carry the steps:** `py-shape` (an idea to its ticket: the grill, research, prototype, the wayfinder map, the shaping branch), `py-build` (a ticket to its merge: the shape, Repowise, the seams, `implement` with `tdd`, the gates, the review, the merge question, the handoff) and `py-review` (the four axes). The health step lives in `py-baseline`, which already owned the gates. Nothing wraps or restates Matt Pocock's skills; ours hold only our steps and call his by name.
+- **CI holds the line.** `check_plugin.py` fails when the persona passes 10,000 characters ("grow a skill, not the persona") or when a folder under `skills/` is named by no routing row.
+- Section numbers moved: voice is section 5, the Repowise and one-place rule section 4, filing a defect section 8; `py-intake` and `py-baseline` point at the new numbers.
+
 ## 0.9.0 (2026-09-21)
 
 From aihero.dev/skills' own grouping of Matt Pocock's skills (Getting Started, The Main Flow, Shaping, Upkeep, Productivity, Reference): the Shaping group was in `upstream.json` but nothing routed to it, so an idea went from the grill to a spec whatever the fog.
