@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.4 (2026-09-21)
+
+- **Intake recognises prior use of Matt Pocock's skills and of Repowise.** Two new facts-table rows: his files (`issue-tracker.md`, `domain.md`, `triage-labels.md`, the `## Agent skills` block, `backlog/`) and Repowise's traces (`.repowise/`, the managed section, editor wiring in `.mcp.json`, stored decisions with no ADR behind them, last sync). Step 4 runs his skill only for the missing piece; step 6 never re-runs `init` on an existing index, keeps the user's wiring, and confirms in one line before touching either; step 7 asks about each decision recorded in Repowise directly and turns the ones still true into ADRs, deprecating the rest.
+
 ## 0.8.3 (2026-09-21)
 
 - **Cross-references are checked in CI.** `check_plugin.py` now fails when a skill or the persona names a `templates/`, `references/` or `scripts/` file that does not exist (here, in `py-baseline`, or on a line naming the upstream skill it belongs to), calls a skill that is neither in `skills/` nor in `upstream.json`, refers to a step or section number past the last heading, or is a pack missing one of the template's six sections. This is the class of bug 0.8.2 fixed by hand; it found one more (`pack-adk` had no faults table) on its first run.

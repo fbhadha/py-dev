@@ -39,7 +39,8 @@ Establish facts from the repo, never by guessing. Present them as one table and 
 | ADK | `google-adk` in dependencies and its version: `1.x` means `adk-migrate` is the first ticket after intake; `2.x` means the `pack-adk` pack is selected. Either way install Google's skills from their repo: `npx skills@latest add google/adk-python -s adk-agent-builder,adk-architecture,adk-debug,adk-style -a '*' -y` |
 | Packs | dependencies that select a knowledge pack (`pack-adk`: google-adk 2.x; `pack-data-engineering`: dlt, pandas, polars, pyarrow, sqlalchemy, duckdb, dbt-core, pandera, pyspark, prefect, dagster, airflow). A selected pack's "extra checks" section is applied in step 5 and its name is written under `## Packs` in `AGENTS.md` |
 | Docs already there | `CONTEXT.md`, `docs/adr/`, `docs/agents/`, `docs/howto/`, `README.md` |
-| Repowise state | `.repowise/` present? `AGENTS.md` has a `REPOWISE:START` marker? |
+| Matt Pocock's skills already set up | `docs/agents/issue-tracker.md`, `docs/agents/domain.md`, `docs/agents/triage-labels.md`, an `## Agent skills` block in `AGENTS.md` or `CLAUDE.md`, a `backlog/` directory: which exist. Any of them means his setup ran before; steps 4 and 7 keep what it wrote and ask only about what is missing |
+| Repowise already in use | `.repowise/` present; `AGENTS.md` has a `REPOWISE:START` marker; `.mcp.json` or `.claude/settings.json` names repowise (the user wired the editor themselves); `uv run repowise decision list` shows decisions that have no ADR file behind them; `uv run repowise status` for when the index was last synced. Anything found means the user has used Repowise here; step 6 keeps the index and the wiring and step 7 turns stored decisions into ADRs |
 
 ## 2. Mode
 
@@ -70,7 +71,7 @@ Done when `docs/agents/issue-tracker.md` exists.
 
 The remote decides. GitHub remote: GitHub Issues. GitLab remote: GitLab Issues. No remote: Backlog.md. A public repo gets a warning that its planning will be public and the offer of Backlog.md instead.
 
-Matt Pocock's `setup-matt-pocock-skills` writes the tracker file, `docs/agents/domain.md` and the `## Agent skills` block. It is user-invoked, so the Skill tool refuses it: run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/find_skill.py" setup-matt-pocock-skills`, read the `SKILL.md` it prints, and follow it here. You already know its answers from step 1: tracker from the remote (GitHub, GitLab, or **Other: "Backlog.md, see docs/agents/issue-tracker.md"**), default triage labels, single-context, and the file for the `## Agent skills` block is `AGENTS.md`. His skill prefers `CLAUDE.md` when one exists; here `AGENTS.md` is canonical (step 3), so put the block in `AGENTS.md` and say why. Writing the block into `AGENTS.md` is a change to an existing file: show it, get the yes. Ask the user only what step 1 did not settle, and show the draft files before writing, as it says. If `docs/agents/issue-tracker.md` already exists from an earlier run of his skill, this step is done; do not run it again.
+Matt Pocock's `setup-matt-pocock-skills` writes the tracker file, `docs/agents/domain.md` and the `## Agent skills` block. It is user-invoked, so the Skill tool refuses it: run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/find_skill.py" setup-matt-pocock-skills`, read the `SKILL.md` it prints, and follow it here. You already know its answers from step 1: tracker from the remote (GitHub, GitLab, or **Other: "Backlog.md, see docs/agents/issue-tracker.md"**), default triage labels, single-context, and the file for the `## Agent skills` block is `AGENTS.md`. His skill prefers `CLAUDE.md` when one exists; here `AGENTS.md` is canonical (step 3), so put the block in `AGENTS.md` and say why. Writing the block into `AGENTS.md` is a change to an existing file: show it, get the yes. Ask the user only what step 1 did not settle, and show the draft files before writing, as it says. If `docs/agents/issue-tracker.md` already exists from an earlier run of his skill, this step is done; do not run it again. `domain.md` or the `## Agent skills` block present with the tracker file missing: say what is there, run his skill only for the missing piece, and keep his files as they are.
 
 Then, for the Backlog.md case: run `npx backlog.md init --defaults --no-git` if `backlog/config.yml` is missing, and propose replacing `docs/agents/issue-tracker.md` with `templates/issue-tracker-backlog-md.md` (the "Other" file is freeform prose; ours carries the commands the skills need). Show both, get the yes.
 
@@ -97,6 +98,8 @@ Prove each gate bites before moving on: make one violation on a scratch file (a 
 
 Done when `.repowise/` exists and `AGENTS.md` has the managed section.
 
+Already in use (step 1 found `.repowise/`): do not run `init` again; `uv run repowise update` brings the index to HEAD and `generate-claude-md` is idempotent, so only the missing piece runs. Editor wiring the user made (`.mcp.json`, hooks) stays; say once that the agent itself uses the CLI. Confirm with the user before any of it: "You have used Repowise here before; I will keep the index and your wiring and only add what is missing. Right?"
+
 ```bash
 DO_NOT_TRACK=1 uv run repowise init --no-prose --no-editor-setup --no-save-key -y
 uv run repowise generate-claude-md --output AGENTS.md
@@ -118,13 +121,14 @@ Read, in this order, and say nothing until you have all of it:
 1. The map: the `AGENTS.md` managed section (architecture, key modules, entry points), then `uv run repowise context <file>` on at most three entry points, the ones the section lists first. `context` takes files and symbols (`path.py::Name`), not directories, and its output is long; three is enough to describe the repo.
 2. Health: `uv run repowise health --refactoring-targets`.
 3. Dead code: `uv run repowise dead-code --safe-only`.
-4. Decisions: `uv run repowise decision candidates` and `uv run repowise decision health` (ungoverned hotspots).
+4. Decisions: `uv run repowise decision list` first: any accepted decision with no ADR file in `docs/adr/` was added through Repowise directly; then `uv run repowise decision candidates` and `uv run repowise decision health` (ungoverned hotspots).
 5. Doc drift: `uv run repowise doc-drift`.
 
 Then tell the user what the repo is, in one message, one or two sentences per item, using its own names: what it does and where a run starts; how it is layered, or that it is not; the three worst files and the one marker that makes each bad, in plain words ("this file talks to the database inside a loop, once per row"); what nothing uses; which files keep getting bug-fixed and have no decision governing them; which docs point at things that no longer exist. No scores without the sentence that explains them.
 
 Now the grill. Call the Skill tool with "grilling". The questions come from what Repowise surfaced and from step 3, one at a time, each with your recommended answer and its cost:
 
+- Every stored decision with no ADR behind it: "You recorded this in Repowise: <title>. Still true?" Yes: write the ADR from `templates/adr-template.md` with the same title and its paths under `## Scope`, then `uv run python scripts/adr_sync.py` (the ADR is the one write path, ADR 0005; the store entry is kept, now bound to the file). No: `uv run repowise decision deprecate <id>`.
 - Every decision candidate: "Repowise found this in `<evidence>`: <quote>. Is this a rule of the repo?" Yes: write the ADR from `templates/adr-template.md` with the paths under `## Scope`, then `uv run python scripts/adr_sync.py`. No: `uv run repowise decision dismiss <id>`. Not now: a `later` ticket.
 - Every ungoverned hotspot: "This file is fixed often and no decision covers it. Why is it shaped this way?" The answer is an ADR, a `CONTEXT.md` term, or a `later` ticket titled with the question.
 - Every prose rule carried over into `AGENTS.md` in step 3: "A check enforces this now (`<rule>`): delete the sentence?" or "Nothing enforces this. Should a check, an ADR, or neither?" Deleting the sentence is a change to `AGENTS.md`: show it, get the yes.
