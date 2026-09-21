@@ -19,14 +19,15 @@ def main() -> int:
         state = {
             "intake": "ON (repo not set up yet): each protected file needs one yes",
             "on": "ON: the protected list needs one yes per file",
+            "ask-once": "ASK-ONCE: the first protected change asks; that yes covers the session",
             "off": "OFF (docs/agents/mode.md or PYTHON_DEV_GUARD)",
         }[mode]
         sys.stdout.write(
             f"python-dev guards active. Protected-file guard {state}. "
             "Stop gate and git guard on. "
-            "To turn the file guard off: `protect-existing-files: off` in docs/agents/mode.md "
-            "(the harness will ask you to confirm that edit), "
-            "or PYTHON_DEV_GUARD=off for one session.\n"
+            "Modes: on (per file), ask-once (per session), off, set by "
+            "`protect-existing-files:` in docs/agents/mode.md (a protected edit, so the harness "
+            "asks), or PYTHON_DEV_GUARD=off for one session.\n"
         )
     except Exception:  # noqa: BLE001 - a hook must fail open
         return 0

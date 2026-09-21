@@ -7,8 +7,10 @@ commit that touches one of these files fails unless its message carries a line
 
     approved: pyproject.toml, .gitignore
 
-naming every protected file in the commit. Off when docs/agents/mode.md says
-`protect-existing-files: off` or PYTHON_DEV_GUARD=off is set.
+naming every protected file in the commit. Enforced only while docs/agents/mode.md
+says `protect-existing-files: on` (or does not exist yet, during intake): in
+ask-once mode the session's one yes already covered the change, and in off mode
+the guards stand down. PYTHON_DEV_GUARD=off also disables it.
 
 Installed by .pre-commit-config.yaml at the commit-msg stage; pre-commit passes
 the path of the message file as the only argument.
@@ -62,12 +64,13 @@ PROTECTED = (
     "scripts/run_readme_blocks.py",
     "scripts/check_protected_commit.py",
 )
-OFF_VALUES = {"off", "0", "false", "no"}
+OFF_VALUES = {"off", "0", "false", "no", "ask-once", "once", "session"}
 APPROVED_LINE = re.compile(r"^\s*approved:\s*(.+?)\s*$", re.IGNORECASE | re.MULTILINE)
 
 
 def guard_off() -> bool:
-    if os.environ.get("PYTHON_DEV_GUARD", "").strip().lower() in OFF_VALUES:
+    """True unless the mode is per-file ("on", or no mode.md yet)."""
+    if os.environ.get("PYTHON_DEV_GUARD", "").strip().lower() in {"off", "0", "false", "no"}:
         return True
     mode = Path("docs/agents/mode.md")
     if not mode.exists():

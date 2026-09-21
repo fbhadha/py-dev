@@ -46,7 +46,7 @@ def main() -> int:
                         r for r in c.changed_since_snapshot(session) if c.needs_approval(r, mode)
                     }
         if rels:
-            c.approve(c.session_id(payload), rels)
+            c.approve(c.session_id(payload), rels, mode)
     except Exception:  # noqa: BLE001 - a hook must fail open
         return 0
     return 0

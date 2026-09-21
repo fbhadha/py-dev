@@ -39,13 +39,12 @@ def status_lines() -> list[str]:
 def unapproved_protected(lines: list[str], session: str, mode: str) -> list[str]:
     if mode == "off":
         return []
-    done = c.approved(session)
     found: list[str] = []
     for line in lines:
         code, path = line[:2], line[3:].split(" -> ")[-1].strip()
         if code.strip() in ("", "??"):
             continue  # untracked: creating files is allowed
-        if c.needs_approval(path, mode) and path not in done:
+        if c.needs_approval(path, mode) and not c.is_approved(session, path):
             found.append(path)
     return sorted(found)
 

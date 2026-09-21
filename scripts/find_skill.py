@@ -9,7 +9,8 @@ door check uses it too: a skill is installed when this finds it.
 Usage:
     python3 find_skill.py grill-with-docs
     python3 find_skill.py grilling tdd code-review      # one path per line
-    python3 find_skill.py --door-check                  # every skill in upstream.json
+    python3 find_skill.py --door-check [--no-cache]     # every skill in upstream.json; a clean
+                                                        # result is cached for a day
 
 Exit codes: 0 every name was found; 1 at least one was not (the missing names
 and the directories searched go to stderr).
@@ -24,10 +25,13 @@ is <name> (some skills live in a directory named differently).
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
 import sys
+import tempfile
+import time
 from pathlib import Path
 
 HOME = Path.home()
@@ -87,9 +91,20 @@ def find(name: str) -> Path | None:
     return None
 
 
-def door_check() -> int:
-    """Check the skills in upstream.json; print what is missing and how to install it."""
+def door_check(*, use_cache: bool = True) -> int:
+    """Check the skills in upstream.json; print what is missing and how to install it.
+
+    A clean result is cached for a day per repo and upstream.json version, so a
+    session start costs one stat instead of a walk of every skill directory.
+    """
     manifest = Path(__file__).resolve().parent.parent / "upstream.json"
+    stamp_key = f"{CWD.resolve()}|{manifest.stat().st_mtime_ns}".encode()
+    stamp = Path(tempfile.gettempdir()) / "python-dev-guard" / (
+        "door-" + hashlib.sha256(stamp_key).hexdigest()[:16]
+    )
+    if use_cache and stamp.exists() and time.time() - stamp.stat().st_mtime < 86400:
+        print("door check: every upstream skill is installed (cached; --no-cache to recheck)")
+        return 0
     data = json.loads(manifest.read_text(encoding="utf-8"))
     missing = 0
     pyproject = CWD / "pyproject.toml"
@@ -105,6 +120,8 @@ def door_check() -> int:
             print(f"  install: {upstream['install']}")
     if missing == 0:
         print("door check: every upstream skill is installed")
+        stamp.parent.mkdir(parents=True, exist_ok=True)
+        stamp.touch()
     return 1 if missing else 0
 
 
@@ -112,8 +129,8 @@ def main(names: list[str]) -> int:
     if not names:
         print(__doc__, file=sys.stderr)
         return 1
-    if names == ["--door-check"]:
-        return door_check()
+    if names and names[0] == "--door-check":
+        return door_check(use_cache="--no-cache" not in names)
     missing: list[str] = []
     for name in names:
         path = find(name)

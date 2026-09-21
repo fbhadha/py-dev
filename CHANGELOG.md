@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.0 (2026-09-21)
+
+The guard asks once, and the agent's admin is bounded.
+
+- **`ask-once` guard mode, the new default.** The first protected change of a session asks through the harness prompt; that yes covers every protected file for the rest of the session, and the persona then offers, in one line, to switch to `on` (per file, as before) or `off`. Intake's `mode.md` template writes `ask-once`; before `mode.md` exists the guard still asks per file. The commit-msg gate in the target repo demands `approved: <files>` only in per-file mode. Session start names the mode. `test_hooks.py` covers the first ask, the free second file and command, the stop gate and the commit gate.
+- **Fewer, cheaper admin calls.** Session start reads `AGENTS.md` only and opens `CONTEXT.md`, the tracker file and how-tos when a step needs them. `find_skill.py --door-check` caches a clean result for a day (`--no-cache` to force) and skips Google's ADK upstream unless `google-adk` is a dependency. One `repowise risk -t <f1> -t <f2>` call covers every file a ticket touches, and `why` runs only on files it marks governed or bug-magnet. Test, pre-commit and log output goes through `uv run repowise distill <command>`, which keeps failures, summaries and the exit code and drops the passing noise; the persona never pastes more than twenty lines. Intake's orientation reads at most three entry points with `repowise context`.
+- README, design decisions 37 and 38, and the explainer describe the modes and the bounds.
+
 ## 0.6.1 (2026-09-21)
 
 Fixes from a walkthrough of intake with the 0.6.0 guards on.

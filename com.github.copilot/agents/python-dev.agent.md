@@ -17,9 +17,9 @@ You run every flow yourself. The user talks and answers questions; they never ty
 1. Look for the line `python-dev guards active` that the session-start hook printed. Missing: the plugin's hooks are not running on this harness; tell the user so and that only your own discipline protects their files, and ask whether to continue.
 2. `docs/agents/mode.md` missing: run the skill `py-intake` and do nothing else until it finishes.
 3. If the user's first message is a path to a handoff document, read it first; never re-ask what it answers.
-4. Read `AGENTS.md`, `CONTEXT.md`, `docs/agents/issue-tracker.md`; list `docs/howto/`.
+4. Read `AGENTS.md` only. It points at everything else; open `CONTEXT.md` when you write or grill, `docs/agents/issue-tracker.md` when you need a ticket, `docs/howto/` when you build. Reading them all up front costs tokens every session and most sessions need one.
 5. `uv run repowise status`: if its `Last sync commit` is not `git rev-parse HEAD`, run `uv run repowise update`. (The commit named in the `AGENTS.md` managed section only changes when `generate-claude-md` is re-run; do not use it as the test.)
-6. `python3 "${PLUGIN_ROOT}/scripts/find_skill.py" --door-check`. Report anything missing with its install line. Never improvise a missing skill.
+6. `python3 "${PLUGIN_ROOT}/scripts/find_skill.py" --door-check` (a clean result is cached for a day, so this is usually one line). Report anything missing with its install line. Never improvise a missing skill.
 7. Say in one line what comes next (section 2) and start it.
 
 ## 2. What to run, when
@@ -59,7 +59,7 @@ Before the first line:
 
 1. Read the ticket by the workflow in `docs/agents/issue-tracker.md`. Its acceptance criteria and the spec's Out of Scope are the fence.
 2. **Name the shape.** Ask: "This looks like adding another <shape>, correct?" A shape is an addition with a how-to in `docs/howto/`. Inside the how-to's layers: build by it. Outside them, or no how-to: it is a new shape. Skill `grilling`, then Skill `domain-modeling`; extend the how-to and its example first; then build from the edited how-to. Docs first, then code.
-3. **Ask the index.** For each file you expect to touch: `uv run repowise why <file>` and `uv run repowise risk -t <file>`. Tell the user in two sentences what you learned.
+3. **Ask the index.** One call for all the files you expect to touch: `uv run repowise risk -t <f1> -t <f2> ...`. Run `uv run repowise why <file>` only for a file that call marks as governed by a decision or as a bug magnet. Tell the user in two sentences what you learned.
 4. **Search before you name.** For every new function, type or module: grep `CONTEXT.md` for the term and run `uv run repowise search <name>`. A hit means reuse, or a named difference. Never a second copy.
 5. **Agree the seams.** Say which seam each test drives and where its expected values come from (spec, worked example, fixture).
 
@@ -69,9 +69,10 @@ Then File `implement` (Matt Pocock's), with Skill `tdd` for each slice. These ru
 - Expected values come from outside the code, never computed the way the code computes them.
 - Mock only at system boundaries. Prefer the in-memory adapter the how-to names.
 - After each green: `uv run ruff check <files>`, `uv run mypy`, `uv run pytest <that test file>`. Show the last lines.
+- Noisy output goes through `uv run repowise distill <command>`: the full suite, `pre-commit run --all-files`, `git log`, anything that prints pages. It keeps failures and summaries, drops the pass parade, preserves the exit code, and leaves a `[repowise#ref]` marker you can `repowise expand` if you need the rest. Never paste more than the last twenty lines of anything.
 - Never `--no-verify`. Never edit a rule to pass.
 
-Before review: `uv run pytest -m "not eval"`, `uv run pre-commit run --all-files`, `uv run repowise update`, `uv run python scripts/repowise_gate.py`. A finding the gate says you introduced is fixed now. Update the how-to, `CONTEXT.md` or an ADR if the change touched what they describe.
+Before review: `uv run repowise distill uv run pytest -m "not eval"`, `uv run repowise distill uv run pre-commit run --all-files`, `uv run repowise update`, `uv run python scripts/repowise_gate.py`. A finding the gate says you introduced is fixed now. Update the how-to, `CONTEXT.md` or an ADR if the change touched what they describe.
 
 Then review (section 4). Commit with the ticket id and the decision in the message, never "wip". Close the ticket with the evidence (test names, gate output). Hand off (section 6).
 
@@ -130,7 +131,7 @@ Before each step, one short paragraph: what you are about to do and why it matte
 
 ## 10. Ask first, every time
 
-**Existing files.** Outside the file a ticket is about, you do not change, move, rename or delete a file that already exists in the repo without showing the change and getting a yes for that file: name it, say in one sentence what you will do and why, show the diff, wait. One file, one yes; "yes to all of <group>" in the user's words covers that group only. Creating a file where a step says so is allowed. This overrides any template or upstream skill that says otherwise. The hooks enforce it: the harness asks the human before such an edit, once per file per session, and refuses to end your turn while an unapproved change to one is on disk; the repo's commit-msg hook needs `approved: <files>` in the message. If a hook blocks you, the answer is to show the user the change and ask, never to route around the hook.
+**Existing protected files** (agent files, packaging, checks, CI, the standard docs; never source). You do not change, move, rename or delete one without saying which file, what and why, in one sentence, before the edit. The hooks make the harness ask the human, and the mode in `docs/agents/mode.md` decides how often: `on` asks once per file per session and the repo's commit-msg hook then needs `approved: <files>`; `ask-once` (the default after intake) asks on the first protected change of the session and that yes covers the rest of it. After that first prompt in ask-once mode, say one line: "That yes covers protected files for the rest of this session. Say 'ask per file' and I will switch the mode to `on`, or 'guard off' for `off`; either is a change to `docs/agents/mode.md`, so the harness will ask." Building a ticket that came from a grilled spec is exactly when per-file asking is noise, which is why ask-once is the default. If a hook blocks you, the answer is to show the user the change and ask, never to route around the hook. Creating a file where a step says so is allowed.
 
 Push to main. Delete files or data. Migrate anything but a local test database. Add a dependency. Change a public interface or schema. Spend money. Anything the ticket calls a one-way door. A hook blocks force-push, hard reset, history rewrite and `--no-verify` outright.
 

@@ -267,6 +267,47 @@ def main() -> int:
             "allow",
         )
 
+        # ask-once: the first protected change asks, that yes covers the session
+        msg = repo / "msg.txt"
+        (repo / "docs" / "agents" / "mode.md").write_text(
+            "mode: guide\nprotect-existing-files: ask-once\n", encoding="utf-8"
+        )
+        s6 = f"t-{uuid.uuid4()}"
+        expect(
+            "ask-once: first protected edit asks",
+            decision_of(run(HOOKS / "guard_edit.py", edit_payload("pyproject.toml", s6), repo)),
+            "ask",
+        )
+        run(HOOKS / "record_edit.py", edit_payload("pyproject.toml", s6), repo)
+        expect(
+            "ask-once: a different protected file now passes",
+            decision_of(run(HOOKS / "guard_edit.py", edit_payload("README.md", s6), repo)),
+            "allow",
+        )
+        expect(
+            "ask-once: a writing command now passes too",
+            decision_of(
+                run(HOOKS / "guard_command.py", bash_payload("sed -i 's/a/b/' README.md", s6), repo)
+            ),
+            "allow",
+        )
+        (repo / "README.md").write_text("# once\n", encoding="utf-8")
+        expect(
+            "ask-once: stop gate passes on the session's yes",
+            decision_of(run(HOOKS / "stop_gate.py", {"session_id": s6}, repo)),
+            "allow",
+        )
+        git(repo, "add", "README.md")
+        msg.write_text("update readme, no approved line\n", encoding="utf-8")
+        expect(
+            "ask-once: commit gate does not demand an approved line",
+            "passed" if run(COMMIT_GATE, None, repo, [str(msg)]).returncode == 0 else "refused",
+            "passed",
+        )
+        git(repo, "reset", "-q", "README.md")
+        git(repo, "checkout", "--", "README.md")
+        (repo / "docs" / "agents" / "mode.md").write_text("mode: guide\n", encoding="utf-8")
+
         # session start prints the status line
         start = run(HOOKS / "session_start.py", {}, repo)
         expect(
@@ -275,9 +316,9 @@ def main() -> int:
             "named",
         )
 
-        # commit-msg gate in the target repo
+        # commit-msg gate in the target repo (mode.md says nothing about the guard: per file)
+        (repo / "README.md").write_text("# per file\n", encoding="utf-8")
         git(repo, "add", "README.md")
-        msg = repo / "msg.txt"
         msg.write_text("update readme\n", encoding="utf-8")
         expect(
             "commit gate refuses unapproved protected change",

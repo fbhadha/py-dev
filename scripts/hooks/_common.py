@@ -20,8 +20,14 @@ file it actually changed is recorded, so `uv add` rewriting `uv.lock` beside
 `ruff format`, `ruff check --fix`) never asks, and what it changed is recorded as
 approved: it is mechanical, and pre-commit runs it on every commit anyway.
 
-Turn it off: `protect-existing-files: off` in docs/agents/mode.md (itself a
-protected change, so the harness asks), or PYTHON_DEV_GUARD=off for one session.
+Three modes, from `protect-existing-files:` in docs/agents/mode.md:
+  on        every protected file needs its own yes (per file per session)
+  ask-once  the first protected change of a session asks; that yes covers the
+            rest of the session (the default intake writes, since the point after
+            intake is to build what was grilled, specified and ticketed)
+  off       the guards stand down
+Before intake has written mode.md the mode is "intake", which behaves like "on".
+PYTHON_DEV_GUARD=off turns the file guard off for one session.
 """
 
 from __future__ import annotations
@@ -75,6 +81,8 @@ PROTECTED: tuple[str, ...] = (
 
 MODE_FILE = Path("docs/agents/mode.md")
 OFF_VALUES = {"off", "0", "false", "no"}
+ONCE_VALUES = {"ask-once", "once", "session"}
+ALL = "*"
 EDIT_TOOLS = re.compile(r"edit|write|create|replace", re.IGNORECASE)
 WRITE_INDICATORS = re.compile(
     r"(^|[\s;&|(])(>>?|sed\s+-i|tee\b|cp\b|mv\b|rm\b|truncate\b|dd\b|patch\b|git\s+apply)"
@@ -159,15 +167,19 @@ def is_protected(rel: str) -> bool:
 
 
 def guard_mode() -> str:
-    """'off', 'intake' (mode.md not written yet) or 'on'. The protected list applies in both."""
+    """'off', 'intake' (mode.md not written yet), 'on' (per file) or 'ask-once' (per session)."""
     if os.environ.get("PYTHON_DEV_GUARD", "").strip().lower() in OFF_VALUES:
         return "off"
     if not MODE_FILE.exists():
         return "intake"
     for line in MODE_FILE.read_text(encoding="utf-8", errors="replace").splitlines():
         key, _, value = line.partition(":")
-        if key.strip() == "protect-existing-files" and value.strip().lower() in OFF_VALUES:
-            return "off"
+        if key.strip() == "protect-existing-files":
+            value = value.strip().lower()
+            if value in OFF_VALUES:
+                return "off"
+            if value in ONCE_VALUES:
+                return "ask-once"
     return "on"
 
 
@@ -195,9 +207,18 @@ def approved(session: str) -> set[str]:
     return set(data) if isinstance(data, list) else set()
 
 
-def approve(session: str, rels: set[str]) -> None:
+def approve(session: str, rels: set[str], mode: str | None = None) -> None:
+    """Record approved paths. In ask-once mode any approval covers the whole session."""
+    mode = mode or guard_mode()
     current = approved(session) | rels
+    if rels and mode == "ask-once":
+        current.add(ALL)
     approvals_file(session).write_text(json.dumps(sorted(current)), encoding="utf-8")
+
+
+def is_approved(session: str, rel: str) -> bool:
+    done = approved(session)
+    return ALL in done or rel in done
 
 
 def modified_tracked() -> set[str]:

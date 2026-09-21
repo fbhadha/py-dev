@@ -62,11 +62,10 @@ def unapproved_targets(command: str, session: str) -> list[str]:
     mode = c.guard_mode()
     if root is None or mode == "off":
         return []
-    done = c.approved(session)
     return sorted(
         rel
         for rel in c.command_targets(command, root)
-        if c.needs_approval(rel, mode) and rel not in done
+        if c.needs_approval(rel, mode) and not c.is_approved(session, rel)
     )
 
 
@@ -89,7 +88,11 @@ def main() -> int:
                 "python-dev: this command writes existing protected file(s): "
                 + ", ".join(f"`{rel}`" for rel in pending)
                 + ". The agent must have shown you what will change and why before you approve. "
-                "Approving is the one yes for these files this session.",
+                + (
+                    "Approving covers every protected file for the rest of this session."
+                    if c.guard_mode() == "ask-once"
+                    else "Approving is the one yes for these files this session."
+                ),
             )
     except Exception:  # noqa: BLE001 - a hook must fail open
         return 0

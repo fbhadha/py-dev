@@ -61,13 +61,13 @@ The persona says it will not change an existing file without showing you the cha
 
 | Layer | Mechanism | What it catches |
 |---|---|---|
-| Ask the human, not the model | A pre-tool hook answers `ask` when the agent is about to edit a git-tracked file on the protected list (agent files, packaging, checks, CI, standard docs; never source). The harness's own permission prompt shows you the file; approving is the one yes for that file this session, recorded by a post-tool hook. Shell commands that write those files (`sed -i`, redirection, `uv add`, `repowise generate-claude-md`) get the same prompt, and everything an approved command actually changed is covered by that yes, so `uv add` rewriting `uv.lock` does not trip the next layer. Formatters (`pre-commit run`, `ruff format`) never ask; what they rewrote is recorded as approved. | The model editing something it should have asked about |
+| Ask the human, not the model | A pre-tool hook answers `ask` when the agent is about to edit a git-tracked file on the protected list (agent files, packaging, checks, CI, standard docs; never source). The harness's own permission prompt shows you the file; approving is recorded by a post-tool hook. In the default `ask-once` mode that first yes covers every protected file for the rest of the session; in `on` mode it covers that one file. Shell commands that write those files (`sed -i`, redirection, `uv add`, `repowise generate-claude-md`) get the same prompt, and everything an approved command actually changed is covered by that yes, so `uv add` rewriting `uv.lock` does not trip the next layer. Formatters (`pre-commit run`, `ruff format`) never ask; what they rewrote is recorded as approved. | The model editing something it should have asked about |
 | The turn cannot end with an unapproved change | The stop hook runs `git status`; a modified protected file with no recorded approval blocks the turn, naming the files, until they are reverted or redone through the edit tool. | Anything the first layer's shell heuristic missed |
 | The commit gate in your repo | A commit-msg hook from the baseline refuses a commit that changes a protected file unless the message carries `approved: <files>`. Harness-independent. | Anything that reaches a commit without a visible approval |
 
 Plus the original two: destructive git (`push --force`, `reset --hard`, `rebase`, `--amend`, `--no-verify`) is denied outright, and the turn cannot end while ruff is red on files the session changed.
 
-The guards are on by default, active as soon as the plugin is installed, and a session-start hook prints `python-dev guards active` so the persona can tell when they are not. To turn the file guard off: `protect-existing-files: off` in `docs/agents/mode.md` (a protected edit, so the harness asks you to confirm), or `PYTHON_DEV_GUARD=off` for one session. The hooks fail open on any error of their own, and `scripts/test_hooks.py` drives every one of them against a scratch repo in CI.
+The guards are on by default, active as soon as the plugin is installed, and a session-start hook prints `python-dev guards active` so the persona can tell when they are not. `protect-existing-files` in `docs/agents/mode.md` sets how often it asks: `ask-once` (the default intake writes; the first protected change asks, that yes covers the session, and the persona then offers to switch), `on` (once per file per session, and the commit gate then wants `approved: <files>`), or `off`. Before intake writes the file the guard asks per file. Changing the mode is itself a protected edit, so the harness asks you to confirm; `PYTHON_DEV_GUARD=off` turns it off for one session. The point of the guard is the first prompt, not a prompt per file: by the time the agent is implementing a ticket the change was grilled, specified and ticketed with you, and asking again per file is noise. The hooks fail open on any error of their own, and `scripts/test_hooks.py` drives every one of them against a scratch repo in CI.
 
 ## How the agent decides
 
@@ -80,9 +80,10 @@ Repowise is the one store for everything derived from the code: structure, calle
 | Moment | Command |
 |---|---|
 | Session start, when the index is behind HEAD | `uv run repowise update` |
-| Before editing a file | `uv run repowise why <file>`, `uv run repowise risk -t <file>` |
+| Before editing, once per ticket | `uv run repowise risk -t <f1> -t <f2> ...` for every file the ticket touches; `why <file>` only for a file that call marks governed or bug-magnet |
 | Before naming something new | `uv run repowise search <name>` |
 | Before review | `scripts/repowise_gate.py`, `repowise risk <range>`, `repowise impacted-tests <range>` |
+| Any command that prints pages | `uv run repowise distill <command>`: keeps failures and summaries, drops the pass parade, keeps the exit code |
 | Health, on request | `health --refactoring-targets`, `dead-code --safe-only`, `doc-drift`, `decision health` |
 | Orientation, at intake | `context`, `health`, `dead-code`, `decision candidates`, `doc-drift` |
 
@@ -90,7 +91,7 @@ Never for browsing: to find or read code the agent greps and opens the file. Dec
 
 ## Context cost
 
-What a harness loads every turn from this plugin is the persona and six skill descriptions, about 3,800 tokens at 3.6 characters per token (persona ~3,400, descriptions ~400), plus the one-line guard status from the session-start hook. Skill bodies load only when a skill runs (`py-intake`, the largest, about 3,000 tokens, once per repo); `references/` files only when a skill opens them. Matt's skills add their descriptions when installed. Google's four are installed only in ADK repos. Every step is a numbered instruction or a command, so a smaller model can follow it; what a smaller model does worse is the judgement in the review's Craft axis and in grilling, and the mechanical checks do not get weaker.
+What a harness loads every turn from this plugin is the persona and six skill descriptions, about 3,800 tokens at 3.6 characters per token (persona ~3,400, descriptions ~400), plus the one-line guard status from the session-start hook. Skill bodies load only when a skill runs (`py-intake`, the largest, about 3,000 tokens, once per repo); `references/` files only when a skill opens them. Matt's skills add their descriptions when installed. Google's four are installed only in ADK repos. The rest of the session's overhead is what the persona reads and runs before real work, and each of those is bounded: session start reads `AGENTS.md` only (`CONTEXT.md`, the tracker file and a how-to are opened when a step needs them); the index is refreshed only when `repowise status` says it is behind HEAD; the upstream door check caches a clean result for a day; one `risk` call covers every file a ticket touches; test, pre-commit and log output goes through `repowise distill`, which drops the passing noise and keeps the failures; intake's orientation reads at most three entry points. Every step is a numbered instruction or a command, so a smaller model can follow it; what a smaller model does worse is the judgement in the review's Craft axis and in grilling, and the mechanical checks do not get weaker.
 
 ## What the baseline installs in your repo
 

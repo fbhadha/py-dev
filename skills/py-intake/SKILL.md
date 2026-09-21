@@ -52,7 +52,7 @@ Establish facts from the repo, never by guessing. Present them as one table and 
 
 ## 2. Mode
 
-Done when `docs/agents/mode.md` exists. Write it from `../py-baseline/templates/mode.md`. Say in one sentence what guide mode means: you explain before and after every step, and nothing runs unattended until a ticket earns it.
+Done when `docs/agents/mode.md` exists. Write it from `../py-baseline/templates/mode.md`. Say in one sentence what guide mode means: you explain before and after every step, and nothing runs unattended until a ticket earns it. Note that the file guard runs per file for the rest of intake (every protected file is shown and approved one at a time) and switches to ask-once, one yes per session, from the next session on; the template sets that.
 
 ## 3. Agent files
 
@@ -123,7 +123,7 @@ Done when `CONTEXT.md` has at least three terms from this repo and every decisio
 
 Read, in this order, and say nothing until you have all of it:
 
-1. The map: the `AGENTS.md` managed section (architecture, key modules, entry points), then `uv run repowise context <file>` on each entry point. `context` takes files and symbols (`path.py::Name`), not directories.
+1. The map: the `AGENTS.md` managed section (architecture, key modules, entry points), then `uv run repowise context <file>` on at most three entry points, the ones the section lists first. `context` takes files and symbols (`path.py::Name`), not directories, and its output is long; three is enough to describe the repo.
 2. Health: `uv run repowise health --refactoring-targets`.
 3. Dead code: `uv run repowise dead-code --safe-only`.
 4. Decisions: `uv run repowise decision candidates` and `uv run repowise decision health` (ungoverned hotspots).
@@ -162,10 +162,10 @@ Copilot's cloud agent on github.com cannot run intake or grilling and installs n
 
 ## 10. Finish
 
-1. `uv run pre-commit run --all-files` and `uv run pytest -m "not eval"`; show the output; on brownfield, red is recorded as the first tickets, not fixed now.
+1. `uv run repowise distill uv run pre-commit run --all-files` and `uv run repowise distill uv run pytest -m "not eval"`; show the distilled output; on brownfield, red is recorded as the first tickets, not fixed now.
 2. Commit in groups with messages that name the decision (`intake: baseline tool tables`, `intake: ADR 1, adapters never normalise`, ...). Never one commit called "setup". Every existing file the commit touches was approved by name; the message says so (`approved: pyproject.toml, .gitignore`).
 3. ADK 1.x found in step 1: say that `adk-migrate` is the first ticket and create it.
-4. Say this once, in these words or close to them: "The protected-file guard stays on. From now on the harness asks you before I change an agent file, packaging, a check, CI or a doc, once per file per session; a command I run that writes one asks the same way and everything it changes is covered by that yes; formatters never ask; and a commit touching one of those files must name it as approved. Source files are never guarded; the checks and the review cover them. To turn it off, tell me and I will change `protect-existing-files` to `off` in `docs/agents/mode.md`; the harness will ask you to confirm that edit. `PYTHON_DEV_GUARD=off` turns it off for one session without changing the repo."
+4. Say this once, in these words or close to them: "From the next session on, the file guard asks you once per session: the first time I would change an agent file, packaging, a check, CI or a doc, the harness asks, and that yes covers the rest of the session. Source files are never guarded; the checks and the review cover them. If you want it per file again, say so and I will set `protect-existing-files: on` in `docs/agents/mode.md`; `off` turns it off; `PYTHON_DEV_GUARD=off` turns it off for one session without changing the repo."
 5. Say in one line what comes next (the persona's table) and start it: greenfield, `grill-with-docs` on the user's idea; brownfield, `improve-codebase-architecture` on the worst file, or the first `later` ticket the user wants back.
 
 ## 11. `later`

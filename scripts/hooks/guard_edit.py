@@ -30,18 +30,19 @@ def main() -> int:
         if rel is None:
             return 0
         mode = c.guard_mode()
-        if not c.needs_approval(rel, mode) or rel in c.approved(c.session_id(payload)):
+        if not c.needs_approval(rel, mode) or c.is_approved(c.session_id(payload), rel):
             return 0
-        why = (
-            "every tracked file is protected until intake has written docs/agents/mode.md"
-            if mode == "intake"
-            else "it is on python-dev's protected list (agent files, packaging, checks, CI, docs)"
+        scope = (
+            "Approving covers every protected file for the rest of this session; "
+            "say 'ask per file' to the agent to go back."
+            if mode == "ask-once"
+            else "Approving is the one yes for this file this session."
         )
         c.decision(
             "ask",
-            f"python-dev: `{rel}` already exists in this repo and {why}. "
-            "The agent must have shown you this change and its reason before you approve. "
-            "Approving is the one yes for this file this session.",
+            f"python-dev: `{rel}` already exists in this repo and is on the protected list "
+            f"(agent files, packaging, checks, CI, docs). The agent must have shown you this "
+            f"change and its reason before you approve. {scope}",
         )
     except Exception:  # noqa: BLE001 - a hook must fail open
         return 0
