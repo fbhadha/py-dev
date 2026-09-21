@@ -39,37 +39,46 @@ DENY: list[tuple[re.Pattern[str], str]] = [
 ]
 
 
+def is_shell_tool(name: str) -> bool:
+    name = name.lower()
+    return not name or "bash" in name or "shell" in name or "terminal" in name or name == "run"
+
+
+def denied(command: str) -> str | None:
+    for pattern, label in DENY:
+        if pattern.search(command):
+            return (
+                f"python-dev blocks {label}. This is on the never list: it destroys history "
+                "the user or a teammate may depend on. Make a new commit instead, or ask the "
+                "user to run it themselves."
+            )
+    return None
+
+
+def unapproved_targets(command: str, session: str) -> list[str]:
+    root = c.repo_root()
+    mode = c.guard_mode()
+    if root is None or mode == "off":
+        return []
+    done = c.approved(session)
+    return sorted(
+        rel
+        for rel in c.command_targets(command, root)
+        if c.needs_approval(rel, mode) and rel not in done
+    )
+
+
 def main() -> int:
     try:
         payload = c.read_payload()
-        name = c.tool_name(payload).lower()
-        if name and not ("bash" in name or "shell" in name or "terminal" in name or name == "run"):
-            return 0
         command = str(c.tool_args(payload).get("command", ""))
-        if not command:
+        if not is_shell_tool(c.tool_name(payload)) or not command:
             return 0
-
-        for pattern, label in DENY:
-            if pattern.search(command):
-                c.decision(
-                    "deny",
-                    f"python-dev blocks {label}. This is on the never list: it destroys history "
-                    "the user or a teammate may depend on. Make a new commit instead, or ask the "
-                    "user to run it themselves.",
-                )
-                return 0
-
-        root = c.repo_root()
-        if root is None:
+        reason = denied(command)
+        if reason:
+            c.decision("deny", reason)
             return 0
-        mode = c.guard_mode()
-        if mode == "off":
-            return 0
-        pending = sorted(
-            rel
-            for rel in c.command_targets(command, root)
-            if c.needs_approval(rel, mode) and rel not in c.approved(c.session_id(payload))
-        )
+        pending = unapproved_targets(command, c.session_id(payload))
         if pending:
             c.decision(
                 "ask",

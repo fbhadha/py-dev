@@ -25,7 +25,8 @@ def main() -> int:
             f"python-dev guards active. Protected-file guard {state}. "
             "Stop gate and git guard on. "
             "To turn the file guard off: `protect-existing-files: off` in docs/agents/mode.md "
-            "(the harness will ask you to confirm that edit), or PYTHON_DEV_GUARD=off for one session.\n"
+            "(the harness will ask you to confirm that edit), "
+            "or PYTHON_DEV_GUARD=off for one session.\n"
         )
     except Exception:  # noqa: BLE001 - a hook must fail open
         return 0

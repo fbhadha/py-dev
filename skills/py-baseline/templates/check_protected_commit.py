@@ -19,9 +19,12 @@ from __future__ import annotations
 import fnmatch
 import os
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+GIT = shutil.which("git") or "git"
 
 PROTECTED = (
     "AGENTS.md",
@@ -78,7 +81,7 @@ def guard_off() -> bool:
 
 def staged_protected() -> list[str]:
     out = subprocess.run(
-        ["git", "diff", "--cached", "--name-only", "--diff-filter=MDR"],
+        [GIT, "diff", "--cached", "--name-only", "--diff-filter=MDR"],
         capture_output=True,
         text=True,
         check=False,

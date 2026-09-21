@@ -77,44 +77,49 @@ def block(reason: str) -> None:
     json.dump({"decision": "block", "reason": reason}, sys.stdout)
 
 
+def protected_problem(lines: list[str], session: str) -> str | None:
+    pending = unapproved_protected(lines, session, c.guard_mode())
+    if not pending:
+        return None
+    return (
+        "python-dev: these existing protected files were changed without the human's "
+        "approval this session:\n  " + "\n  ".join(pending) + "\n"
+        "Do not end the turn like this. For each file: revert it "
+        "(`git checkout -- <file>`) and, if the change is wanted, show the user what "
+        "will change and why, then make it through the edit tool so the harness can "
+        "ask them. A command that must write the file (`uv add`, "
+        "`repowise generate-claude-md`) is run only after that explanation."
+    )
+
+
+def ruff_problem(lines: list[str]) -> str | None:
+    pyproject = Path("pyproject.toml")
+    if not pyproject.exists() or "[tool.ruff" not in pyproject.read_text(encoding="utf-8"):
+        return None
+    files = changed_python_files(lines)
+    if not files:
+        return None
+    result = run_ruff(["uv", "run", "--no-sync", "ruff"], files)
+    if result is None or result.returncode not in (0, 1):
+        result = run_ruff(["ruff"], files)
+    if result is None or result.returncode != 1 or not result.stdout.strip():
+        return None  # clean, or ruff itself could not run: never block on our own failure
+    head = "\n".join(result.stdout.splitlines()[:15])
+    return (
+        "ruff is red on files changed this session. Fix these before stopping "
+        "(never with --no-verify or by editing the rule):\n" + head
+    )
+
+
 def main() -> int:
     try:
         payload = c.read_payload()
-        if payload.get("stop_hook_active"):
-            return 0
-        if c.repo_root() is None:
+        if payload.get("stop_hook_active") or c.repo_root() is None:
             return 0
         lines = status_lines()
-
-        pending = unapproved_protected(lines, c.session_id(payload), c.guard_mode())
-        if pending:
-            block(
-                "python-dev: these existing protected files were changed without the human's "
-                "approval this session:\n  " + "\n  ".join(pending) + "\n"
-                "Do not end the turn like this. For each file: revert it "
-                "(`git checkout -- <file>`) and, if the change is wanted, show the user what "
-                "will change and why, then make it through the edit tool so the harness can "
-                "ask them. A command that must write the file (`uv add`, "
-                "`repowise generate-claude-md`) is run only after that explanation."
-            )
-            return 0
-
-        pyproject = Path("pyproject.toml")
-        if not pyproject.exists() or "[tool.ruff" not in pyproject.read_text(encoding="utf-8"):
-            return 0
-        files = changed_python_files(lines)
-        if not files:
-            return 0
-        result = run_ruff(["uv", "run", "--no-sync", "ruff"], files)
-        if result is None or result.returncode not in (0, 1):
-            result = run_ruff(["ruff"], files)
-        if result is None or result.returncode != 1 or not result.stdout.strip():
-            return 0  # clean, or ruff itself could not run: never block on our own failure
-        head = "\n".join(result.stdout.splitlines()[:15])
-        block(
-            "ruff is red on files changed this session. Fix these before stopping "
-            "(never with --no-verify or by editing the rule):\n" + head
-        )
+        reason = protected_problem(lines, c.session_id(payload)) or ruff_problem(lines)
+        if reason:
+            block(reason)
     except Exception:  # noqa: BLE001 - a hook must fail open
         return 0
     return 0
