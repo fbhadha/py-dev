@@ -5,22 +5,15 @@ The skills read this file at session start. One key per line; unknown keys are i
 mode: guide
 explain: before-and-after
 unattended: never
-protect-existing-files: ask-once
 
 <!--
 mode        guide is the only mode in v1. partner is reserved.
 explain     before-and-after (default) or after-only.
 unattended  never (default), or ticket:<id> to allow one unattended run on that
-            ticket, which must come from a grilled spec and must end in a PR.
-            the agent clears the value when the run ends.
-protect-existing-files
-            ask-once (default after intake): the first time in a session the
-            agent would change an existing protected file (agent files,
-            packaging, checks, CI, docs), the harness asks you; that yes covers
-            the rest of the session. Building what was grilled, specified and
-            ticketed should not be interrupted per file.
-            on: the harness asks once per file per session, and a commit
-            touching one must say "approved: <files>". Intake runs this way.
-            off: the guards stand down.
-            Changing this line is itself a protected change, so the harness asks.
+            ticket, which must come from a grilled spec and must end in a pull
+            request. the agent clears the value when the run ends.
+
+There is no file guard to configure. Work happens on a branch; main changes only
+by a merge you said yes to, and the plugin's hook asks before anything that lands
+on main. PYTHON_DEV_GUARD=off silences that ask for one session.
 -->

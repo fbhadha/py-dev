@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.0 (2026-09-21)
+
+The branch is the guard. The per-file guard is gone.
+
+- **`main` changes only by a merge you said yes to.** The persona works on `ticket/<id>` (intake on `intake/baseline`), commits and pushes there freely, and when the ticket is done shows the diff summary (files outside `src/` and `tests/` first), the commits and the check results and asks "merge to main?". Merge commits, never squash. ADR 0006, decision 39.
+- **The hook asks only for what lands on `main`.** `guard_command.py` answers `ask` for a commit while `main` is checked out, a merge into it, a push to it, or `gh pr merge` / `glab mr merge`; on a branch nothing asks. The never list (force-push, hard reset, rebase, amend, `--no-verify`, force-delete) is denied as before. `PYTHON_DEV_GUARD=off` silences the ask, not the denies. The session-start line names the branch.
+- **Deleted:** `guard_edit.py`, `record_edit.py`, the approvals and snapshot files, the `on` / `ask-once` / `off` modes, `protect-existing-files` in `mode.md`, and the baseline's `check_protected_commit.py` commit-msg hook. The stop gate keeps only the ruff check. Both hook manifests lose the edit PreToolUse and the PostToolUse entries.
+- **Branch protection on the server**, offered at the end of intake with the exact `gh api` / `glab api` commands: no push to `main`, no merge until the CI jobs are green.
+- **Tests stay real, in CI.** New baseline script `scripts/check_test_diff.py` fails a pull request whose `tests/` diff deletes a test, adds a `skip` or `xfail`, or loses assertions, unless a commit message carries `test-override:` in the user's words. `diff-cover` at 90% on the lines a change added, in both CI templates. Decision 40.
+- `test_hooks.py` rewritten: the guard on `main` and on a branch in both payload shapes, the never list, the stop gate (blocks red ruff when ruff is on PATH), the session line, and the test-diff check on a deleted test, an added skip, fewer assertions, an override and a clean change.
+
 ## 0.7.0 (2026-09-21)
 
 The guard asks once, and the agent's admin is bounded.

@@ -1,4 +1,4 @@
-# GitLab CI. Same three jobs as ci.yml.
+# GitLab CI. Same jobs as ci.yml.
 # Merge request pipelines only, plus main.
 stages: [gate, test, review]
 
@@ -27,16 +27,26 @@ commit-gate:
   script:
     - BASE="${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$CI_COMMIT_BEFORE_SHA}"
     - uv run pre-commit run --show-diff-on-failure --from-ref "$BASE" --to-ref HEAD
+    - if [ -n "$CI_MERGE_REQUEST_DIFF_BASE_SHA" ]; then uv run python scripts/check_test_diff.py "$CI_MERGE_REQUEST_DIFF_BASE_SHA...HEAD"; fi
 
 tests:
   stage: test
   script:
-    - uv run pytest -m "not eval" --cov --cov-report=lcov:coverage.lcov --junitxml=report.xml
+    - uv run pytest -m "not eval" --cov --cov-report=lcov:coverage.lcov --cov-report=xml:coverage.xml --junitxml=report.xml
   artifacts:
     when: always
     reports:
       junit: report.xml
-    paths: [coverage.lcov]
+    paths: [coverage.lcov, coverage.xml]
+
+changed-lines-covered:
+  stage: review
+  needs: [tests]
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  script:
+    - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+    - uv run diff-cover coverage.xml --compare-branch="origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" --fail-under=90
 
 readme-commands:
   stage: test

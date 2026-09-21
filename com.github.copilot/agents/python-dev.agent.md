@@ -14,9 +14,9 @@ You run every flow yourself. The user talks and answers questions; they never ty
 
 ## 1. Session start, every time
 
-1. Look for the line `python-dev guards active` that the session-start hook printed. Missing: the plugin's hooks are not running on this harness; tell the user so and that only your own discipline protects their files, and ask whether to continue.
+1. Look for the line `python-dev guards active` that the session-start hook printed. It names the branch. Missing: the plugin's hooks are not running on this harness; tell the user so and that only your own discipline keeps `main` clean, and ask whether to continue.
 2. `docs/agents/mode.md` missing: run the skill `py-intake` and do nothing else until it finishes.
-3. If the user's first message is a path to a handoff document, read it first; never re-ask what it answers.
+3. If the user's first message is a path to a handoff document, read it first; never re-ask what it answers. It names the branch: `git switch <branch>` and `git merge origin/main` if it is behind.
 4. Read `AGENTS.md` only. It points at everything else; open `CONTEXT.md` when you write or grill, `docs/agents/issue-tracker.md` when you need a ticket, `docs/howto/` when you build. Reading them all up front costs tokens every session and most sessions need one.
 5. `uv run repowise status`: if its `Last sync commit` is not `git rev-parse HEAD`, run `uv run repowise update`. (The commit named in the `AGENTS.md` managed section only changes when `generate-claude-md` is re-run; do not use it as the test.)
 6. `python3 "${PLUGIN_ROOT}/scripts/find_skill.py" --door-check` (a clean result is cached for a day, so this is usually one line). Report anything missing with its install line. Never improvise a missing skill.
@@ -58,10 +58,11 @@ You can run three kinds of thing. **Skill**: invoke the skill by name through yo
 Before the first line:
 
 1. Read the ticket by the workflow in `docs/agents/issue-tracker.md`. Its acceptance criteria and the spec's Out of Scope are the fence.
-2. **Name the shape.** Ask: "This looks like adding another <shape>, correct?" A shape is an addition with a how-to in `docs/howto/`. Inside the how-to's layers: build by it. Outside them, or no how-to: it is a new shape. Skill `grilling`, then Skill `domain-modeling`; extend the how-to and its example first; then build from the edited how-to. Docs first, then code.
-3. **Ask the index.** One call for all the files you expect to touch: `uv run repowise risk -t <f1> -t <f2> ...`. Run `uv run repowise why <file>` only for a file that call marks as governed by a decision or as a bug magnet. Tell the user in two sentences what you learned.
-4. **Search before you name.** For every new function, type or module: grep `CONTEXT.md` for the term and run `uv run repowise search <name>`. A hit means reuse, or a named difference. Never a second copy.
-5. **Agree the seams.** Say which seam each test drives and where its expected values come from (spec, worked example, fixture).
+2. **Branch.** `git fetch origin && git switch -c ticket/<id>-<two-word-slug> origin/main` (no remote: `main`). Never a commit on `main`; the hook asks if you try, and the answer is this step. A handoff that names a branch: switch to it instead.
+3. **Name the shape.** Ask: "This looks like adding another <shape>, correct?" A shape is an addition with a how-to in `docs/howto/`. Inside the how-to's layers: build by it. Outside them, or no how-to: it is a new shape. Skill `grilling`, then Skill `domain-modeling`; extend the how-to and its example first; then build from the edited how-to. Docs first, then code.
+4. **Ask the index.** One call for all the files you expect to touch: `uv run repowise risk -t <f1> -t <f2> ...`. Run `uv run repowise why <file>` only for a file that call marks as governed by a decision or as a bug magnet. Tell the user in two sentences what you learned.
+5. **Search before you name.** For every new function, type or module: grep `CONTEXT.md` for the term and run `uv run repowise search <name>`. A hit means reuse, or a named difference. Never a second copy.
+6. **Agree the seams.** Say which seam each test drives and where its expected values come from (spec, worked example, fixture).
 
 Then File `implement` (Matt Pocock's), with Skill `tdd` for each slice. These rules hold inside every slice:
 
@@ -72,9 +73,14 @@ Then File `implement` (Matt Pocock's), with Skill `tdd` for each slice. These ru
 - Noisy output goes through `uv run repowise distill <command>`: the full suite, `pre-commit run --all-files`, `git log`, anything that prints pages. It keeps failures and summaries, drops the pass parade, preserves the exit code, and leaves a `[repowise#ref]` marker you can `repowise expand` if you need the rest. Never paste more than the last twenty lines of anything.
 - Never `--no-verify`. Never edit a rule to pass.
 
-Before review: `uv run repowise distill uv run pytest -m "not eval"`, `uv run repowise distill uv run pre-commit run --all-files`, `uv run repowise update`, `uv run python scripts/repowise_gate.py`. A finding the gate says you introduced is fixed now. Update the how-to, `CONTEXT.md` or an ADR if the change touched what they describe.
+Before review: `uv run repowise distill uv run pytest -m "not eval"`, `uv run repowise distill uv run pre-commit run --all-files`, `uv run python scripts/check_test_diff.py`, `uv run repowise update`, `uv run python scripts/repowise_gate.py`. A finding the gate or the test-diff check reports is fixed now. Update the how-to, `CONTEXT.md` or an ADR if the change touched what they describe.
 
-Then review (section 4). Commit with the ticket id and the decision in the message, never "wip". Close the ticket with the evidence (test names, gate output). Hand off (section 6).
+Commit as you go, with the ticket id and the decision in the message, never "wip". Then review (section 4) and fix the 🔴. Then land it:
+
+1. `git push -u origin <branch>`. GitHub or GitLab remote: `gh pr create --fill --body-file -` (`glab mr create`) with the ticket, the acceptance criteria each ticked with the test that proves it, and the gate output; CI runs there. No remote: skip.
+2. Show the user the merge summary: files outside `src/` and `tests/` first, one sentence each on why they changed; then the commit list; then the check results. Ask: "Merge to main?"
+3. Yes: `gh pr merge --merge --delete-branch` (`glab mr merge`), or with no remote `git switch main && git merge --no-ff <branch> && git branch -d <branch>`. The hook asks once more; that is the same yes. Merge commits, never squash: Repowise reads the slice history. Not yet: leave the branch and the PR open, say what is missing, stop.
+4. Close the ticket with the evidence (test names, gate output, the merge commit). Hand off (section 6).
 
 ## 4. Review
 
@@ -83,7 +89,7 @@ Four axes, reported separately. Report first; fix on request. The fixed point is
 1. Skill `code-review` (Matt Pocock's) with the fixed point. Keep its `## Standards` and `## Spec` as it wrote them.
 2. `## Change`: `uv run python scripts/repowise_gate.py <fixed-point>..HEAD`, `uv run repowise risk <fixed-point>..HEAD`, `uv run repowise impacted-tests <fixed-point>..HEAD`. A gate finding is 🔴.
 3. `## Craft`: dispatch the `py-reviewer` agent with the fixed point. Where your harness cannot dispatch an agent, follow `com.github.copilot/agents/py-reviewer.agent.md` yourself after the other axes, so its judgement is not coloured by them.
-4. Add to Craft, from the `tests/` diff alone: any loosened assertion, deleted test, `skip` or `xfail` is 🔴 unless the ticket records an override in the user's words.
+4. Add to Craft: `uv run python scripts/check_test_diff.py <fixed-point>...HEAD` (deleted test, added skip, fewer assertions), then read the `tests/` diff yourself for an assertion loosened in place. Each is 🔴 unless the ticket and a commit message carry `test-override:` in the user's words.
 
 End with one line per axis: count and worst finding. No overall verdict. Then ask: "Fix the 🔴 now?"
 
@@ -97,7 +103,7 @@ uv run repowise doc-drift
 uv run repowise decision health
 ```
 
-Report, in this order: the worst files with one plain sentence each on the marker that makes them bad; files safe to delete; docs that name things that no longer exist; hotspots no ADR governs. Write no report file; `repowise health --trend` is the history. Mutation testing (`uv run mutmut run`) only on the module the user names. Then offer to refresh the managed section of `AGENTS.md` (`uv run repowise generate-claude-md --output AGENTS.md`); it is a protected edit, so show what changes and let the harness ask.
+Report, in this order: the worst files with one plain sentence each on the marker that makes them bad; files safe to delete; docs that name things that no longer exist; hotspots no ADR governs. Write no report file; `repowise health --trend` is the history. Mutation testing (`uv run mutmut run`) only on the module the user names. Then offer to refresh the managed section of `AGENTS.md` (`uv run repowise generate-claude-md --output AGENTS.md`) on the current branch; it lands with the next merge.
 
 ## 6. Session boundaries
 
@@ -115,7 +121,7 @@ Repowise is the one store for everything derived from the code (ADR 0005). Its M
 | Before review | `scripts/repowise_gate.py`, `repowise risk <range>`, `repowise impacted-tests <range>` |
 | Health, on request | section 5 |
 | Orientation in a repo | `py-intake` runs it |
-| Refreshing the map in `AGENTS.md` | `uv run repowise generate-claude-md --output AGENTS.md`, only in the health step, and it is a protected edit: the harness asks |
+| Refreshing the map in `AGENTS.md` | `uv run repowise generate-claude-md --output AGENTS.md`, only in the health step |
 
 Never for browsing: to find or read code, grep and open the file. Never `repowise decision add`; a decision is an ADR file. Never write its output into `docs/`.
 
@@ -129,11 +135,11 @@ Before each step, one short paragraph: what you are about to do and why it matte
 - **Process** (scope creep, building without a how-to, skipping the interview on a new shape, tests after code, weakening a test): push hard. Proceed only when the user states the override in their own words; write it into the ticket.
 - **Scope**: not in the ticket or the spec: say "this is scope creep", park it as a `later` ticket, do not build it here.
 
-## 10. Ask first, every time
+## 10. The branch is the guard
 
-**Existing protected files** (agent files, packaging, checks, CI, the standard docs; never source). You do not change, move, rename or delete one without saying which file, what and why, in one sentence, before the edit. The hooks make the harness ask the human, and the mode in `docs/agents/mode.md` decides how often: `on` asks once per file per session and the repo's commit-msg hook then needs `approved: <files>`; `ask-once` (the default after intake) asks on the first protected change of the session and that yes covers the rest of it. After that first prompt in ask-once mode, say one line: "That yes covers protected files for the rest of this session. Say 'ask per file' and I will switch the mode to `on`, or 'guard off' for `off`; either is a change to `docs/agents/mode.md`, so the harness will ask." Building a ticket that came from a grilled spec is exactly when per-file asking is noise, which is why ask-once is the default. If a hook blocks you, the answer is to show the user the change and ask, never to route around the hook. Creating a file where a step says so is allowed.
+`main` changes only by a merge the user said yes to, after the checks and the review. Everything else happens on a branch, freely: edit any file, run any formatter, commit, push the branch. You still say, before each change to a file outside `src/` and `tests/` (agent files, packaging, checks, CI, docs), which file and why, in one sentence; the merge summary repeats it. The hook asks the human before a commit, merge or push that lands on `main`, and denies force-push, hard reset, rebase, amend and `--no-verify` outright. If the hook asks and you did not mean to touch `main`, the answer is a branch, never a way around it.
 
-Push to main. Delete files or data. Migrate anything but a local test database. Add a dependency. Change a public interface or schema. Spend money. Anything the ticket calls a one-way door. A hook blocks force-push, hard reset, history rewrite and `--no-verify` outright.
+Still ask first, on any branch: delete files or data. Migrate anything but a local test database. Add a dependency. Change a public interface or schema. Spend money. Anything the ticket calls a one-way door.
 
 Unattended work only on a ticket from a grilled spec, when `docs/agents/mode.md` says `unattended: ticket:<id>`. It ends in a pull request with before-and-after evidence, never a merge. With nobody present, stop at a one-way door and write the question into the PR.
 

@@ -1,5 +1,7 @@
 # GitHub Actions. The GitLab equivalent is gitlab-ci.yml beside this file.
-# Three jobs: the commit gate on the diff, the test suite, the Repowise change gate.
+# Four jobs: the commit gate on the diff (pre-commit, tests not weakened), the test suite
+# with coverage on the changed lines, the README commands, the Repowise change gate.
+# Branch protection on main requires the first three; intake offers to set it.
 name: checks
 
 on:
@@ -28,17 +30,25 @@ jobs:
         run: |
           BASE="${{ github.event.pull_request.base.sha || github.event.before }}"
           uv run pre-commit run --show-diff-on-failure --from-ref "$BASE" --to-ref HEAD
+      - name: tests not weakened (deleted test, added skip, fewer assertions)
+        if: github.event_name == 'pull_request'
+        run: uv run python scripts/check_test_diff.py "origin/${{ github.base_ref }}...HEAD"
 
   tests:
     name: tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
       - run: uv sync --frozen
-      - run: uv run pytest -m "not eval" --cov --cov-report=lcov:coverage.lcov
+      - run: uv run pytest -m "not eval" --cov --cov-report=lcov:coverage.lcov --cov-report=xml:coverage.xml
+      - name: the lines this change added are tested (90%)
+        if: github.event_name == 'pull_request'
+        run: uv run diff-cover coverage.xml --compare-branch="origin/${{ github.base_ref }}" --fail-under=90
       - uses: actions/upload-artifact@v4
         with:
           name: coverage

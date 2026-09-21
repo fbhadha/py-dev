@@ -9,18 +9,9 @@ Run once per repo, and again whenever you come back after a long gap. Every step
 
 `py-intake later`: skip to step 11.
 
-## The rule for existing files
+## The branch rule
 
-This holds for every step below and overrides anything a template or an upstream skill says.
-
-**You do not change, move, rename or delete a file that already exists without showing the change and getting a yes for that file.** Creating a file that does not exist is allowed where a step says so. Everything else goes through this, one file at a time:
-
-1. Name the file and say in one sentence what you will do to it and why (merge these keys, append this section, move this content to that file, replace the body with a one-line include).
-2. Show the change: the diff, or for a merge the resulting file with the new parts marked.
-3. Wait for a yes. The harness will ask as well when you make the edit: that prompt is the mechanical yes, this one is where you explain. No yes, no change; record the file under `later` and move on. The user may say "yes to all of <group>" in their own words; that covers the group they named and nothing else.
-4. After the change, say what changed, in one line.
-
-A repo is "existing" when it has any commit before this session. In a repo with none, create freely and still show what you wrote. Never batch changes to several existing files behind one question, and never let a step "just fix" a file because a later step needs it that way: stop, explain, ask.
+Intake runs on a branch, `intake/baseline`, and lands on `main` by one merge the user says yes to at the end (step 10). Create it first: `git switch -c intake/baseline` (a repo with no commits yet: make the first commit, `init`, on `main`; the hook asks once; then branch). On the branch you change files freely, and for every existing file you still say, before the change, which file and what you will do to it in one sentence, then show the result with the new parts marked. Nobody waits per file; the diff at the merge is where the user says yes. Never let a step "just fix" a file because a later step needs it that way without saying so.
 
 ## Door check, before anything
 
@@ -52,7 +43,7 @@ Establish facts from the repo, never by guessing. Present them as one table and 
 
 ## 2. Mode
 
-Done when `docs/agents/mode.md` exists. Write it from `../py-baseline/templates/mode.md`. Say in one sentence what guide mode means: you explain before and after every step, and nothing runs unattended until a ticket earns it. Note that the file guard runs per file for the rest of intake (every protected file is shown and approved one at a time) and switches to ask-once, one yes per session, from the next session on; the template sets that.
+Done when `docs/agents/mode.md` exists. Write it from `../py-baseline/templates/mode.md`. Say in one sentence what guide mode means: you explain before and after every step, and nothing runs unattended until a ticket earns it.
 
 ## 3. Agent files
 
@@ -64,7 +55,7 @@ Done when `AGENTS.md` exists with the pointer block from `../py-baseline/templat
 |---|---|
 | Neither file | Create `AGENTS.md` from the template and `CLAUDE.md` as `@AGENTS.md`. |
 | `AGENTS.md` with content, no `CLAUDE.md` | Change `AGENTS.md`: the pointer block above the existing content, nothing else touched. Create `CLAUDE.md`. |
-| `CLAUDE.md` with content, no `AGENTS.md` | Create `AGENTS.md`: the pointer block, then a heading `## Carried over from CLAUDE.md` with the content unchanged. Change `CLAUDE.md` to the one line. Two files, two approvals. |
+| `CLAUDE.md` with content, no `AGENTS.md` | Create `AGENTS.md`: the pointer block, then a heading `## Carried over from CLAUDE.md` with the content unchanged. Change `CLAUDE.md` to the one line. |
 | Both with content | Create nothing. Change `AGENTS.md`: pointer block on top, then `## Carried over from CLAUDE.md` with that content below the existing content. Change `CLAUDE.md` to the one line. |
 | `.github/copilot-instructions.md` with content | Change `AGENTS.md`: `## Carried over from copilot-instructions.md` with the content. Change the original to one line, `See AGENTS.md.`; Copilot reads `AGENTS.md` natively. |
 | `.cursorrules`, `.cursor/rules/`, `GEMINI.md` | Leave them. Say once that they exist and that `AGENTS.md` now holds the shared rules; folding them in is the user's call, as a `later` ticket. |
@@ -87,13 +78,13 @@ Then, for the Backlog.md case: run `npx backlog.md init --defaults --no-git` if 
 
 Done when every row of the files table in `py-baseline` exists and `uv run pre-commit run --all-files` runs (red is fine on brownfield; "cannot run" is not).
 
-Call the Skill tool with "py-baseline" and follow its application rules: merge, never overwrite; fill placeholders from step 1; every change to an existing file goes through the rule above. In order:
+Call the Skill tool with "py-baseline" and follow its application rules: merge, never overwrite; fill placeholders from step 1; every change to an existing file is announced and shown as the branch rule says. In order:
 
 1. **Packaging.** No `pyproject.toml` and no other packaging: `uv init --package`, `uv python pin <version>`. Already on uv: nothing. On something else (`setup.py`, `requirements*.txt`, `Pipfile`, `poetry.lock`): do not touch it. Adopting uv is a decision, so it becomes the first baseline ticket, with the migration steps in the body (`uv init` beside the existing config, `uv add` from the requirements, `uv lock`, run the suite, then remove the old files), and the rest of this step waits until that ticket is done. Say so.
 2. `[tool.*]` tables from `templates/pyproject-tools.toml`; `[dependency-groups] dev` from the same file; `uv sync`. Existing tables: merge missing keys only, show the result.
-3. `.pre-commit-config.yaml`, `uv run pre-commit install` (the template installs the pre-commit and commit-msg stages), `uv run detect-secrets scan > .secrets.baseline`. An existing pre-commit config gets our hooks appended, shown first.
-4. `scripts/repowise_gate.py`, `scripts/adr_sync.py`, `scripts/run_readme_blocks.py`, `scripts/check_protected_commit.py`.
-5. **CI.** No workflow yet: `.github/workflows/ci.yml` on a GitHub remote, `.gitlab-ci.yml` on GitLab, both when there is no remote. A workflow already exists: never edit it. Add ours beside it as `.github/workflows/python-dev-checks.yml`, or on GitLab a `python-dev-checks.yml` that the user includes from `.gitlab-ci.yml` (that one-line include is a change to their file: show it, ask). Their pipeline keeps running; ours adds pre-commit on changed lines and the change gate.
+3. `.pre-commit-config.yaml`, `uv run pre-commit install`, `uv run detect-secrets scan > .secrets.baseline`. An existing pre-commit config gets our hooks appended, shown first.
+4. `scripts/repowise_gate.py`, `scripts/adr_sync.py`, `scripts/run_readme_blocks.py`, `scripts/check_test_diff.py`.
+5. **CI.** No workflow yet: `.github/workflows/ci.yml` on a GitHub remote, `.gitlab-ci.yml` on GitLab, both when there is no remote. A workflow already exists: never edit it. Add ours beside it as `.github/workflows/python-dev-checks.yml`, or on GitLab a `python-dev-checks.yml` that the user includes from `.gitlab-ci.yml` (that one-line include is a change to their file: show it, ask). Their pipeline keeps running; ours adds pre-commit on changed lines, the test-diff check, coverage on changed lines and the change gate.
 6. `.env.example`; `.gitignore` gets `.env`, `.repowise/`, `coverage.lcov`, `.mutmut-cache/`; `.secrets.baseline` stays tracked. An existing `.gitignore` is a change: show the lines you will add.
 7. `CONTEXT.md` from the template if absent; `docs/adr/` with the template as `docs/adr/README.md`.
 
@@ -163,10 +154,21 @@ Copilot's cloud agent on github.com cannot run intake or grilling and installs n
 ## 10. Finish
 
 1. `uv run repowise distill uv run pre-commit run --all-files` and `uv run repowise distill uv run pytest -m "not eval"`; show the distilled output; on brownfield, red is recorded as the first tickets, not fixed now.
-2. Commit in groups with messages that name the decision (`intake: baseline tool tables`, `intake: ADR 1, adapters never normalise`, ...). Never one commit called "setup". Every existing file the commit touches was approved by name; the message says so (`approved: pyproject.toml, .gitignore`).
+2. Commit in groups with messages that name the decision (`intake: baseline tool tables`, `intake: ADR 1, adapters never normalise`, ...). Never one commit called "setup".
 3. ADK 1.x found in step 1: say that `adk-migrate` is the first ticket and create it.
-4. Say this once, in these words or close to them: "From the next session on, the file guard asks you once per session: the first time I would change an agent file, packaging, a check, CI or a doc, the harness asks, and that yes covers the rest of the session. Source files are never guarded; the checks and the review cover them. If you want it per file again, say so and I will set `protect-existing-files: on` in `docs/agents/mode.md`; `off` turns it off; `PYTHON_DEV_GUARD=off` turns it off for one session without changing the repo."
-5. Say in one line what comes next (the persona's table) and start it: greenfield, `grill-with-docs` on the user's idea; brownfield, `improve-codebase-architecture` on the worst file, or the first `later` ticket the user wants back.
+4. Land it. `git push -u origin intake/baseline`; on GitHub or GitLab, `gh pr create` (`glab mr create`) with the list of what intake wrote and changed, so CI runs on it. Show the merge summary (files that existed before, one sentence each; then the new files; then the check results) and ask: "Merge to main?" Yes: `gh pr merge --merge --delete-branch` (`glab mr merge`), or with no remote `git switch main && git merge --no-ff intake/baseline && git branch -d intake/baseline`. The hook asks once more; same yes.
+5. After the merge, one question: "Protect `main` on the server, so nothing lands there except a merge with green checks, from any tool or person?" Yes, GitHub:
+
+   ```bash
+   gh api -X PUT "repos/{owner}/{repo}/branches/main/protection" --input - <<'JSON'
+   {"required_status_checks":{"strict":true,"contexts":["commit gate on the diff","tests","README commands still run"]},
+    "enforce_admins":false,"required_pull_request_reviews":null,"restrictions":null}
+   JSON
+   ```
+
+   GitLab: `glab api -X POST "projects/:id/protected_branches" -f name=main -f push_access_level=0 -f merge_access_level=30` and `glab api -X PUT "projects/:id" -f only_allow_merge_if_pipeline_succeeds=true`. No remote: nothing to set; the hook is the guard.
+6. Say this once, in these words or close to them: "From here on I work on a branch per ticket and never on `main`. When a ticket is done I show you the diff and the checks and ask to merge; that yes is the one approval. The hook asks you before anything that lands on `main`, so nothing gets there by accident."
+7. Say in one line what comes next (the persona's table) and start it: greenfield, `grill-with-docs` on the user's idea; brownfield, `improve-codebase-architecture` on the worst file, or the first `later` ticket the user wants back.
 
 ## 11. `later`
 

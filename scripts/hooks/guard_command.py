@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
-"""PreToolUse guard for the shell tool.
+"""PreToolUse guard for the shell tool: main changes only by a merge the human said yes to.
 
 Denied outright (no asking): force-push, hard reset, history rewrite, --no-verify,
 force-deleting a branch. These are on the persona's never list.
 
-Asked (the harness prompts the human): a command that would write a protected,
-tracked file without going through the edit tool: a redirection, `sed -i`, `tee`,
-`cp`, `mv`, `rm`, `uv add`, `uv init`, `uv python pin`, `repowise
-generate-claude-md`, and so on. Before any shell command runs, the set of files
-git already reports modified is snapshotted, so record_edit.py can tell exactly
-which tracked files the command changed and record them once it was approved.
-Formatters never ask. This is a heuristic; stop_gate.py catches what it misses.
+Asked (the harness prompts the human): anything that lands on main. A commit while
+main is checked out, a merge into main (checked out, or switched to in the same
+command), a push to main (explicit, or a bare push while on main), and merging a
+pull or merge request from the command line (`gh pr merge`, `glab mr merge`). On
+a branch, nothing asks: commit, push and merging main into the branch are free.
 
 Reads either harness's payload. Any failure exits 0 with no output.
 """
@@ -22,23 +20,32 @@ import sys
 
 import _common as c
 
+GIT = r"\bgit\b[^|;&]*"
 DENY: list[tuple[re.Pattern[str], str]] = [
     (
         re.compile(
-            r"\bgit\b[^|;&]*\bpush\b[^|;&]*(\s--force(-with-lease)?\b|\s-f\b|\s-[a-zA-Z]*f[a-zA-Z]*\b)"
+            GIT + r"\bpush\b[^|;&]*(\s--force(-with-lease)?\b|\s-f\b|\s-[a-zA-Z]*f[a-zA-Z]*\b)"
         ),
         "force-push",
     ),
-    (re.compile(r"\bgit\b[^|;&]*\breset\b[^|;&]*\s--hard\b"), "hard reset"),
-    (re.compile(r"\bgit\b[^|;&]*\brebase\b"), "history rewrite (rebase)"),
-    (re.compile(r"\bgit\b[^|;&]*\bcommit\b[^|;&]*\s--amend\b"), "history rewrite (amend)"),
-    (re.compile(r"\bgit\b[^|;&]*\b(filter-branch|filter-repo)\b"), "history rewrite"),
+    (re.compile(GIT + r"\breset\b[^|;&]*\s--hard\b"), "hard reset"),
+    (re.compile(GIT + r"\brebase\b"), "history rewrite (rebase)"),
+    (re.compile(GIT + r"\bcommit\b[^|;&]*\s--amend\b"), "history rewrite (amend)"),
+    (re.compile(GIT + r"\b(filter-branch|filter-repo)\b"), "history rewrite"),
     (
-        re.compile(r"\bgit\b[^|;&]*\b(commit|push|merge)\b[^|;&]*\s(--no-verify|-n)\b"),
+        re.compile(GIT + r"\b(commit|push|merge)\b[^|;&]*\s(--no-verify|-n)\b"),
         "skipping the commit hooks",
     ),
-    (re.compile(r"\bgit\b[^|;&]*\bbranch\b[^|;&]*\s-D\b"), "force-deleting a branch"),
+    (re.compile(GIT + r"\bbranch\b[^|;&]*\s-D\b"), "force-deleting a branch"),
 ]
+
+MAIN = r"(main|master|trunk)"
+COMMIT = re.compile(GIT + r"\bcommit\b")
+MERGE = re.compile(GIT + r"\bmerge\b")
+PUSH = re.compile(GIT + r"\bpush\b")
+PUSH_TO_MAIN = re.compile(GIT + r"\bpush\b[^|;&]*\s(\S+\s+)?(\S+:)?" + MAIN + r"\b")
+SWITCH_TO_MAIN = re.compile(GIT + r"\b(switch|checkout)\s+(-q\s+)?" + MAIN + r"\b")
+PR_MERGE = re.compile(r"\b(gh\s+pr\s+merge|glab\s+mr\s+merge)\b")
 
 
 def is_shell_tool(name: str) -> bool:
@@ -57,16 +64,18 @@ def denied(command: str) -> str | None:
     return None
 
 
-def unapproved_targets(command: str, session: str) -> list[str]:
-    root = c.repo_root()
-    mode = c.guard_mode()
-    if root is None or mode == "off":
-        return []
-    return sorted(
-        rel
-        for rel in c.command_targets(command, root)
-        if c.needs_approval(rel, mode) and not c.is_approved(session, rel)
-    )
+def lands_on_main(command: str, branch: str) -> str | None:
+    """What this command would do to main, or None when it stays on a branch."""
+    on_main = c.is_main(branch) or bool(SWITCH_TO_MAIN.search(command))
+    if PR_MERGE.search(command):
+        return "merge a pull request into main"
+    if MERGE.search(command) and on_main:
+        return "merge into main"
+    if PUSH_TO_MAIN.search(command) or (PUSH.search(command) and on_main):
+        return "push to main"
+    if COMMIT.search(command) and on_main:
+        return "commit on main"
+    return None
 
 
 def main() -> int:
@@ -75,24 +84,20 @@ def main() -> int:
         command = str(c.tool_args(payload).get("command", ""))
         if not is_shell_tool(c.tool_name(payload)) or not command:
             return 0
-        if c.repo_root() is not None:
-            c.take_snapshot(c.session_id(payload))
         reason = denied(command)
         if reason:
             c.decision("deny", reason)
             return 0
-        pending = unapproved_targets(command, c.session_id(payload))
-        if pending:
+        if c.guard_off() or c.repo_root() is None:
+            return 0
+        action = lands_on_main(command, c.current_branch())
+        if action:
             c.decision(
                 "ask",
-                "python-dev: this command writes existing protected file(s): "
-                + ", ".join(f"`{rel}`" for rel in pending)
-                + ". The agent must have shown you what will change and why before you approve. "
-                + (
-                    "Approving covers every protected file for the rest of this session."
-                    if c.guard_mode() == "ask-once"
-                    else "Approving is the one yes for these files this session."
-                ),
+                f"python-dev: this would {action}. Main changes only by a merge you said yes "
+                "to, after the checks and the review. If this is that merge, approve it. If "
+                "the agent is committing straight to main, it should be on a branch "
+                "(`git switch -c ticket/<id>`).",
             )
     except Exception:  # noqa: BLE001 - a hook must fail open
         return 0

@@ -14,10 +14,10 @@ The skeleton every repo this agent touches ends up with, so a junior reader can 
 | `pyproject.toml` `[tool.*]` tables | ruff, ruff-format, mypy strict, import-linter layers, pytest, coverage | `templates/pyproject-tools.toml` |
 | `uv.lock`, `.python-version` | committed; CI installs with `uv sync --frozen` | created by `uv` |
 | `.pre-commit-config.yaml` | ruff, ruff-format, mypy on changed files, import-linter, pylint too-many-lines, detect-secrets | `templates/pre-commit-config.yaml` |
-| `.github/workflows/ci.yml` (or the GitLab equivalent) | pre-commit on the files the PR changed, the whole test suite, then the Repowise change gate | `templates/ci.yml`, `templates/gitlab-ci.yml` |
+| `.github/workflows/ci.yml` (or the GitLab equivalent) | pre-commit on the files the PR changed, the test-diff check, the whole test suite with coverage on the changed lines, then the Repowise change gate | `templates/ci.yml`, `templates/gitlab-ci.yml` |
 | `scripts/repowise_gate.py` | the CI change gate over Repowise's Python API | `templates/repowise_gate.py` |
 | `scripts/run_readme_blocks.py` | executes every ```bash ci``` block in `README.md` in CI | `templates/run_readme_blocks.py` |
-| `scripts/check_protected_commit.py` | commit-msg hook: a commit that changes a protected file must carry `approved: <files>` | `templates/check_protected_commit.py` |
+| `scripts/check_test_diff.py` | fails when the `tests/` diff deletes a test, adds a skip or loses assertions, unless a commit message carries `test-override:` | `templates/check_test_diff.py` |
 | `.secrets.baseline` | detect-secrets baseline, created by `uv run detect-secrets scan > .secrets.baseline` | created by `detect-secrets` |
 | `.env.example` | every key the code reads, with a comment, no values | `templates/env.example` |
 | `AGENTS.md` | pointers only, under 40 lines, above the Repowise managed section (`repowise generate-claude-md --output AGENTS.md`) | `templates/AGENTS.md` |
@@ -41,7 +41,8 @@ Two layers. Line-level tools run at commit on the changed files. Repowise (`docs
 | Prompt-shaped docstrings and comments | ruff `D401` (non-imperative docstring), `TD002`/`TD003` (a TODO must name an author and an issue), `FIX002` (no TODO left in code), `ERA001` (commented-out code) | commit |
 | Swallowed exceptions, mutable defaults, prints, string SQL, secrets | ruff `BLE`, `B`, `T20`, `S`; `detect-secrets` | commit |
 | Complexity, flags, too many parameters | ruff `C901`, `PLR091x`, `FBT` | commit |
-| An existing protected file changed without the human's yes | in-session: the plugin's hooks make the harness ask, once per file per session, and refuse to end a turn with an unapproved change; at commit: `scripts/check_protected_commit.py` needs `approved: <files>` in the message | session; commit |
+| A change lands on `main` without the human's yes | in-session: the plugin's hook asks before a commit, merge or push that lands on `main`; on the server: branch protection requiring the CI jobs, set at intake with the user's yes | session; platform |
+| New lines without a test | `diff-cover` at 90% on the lines the change added, in CI | CI |
 | Layering | `import-linter` layers contract | commit |
 | Types | `mypy --strict` on `src/` | commit |
 | A change made a touched file worse (new nesting, god class, I/O in a loop, duplication, swallowed exception) | `scripts/repowise_gate.py`: `ChangeReviewService.review()` on `origin/main..HEAD`, fails when `introduced_total > 0` | CI |
@@ -52,7 +53,7 @@ Two layers. Line-level tools run at commit on the changed files. Repowise (`docs
 | Docs that name paths, links or commands the tree no longer has | `repowise doc-drift` | health |
 | Security | `bandit` (Repowise's 16-pattern scan is a floor, not a scanner) | health |
 | Fake tests (pass on any mutation) | `mutmut`, on the module named; the score is reported in the health step and read at review, not stored | health |
-| Weakened test (assertion loosened, test deleted, skip added) | the review's Craft axis on the `tests/` diff, and a `CODEOWNERS` line on `tests/` requiring the owner's approval | review; platform |
+| Weakened test (test deleted, skip added, assertions lost) | `scripts/check_test_diff.py` in CI and before review; an assertion loosened in place is the review's Craft axis on the `tests/` diff | CI; review |
 
 ## Where Repowise reads and writes (ADR 0005 in this repo)
 
@@ -72,7 +73,7 @@ Repowise rules: every scripted call is `DO_NOT_TRACK=1 repowise <cmd> --no-edito
 
 ## Applying it (rules for `py-intake`)
 
-1. Never change an existing file without showing the change and getting a yes for that file (the rule in `py-intake`). Merge missing keys into existing tables; leave existing values; show the merged result with the new parts marked; one file, one yes. A workflow file that already exists is never edited: ours goes beside it. A repo not on `uv` gets "adopt uv" as its first ticket, not a second packaging config.
+1. Work on the intake branch; say which existing file you are about to change and why, then show the result (the branch rule in `py-intake`). Merge missing keys into existing tables; leave existing values; show the merged result with the new parts marked. The user's yes is the merge. A workflow file that already exists is never edited: ours goes beside it. A repo not on `uv` gets "adopt uv" as its first ticket, not a second packaging config.
 2. Fill placeholders from the repo, never by guessing: `{{PROJECT}}` (repo name), `{{PACKAGE}}` (import name under `src/`), `{{PYTHON}}` (e.g. `3.12`), `{{PYTHON_NODOT}}` (`312`), `{{SHAPE}}`, `{{LAYERS}}`, `{{PORT}}` (per how-to), `{{NUMBER}}`, `{{TITLE}}`, `{{DATE}}` (per ADR).
 3. Brownfield: propose the baseline as tickets, one file group at a time, each green before the next.
 4. Prove each gate bites before finishing: make a violation on a scratch file, watch the gate fail, revert, watch it pass.

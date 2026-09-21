@@ -12,6 +12,7 @@ dev = [
   "mypy>=2.3",
   "pytest>=9",
   "pytest-cov>=7",
+  "diff-cover>=9",   # coverage on the lines a change added, enforced in CI
   "import-linter>=2.15",
   "pylint>=4",
   "pre-commit>=4.6",
