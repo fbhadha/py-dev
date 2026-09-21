@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.2 (2026-09-21)
+
+- **Packs verified and wired.** `docs/research/packs.md` records every library claim in `pack-adk`, `adk-migrate`, `pack-data-engineering` and the canonical examples, checked by fetching the file at Google's pinned ADK commit, dlt `devel`, requests `main` and the cosmic python repo. All hold. Two gaps fixed: intake's facts table promised the selected pack's extra checks would be applied in the baseline step, but the step had no line for it (now sub-step 8, which also writes `## Packs` in `AGENTS.md`); `pack-adk` lacked the template's Canonical repo, Extra checks and Tests sections, so `pytest-asyncio` and `asyncio_mode = "auto"` were never installed (now listed). An unverifiable "seven other skills" count is gone.
+
 ## 0.8.1 (2026-09-21)
 
 - **Voice, for a user who does not code.** Persona section 8 rewritten as rules: one sentence before a step and one after, nothing when nothing changed; a technical word gets a plain word beside it once; a command's result is a verdict, not pasted output; a question is one line with the recommended answer and its cost; a number only when it changes a decision; no preamble, praise or menus. The persona's opening and description say who the user is. Intake's read-back is one message, one or two sentences per item, instead of six paragraphs.
