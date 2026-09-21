@@ -158,6 +158,7 @@ Copilot's cloud agent on github.com cannot run intake or grilling and installs n
 
 ## 10. Finish
 
+0. Walk the "done when" line of every step above and list the ones that do not hold; do those first. "Finish intake" from the user means finish it, not skip to the merge: in the live run the three human docs (step 8) and the harness shells (step 9) were skipped this way.
 1. `uv run repowise distill uv run pre-commit run --all-files`, `uv run lint-imports`, and `uv run repowise distill uv run pytest -m "not eval"`; show the distilled output; on brownfield, red is recorded as the first tickets, not fixed now. The commit hook checks staged files only, so intake's own commits go through while CI stays red; never `pre-commit uninstall`.
 2. Commit in groups with messages that name the decision (`intake: baseline tool tables`, `intake: ADR 1, adapters never normalise`, ...). Never one commit called "setup".
 3. ADK 1.x found in step 1: say that `adk-migrate` is the first ticket and create it.

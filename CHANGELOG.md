@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.11 (2026-09-21)
+
+- Intake's finish step starts by checking every earlier step's "done when" line. In the live run, "finish intake" made the agent skip the three human docs and the harness shells and go straight to committing.
+
 ## 0.8.10 (2026-09-21)
 
 From the same live intake run, at the finish.
