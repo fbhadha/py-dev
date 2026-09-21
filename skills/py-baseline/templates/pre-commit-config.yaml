@@ -1,4 +1,6 @@
-# Commit gate: line-level checks on the files being committed.
+# Commit gate: checks on the files being committed, never the whole program.
+# Whole-program checks (import-linter) run in CI and on demand:
+#   uv run pre-commit run import-linter --all-files --hook-stage manual
 # CI runs the same file with `--from-ref origin/main --to-ref HEAD`, so the
 # whole diff is checked and old files are left alone.
 # Install once: uv run pre-commit install
@@ -34,18 +36,18 @@ repos:
   - repo: local
     hooks:
       - id: mypy
-        name: mypy (strict, src only)
+        name: mypy (strict, the staged src files; follow_imports=silent keeps it per file)
         entry: uv run mypy
         language: system
         types: [python]
         files: ^src/
-        pass_filenames: false
       - id: import-linter
-        name: import-linter (layers)
+        name: import-linter (layers; whole program, so CI runs it, not the commit)
         entry: uv run lint-imports
         language: system
-        types: [python]
         pass_filenames: false
+        always_run: true
+        stages: [manual]
       - id: module-length
         name: pylint too-many-lines (400 src, 150 tests)
         entry: uv run pylint --disable=all --enable=too-many-lines --max-module-lines=400

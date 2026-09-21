@@ -20,8 +20,8 @@ def main() -> int:
         where = " Start a branch before changing anything." if c.is_main(branch) else ""
         sys.stdout.write(
             f"python-dev guards active. Branch: {branch}.{where} "
-            f"Main guard {guard}: a commit, merge or push that lands on main asks you first, and so does "
-            "anything sent to a repo that is not this project's origin; "
+            f"Main guard {guard}: a commit, merge or push that lands on main asks you first, "
+            "and so does anything sent to a repo that is not this project's origin; "
             "force-push, hard reset, rebase, amend and --no-verify are denied; the turn "
             "cannot end with red ruff.\n"
         )

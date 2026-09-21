@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.9 (2026-09-21)
+
+From the same live intake run, at the finish.
+
+- **Whole-program checks leave the commit hook.** The baseline promised "changed lines only" but ran `mypy` over all of `src/` and `import-linter` over the whole program on every commit, so on a brownfield repo nothing could be committed until the layering existed; the agent uninstalled the hook to land intake. Now `mypy` checks the staged files with `follow_imports = silent`, and `import-linter` is a manual-stage hook run by CI (a dedicated step in both templates) and before review. Intake offers branch protection only once CI is green on the merged intake, and files a ticket otherwise.
+- **Two more denies.** `PYTHON_DEV_GUARD=` inside a command (the agent tried it to get past the merge prompt; the variable is for a person's own shell) and `pre-commit uninstall`. Each has its own reason text saying what to do instead. The persona says what to do when no prompt can reach the user: stop and hand them the command.
+
 ## 0.8.8 (2026-09-21)
 
 Three Repowise behaviours found by running intake on a scratch repo, each verified directly, each a plugin defect until now (decision 41, research record updated).

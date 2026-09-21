@@ -76,6 +76,7 @@ python_version = "{{PYTHON}}"
 files = ["src"]
 strict = true
 warn_unreachable = true
+follow_imports = "silent"   # errors only in the files given, so the commit hook is per file
 pretty = true
 # plugins = ["pydantic.mypy"]   # py-intake uncomments when pydantic is a dependency
 

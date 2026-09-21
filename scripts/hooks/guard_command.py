@@ -2,7 +2,8 @@
 """PreToolUse guard for the shell tool: main changes only by a merge the human said yes to.
 
 Denied outright (no asking): force-push, hard reset, history rewrite, --no-verify,
-force-deleting a branch. These are on the persona's never list.
+force-deleting a branch, setting PYTHON_DEV_GUARD inside a command, and
+`pre-commit uninstall`. These are on the persona's never list.
 
 Asked (the harness prompts the human): anything that lands on main. A commit while
 main is checked out, a merge into main (checked out, or switched to in the same
@@ -43,6 +44,8 @@ DENY: list[tuple[re.Pattern[str], str]] = [
         "skipping the commit hooks",
     ),
     (re.compile(GIT + r"\bbranch\b[^|;&]*\s-D\b"), "force-deleting a branch"),
+    (re.compile(r"\bPYTHON_DEV_GUARD\s*="), "turning this guard off from inside a command"),
+    (re.compile(r"\bpre-commit\s+uninstall\b"), "uninstalling the commit gate"),
 ]
 
 MAIN = r"(main|master|trunk)"
@@ -70,6 +73,18 @@ def is_shell_tool(name: str) -> bool:
 def denied(command: str) -> str | None:
     for pattern, label in DENY:
         if pattern.search(command):
+            if "guard" in label:
+                return (
+                    f"python-dev blocks {label}. The human sets PYTHON_DEV_GUARD=off in their "
+                    "own shell before the session, or answers the prompt; when no prompt can "
+                    "reach them, stop and give them the command to run themselves."
+                )
+            if "commit gate" in label:
+                return (
+                    f"python-dev blocks {label}. A check that blocks every commit is a defect "
+                    "in the check's placement, not a reason to remove the gate: whole-program "
+                    "checks belong in CI (see py-baseline); say what blocked and stop."
+                )
             return (
                 f"python-dev blocks {label}. This is on the never list: it destroys history "
                 "the user or a teammate may depend on. Make a new commit instead, or ask the "

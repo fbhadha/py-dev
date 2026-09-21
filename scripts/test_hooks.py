@@ -176,6 +176,12 @@ def check_guard(repo: Path) -> None:
     expect("no-verify denied", guard("git commit -n -m x", repo, s), "deny")
     expect("hard reset denied", guard("git reset --hard HEAD~1", repo, s), "deny")
     expect(
+        "guard off inline denied",
+        guard("PYTHON_DEV_GUARD=off git merge --no-ff ticket/1", repo, s),
+        "deny",
+    )
+    expect("pre-commit uninstall denied", guard("uv run pre-commit uninstall", repo, s), "deny")
+    expect(
         "edit tool payload ignored by the command guard",
         decision_of(run(GUARD, {"tool_name": "Edit", "tool_input": {"file_path": "x"}}, repo)),
         "allow",

@@ -27,6 +27,7 @@ commit-gate:
   script:
     - BASE="${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$CI_COMMIT_BEFORE_SHA}"
     - uv run pre-commit run --show-diff-on-failure --from-ref "$BASE" --to-ref HEAD
+    - uv run lint-imports
     - if [ -n "$CI_MERGE_REQUEST_DIFF_BASE_SHA" ]; then uv run python scripts/check_test_diff.py "$CI_MERGE_REQUEST_DIFF_BASE_SHA...HEAD"; fi
 
 tests:

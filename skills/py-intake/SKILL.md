@@ -158,11 +158,11 @@ Copilot's cloud agent on github.com cannot run intake or grilling and installs n
 
 ## 10. Finish
 
-1. `uv run repowise distill uv run pre-commit run --all-files` and `uv run repowise distill uv run pytest -m "not eval"`; show the distilled output; on brownfield, red is recorded as the first tickets, not fixed now.
+1. `uv run repowise distill uv run pre-commit run --all-files`, `uv run lint-imports`, and `uv run repowise distill uv run pytest -m "not eval"`; show the distilled output; on brownfield, red is recorded as the first tickets, not fixed now. The commit hook checks staged files only, so intake's own commits go through while CI stays red; never `pre-commit uninstall`.
 2. Commit in groups with messages that name the decision (`intake: baseline tool tables`, `intake: ADR 1, adapters never normalise`, ...). Never one commit called "setup".
 3. ADK 1.x found in step 1: say that `adk-migrate` is the first ticket and create it.
 4. Land it. `git push -u origin intake/baseline`; on GitHub or GitLab, `gh pr create` (`glab mr create`) with the list of what intake wrote and changed, so CI runs on it. Show the merge summary (files that existed before, one sentence each; then the new files; then the check results) and ask: "Merge to main?" Yes: `gh pr merge --merge --delete-branch` (`glab mr merge`), or with no remote `git switch main && git merge --no-ff intake/baseline && git branch -d intake/baseline`. The hook asks once more; same yes.
-5. After the merge, one question: "Protect `main` on the server, so nothing lands there except a merge with green checks, from any tool or person?" Yes, GitHub:
+5. After the merge, and only when CI is green on it (or there is no remote): one question: "Protect `main` on the server, so nothing lands there except a merge with green checks, from any tool or person?" CI red on brownfield: a `later` ticket "turn on branch protection when CI is green", blocked by the layering ticket, and say so. Yes, GitHub:
 
    ```bash
    gh api -X PUT "repos/{owner}/{repo}/branches/main/protection" --input - <<'JSON'

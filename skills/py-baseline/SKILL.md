@@ -45,8 +45,8 @@ Two layers. Line-level tools run at commit on the changed files. Repowise (`docs
 | Complexity, flags, too many parameters | ruff `C901`, `PLR091x`, `FBT` | commit |
 | A change lands on `main` without the human's yes | in-session: the plugin's hook asks before a commit, merge or push that lands on `main`; on the server: branch protection requiring the CI jobs, set at intake with the user's yes | session; platform |
 | New lines without a test | `diff-cover` at 90% on the lines the change added, in CI | CI |
-| Layering | `import-linter` layers contract | commit |
-| Types | `mypy --strict` on `src/` | commit |
+| Layering | `import-linter` layers contract, whole program: CI and before review, `--hook-stage manual` locally; never in the commit hook, where it would block every commit on a brownfield repo | CI; review |
+| Types | `mypy --strict` on the staged `src/` files (`follow_imports = silent`), the whole of `src/` in the health step | commit; health |
 | A change made a touched file worse (new nesting, god class, I/O in a loop, duplication, swallowed exception) | `scripts/repowise_gate.py`: `ChangeReviewService.review()` on `origin/main..HEAD`, fails when `introduced_total > 0` | CI |
 | Health score, ranking, what to refactor first, trend | `repowise health`, `--refactoring-targets`, `--trend` (its own history; nothing written to docs) | health |
 | Duplication | `repowise health` (`dry_violation`) | health |
@@ -67,7 +67,7 @@ Repowise rules: every scripted call is `DO_NOT_TRACK=1 repowise <cmd> --no-edito
 
 - **Docstrings are not required** (`D1xx` ignored). Requiring them produces the signature-restating docstrings the prompt-comment gate exists to catch. When a docstring is present it must follow the Google convention.
 - **Tests are exempt** from `S101` (assert), `PLR2004` (magic values), `D`, `ARG` (fixtures), `FBT`.
-- **Strict from day one, changed lines only.** Pre-commit runs on staged files; CI runs pre-commit with `--from-ref origin/main --to-ref HEAD`, so old mess is tolerated and no new mess gets in. Whole-repo numbers come from the health step, not from the commit gate.
+- **Strict from day one, changed lines only.** Pre-commit runs on staged files; CI runs pre-commit with `--from-ref origin/main --to-ref HEAD`, so old mess is tolerated and no new mess gets in. The one whole-program check, import-linter, runs in CI and before review, never in the commit hook: on a brownfield repo it is red until the layering ticket lands, and a hook that blocks every commit gets uninstalled, which is worse than a red CI job. Whole-repo numbers come from the health step, not from the commit gate.
 - **`filterwarnings = ["error"]`** in pytest. A deprecation is a failing test, so it gets fixed while it is one line.
 - **mypy strict on `src/`, not on `tests/`.** With the Pydantic plugin when Pydantic is a dependency.
 - **`uv run` for everything.** No activated virtualenvs in docs or scripts.
@@ -79,3 +79,4 @@ Repowise rules: every scripted call is `DO_NOT_TRACK=1 repowise <cmd> --no-edito
 2. Fill placeholders from the repo, never by guessing: `{{PROJECT}}` (repo name), `{{PACKAGE}}` (import name under `src/`), `{{PYTHON}}` (e.g. `3.12`), `{{PYTHON_NODOT}}` (`312`), `{{SHAPE}}`, `{{LAYERS}}`, `{{PORT}}` (per how-to), `{{NUMBER}}`, `{{TITLE}}`, `{{DATE}}` (per ADR).
 3. Brownfield: propose the baseline as tickets, one file group at a time, each green before the next.
 4. Prove each gate bites before finishing: make a violation on a scratch file, watch the gate fail, revert, watch it pass.
+5. Never `pre-commit uninstall` and never `--no-verify` (both denied by the hook). A check that blocks a commit it should not is a placement defect: file it (persona section 11) and move the check to CI in that repo, with the user's yes.

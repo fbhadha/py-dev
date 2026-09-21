@@ -15,5 +15,6 @@ unattended  never (default), or ticket:<id> to allow one unattended run on that
 
 There is no file guard to configure. Work happens on a branch; main changes only
 by a merge you said yes to, and the plugin's hook asks before anything that lands
-on main. PYTHON_DEV_GUARD=off silences that ask for one session.
+on main. A person can set PYTHON_DEV_GUARD=off in their own shell before a
+session to silence that ask; set inside a command by the agent it is denied.
 -->

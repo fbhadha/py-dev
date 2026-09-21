@@ -30,6 +30,8 @@ jobs:
         run: |
           BASE="${{ github.event.pull_request.base.sha || github.event.before }}"
           uv run pre-commit run --show-diff-on-failure --from-ref "$BASE" --to-ref HEAD
+      - name: layering (import-linter, whole program; red on brownfield until the layering ticket lands)
+        run: uv run lint-imports
       - name: tests not weakened (deleted test, added skip, fewer assertions)
         if: github.event_name == 'pull_request'
         run: uv run python scripts/check_test_diff.py "origin/${{ github.base_ref }}...HEAD"
