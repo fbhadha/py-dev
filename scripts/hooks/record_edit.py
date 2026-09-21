@@ -36,7 +36,15 @@ def main() -> int:
         else:
             command = str(args.get("command", ""))
             if command:
-                rels = {r for r in c.command_targets(command, root) if c.needs_approval(r, mode)}
+                targets = {r for r in c.command_targets(command, root) if c.needs_approval(r, mode)}
+                if targets or c.is_formatter(command):
+                    # The guard asked about `targets` and the human said yes (or it is a
+                    # formatter, which never asks): every tracked file the command changed
+                    # is covered by that yes, uv.lock beside pyproject.toml included.
+                    session = c.session_id(payload)
+                    rels = targets | {
+                        r for r in c.changed_since_snapshot(session) if c.needs_approval(r, mode)
+                    }
         if rels:
             c.approve(c.session_id(payload), rels)
     except Exception:  # noqa: BLE001 - a hook must fail open

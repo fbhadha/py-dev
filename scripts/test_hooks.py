@@ -81,77 +81,230 @@ def main() -> int:
         repo = make_repo(Path(tmp))
         s1 = f"t-{uuid.uuid4()}"
 
-        # intake mode: no docs/agents/mode.md, every tracked file is protected
-        expect("intake: edit tracked pyproject asks",
-               decision_of(run(HOOKS / "guard_edit.py", edit_payload("pyproject.toml", s1), repo)), "ask")
-        expect("intake: edit tracked src/x.py asks",
-               decision_of(run(HOOKS / "guard_edit.py", edit_payload("src/x.py", s1), repo)), "ask")
-        expect("intake: write new file allowed",
-               decision_of(run(HOOKS / "guard_edit.py", edit_payload("src/new.py", s1), repo)), "allow")
-        expect("copilot payload shape asks too",
-               decision_of(run(HOOKS / "guard_edit.py", edit_payload("pyproject.toml", s1, copilot=True), repo)), "ask")
+        # before intake (no docs/agents/mode.md): the protected list applies, source never does
+        expect(
+            "intake: edit tracked pyproject asks",
+            decision_of(run(HOOKS / "guard_edit.py", edit_payload("pyproject.toml", s1), repo)),
+            "ask",
+        )
+        expect(
+            "intake: edit tracked src/x.py allowed (formatters rewrite source)",
+            decision_of(run(HOOKS / "guard_edit.py", edit_payload("src/x.py", s1), repo)),
+            "allow",
+        )
+        expect(
+            "intake: write new file allowed",
+            decision_of(run(HOOKS / "guard_edit.py", edit_payload("src/new.py", s1), repo)),
+            "allow",
+        )
+        expect(
+            "copilot payload shape asks too",
+            decision_of(
+                run(HOOKS / "guard_edit.py", edit_payload("pyproject.toml", s1, copilot=True), repo)
+            ),
+            "ask",
+        )
 
         # one yes: after a recorded edit, the same path passes
         run(HOOKS / "record_edit.py", edit_payload("pyproject.toml", s1), repo)
-        expect("after approval, pyproject passes",
-               decision_of(run(HOOKS / "guard_edit.py", edit_payload("pyproject.toml", s1), repo)), "allow")
-        expect("other session still asks",
-               decision_of(run(HOOKS / "guard_edit.py", edit_payload("pyproject.toml", "other"), repo)), "ask")
+        expect(
+            "after approval, pyproject passes",
+            decision_of(run(HOOKS / "guard_edit.py", edit_payload("pyproject.toml", s1), repo)),
+            "allow",
+        )
+        expect(
+            "other session still asks",
+            decision_of(
+                run(HOOKS / "guard_edit.py", edit_payload("pyproject.toml", "other"), repo)
+            ),
+            "ask",
+        )
 
         # shell guard
-        expect("deny force-push",
-               decision_of(run(HOOKS / "guard_command.py", bash_payload("git push --force origin main", s1), repo)), "deny")
-        expect("sed -i on tracked README asks",
-               decision_of(run(HOOKS / "guard_command.py", bash_payload("sed -i 's/a/b/' README.md", s1), repo)), "ask")
-        expect("uv add asks (pyproject) unless approved: approved above so allow",
-               decision_of(run(HOOKS / "guard_command.py", bash_payload("uv add requests", s1), repo)), "allow")
-        expect("uv add asks in a fresh session",
-               decision_of(run(HOOKS / "guard_command.py", bash_payload("uv add requests", "fresh"), repo)), "ask")
-        expect("plain ls allowed",
-               decision_of(run(HOOKS / "guard_command.py", bash_payload("ls -la", s1), repo)), "allow")
+        expect(
+            "deny force-push",
+            decision_of(
+                run(
+                    HOOKS / "guard_command.py",
+                    bash_payload("git push --force origin main", s1),
+                    repo,
+                )
+            ),
+            "deny",
+        )
+        expect(
+            "sed -i on tracked README asks",
+            decision_of(
+                run(HOOKS / "guard_command.py", bash_payload("sed -i 's/a/b/' README.md", s1), repo)
+            ),
+            "ask",
+        )
+        expect(
+            "uv add asks (pyproject) unless approved: approved above so allow",
+            decision_of(run(HOOKS / "guard_command.py", bash_payload("uv add requests", s1), repo)),
+            "allow",
+        )
+        expect(
+            "uv add asks in a fresh session",
+            decision_of(
+                run(HOOKS / "guard_command.py", bash_payload("uv add requests", "fresh"), repo)
+            ),
+            "ask",
+        )
+        expect(
+            "plain ls allowed",
+            decision_of(run(HOOKS / "guard_command.py", bash_payload("ls -la", s1), repo)),
+            "allow",
+        )
+
+        # an approved command's side effects are approved too: uv add rewrites uv.lock
+        s3 = f"t-{uuid.uuid4()}"
+        (repo / "uv.lock").write_text("lock v1\n", encoding="utf-8")
+        git(repo, "add", "uv.lock")
+        git(repo, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "lock")
+        expect(
+            "uv add asks before running",
+            decision_of(run(HOOKS / "guard_command.py", bash_payload("uv add requests", s3), repo)),
+            "ask",
+        )
+        (repo / "pyproject.toml").write_text(
+            '[project]\nname = "x"\ndependencies = ["requests"]\n', encoding="utf-8"
+        )
+        (repo / "uv.lock").write_text("lock v2\n", encoding="utf-8")
+        run(HOOKS / "record_edit.py", bash_payload("uv add requests", s3), repo)
+        expect(
+            "stop gate passes: pyproject and uv.lock covered by the one yes",
+            decision_of(run(HOOKS / "stop_gate.py", {"session_id": s3}, repo)),
+            "allow",
+        )
+        git(repo, "checkout", "--", "pyproject.toml", "uv.lock")
+
+        # a formatter never asks, and what it rewrote is approved
+        s4 = f"t-{uuid.uuid4()}"
+        expect(
+            "pre-commit run does not ask",
+            decision_of(
+                run(
+                    HOOKS / "guard_command.py",
+                    bash_payload("uv run pre-commit run --all-files", s4),
+                    repo,
+                )
+            ),
+            "allow",
+        )
+        (repo / "README.md").write_text("# x\n\n", encoding="utf-8")
+        run(HOOKS / "record_edit.py", bash_payload("uv run pre-commit run --all-files", s4), repo)
+        expect(
+            "stop gate passes after a formatter touched README",
+            decision_of(run(HOOKS / "stop_gate.py", {"session_id": s4}, repo)),
+            "allow",
+        )
+        git(repo, "checkout", "--", "README.md")
+
+        # an unknown command that rewrote a protected file still blocks at stop
+        s5 = f"t-{uuid.uuid4()}"
+        run(HOOKS / "guard_command.py", bash_payload("python3 mystery.py", s5), repo)
+        (repo / "README.md").write_text("# rewritten\n", encoding="utf-8")
+        run(HOOKS / "record_edit.py", bash_payload("python3 mystery.py", s5), repo)
+        expect(
+            "stop gate blocks a protected change from an unknown command",
+            decision_of(run(HOOKS / "stop_gate.py", {"session_id": s5}, repo)),
+            "block",
+        )
+        git(repo, "checkout", "--", "README.md")
 
         # stop gate: modified protected file without approval blocks; with approval passes
         (repo / "README.md").write_text("# changed\n", encoding="utf-8")
-        expect("stop gate blocks unapproved README change",
-               decision_of(run(HOOKS / "stop_gate.py", {"session_id": s1}, repo)), "block")
+        expect(
+            "stop gate blocks unapproved README change",
+            decision_of(run(HOOKS / "stop_gate.py", {"session_id": s1}, repo)),
+            "block",
+        )
         run(HOOKS / "record_edit.py", edit_payload("README.md", s1), repo)
-        expect("stop gate passes once README approved",
-               decision_of(run(HOOKS / "stop_gate.py", {"session_id": s1}, repo)), "allow")
+        expect(
+            "stop gate passes once README approved",
+            decision_of(run(HOOKS / "stop_gate.py", {"session_id": s1}, repo)),
+            "allow",
+        )
 
-        # after intake: mode.md exists, only the list is protected
+        # after intake: mode.md exists, the same list is protected
         (repo / "docs" / "agents").mkdir(parents=True)
-        (repo / "docs" / "agents" / "mode.md").write_text("mode: guide\nprotect-existing-files: on\n", encoding="utf-8")
+        (repo / "docs" / "agents" / "mode.md").write_text(
+            "mode: guide\nprotect-existing-files: on\n", encoding="utf-8"
+        )
         s2 = f"t-{uuid.uuid4()}"
-        expect("on: source file edit allowed",
-               decision_of(run(HOOKS / "guard_edit.py", edit_payload("src/x.py", s2), repo)), "allow")
-        expect("on: pyproject edit asks",
-               decision_of(run(HOOKS / "guard_edit.py", edit_payload("pyproject.toml", s2), repo)), "ask")
+        expect(
+            "on: source file edit allowed",
+            decision_of(run(HOOKS / "guard_edit.py", edit_payload("src/x.py", s2), repo)),
+            "allow",
+        )
+        expect(
+            "on: pyproject edit asks",
+            decision_of(run(HOOKS / "guard_edit.py", edit_payload("pyproject.toml", s2), repo)),
+            "ask",
+        )
 
         # off switches
-        (repo / "docs" / "agents" / "mode.md").write_text("mode: guide\nprotect-existing-files: off\n", encoding="utf-8")
-        expect("mode.md off: pyproject edit allowed",
-               decision_of(run(HOOKS / "guard_edit.py", edit_payload("pyproject.toml", s2), repo)), "allow")
+        (repo / "docs" / "agents" / "mode.md").write_text(
+            "mode: guide\nprotect-existing-files: off\n", encoding="utf-8"
+        )
+        expect(
+            "mode.md off: pyproject edit allowed",
+            decision_of(run(HOOKS / "guard_edit.py", edit_payload("pyproject.toml", s2), repo)),
+            "allow",
+        )
         (repo / "docs" / "agents" / "mode.md").write_text("mode: guide\n", encoding="utf-8")
-        expect("env off: pyproject edit allowed",
-               decision_of(run(HOOKS / "guard_edit.py", edit_payload("pyproject.toml", s2), repo, env={"PYTHON_DEV_GUARD": "off"})), "allow")
+        expect(
+            "env off: pyproject edit allowed",
+            decision_of(
+                run(
+                    HOOKS / "guard_edit.py",
+                    edit_payload("pyproject.toml", s2),
+                    repo,
+                    env={"PYTHON_DEV_GUARD": "off"},
+                )
+            ),
+            "allow",
+        )
 
         # session start prints the status line
         start = run(HOOKS / "session_start.py", {}, repo)
-        expect("session start names the guard", "named" if "python-dev guards active" in start.stdout else "silent", "named")
+        expect(
+            "session start names the guard",
+            "named" if "python-dev guards active" in start.stdout else "silent",
+            "named",
+        )
 
         # commit-msg gate in the target repo
         git(repo, "add", "README.md")
         msg = repo / "msg.txt"
         msg.write_text("update readme\n", encoding="utf-8")
-        expect("commit gate refuses unapproved protected change",
-               "refused" if run(COMMIT_GATE, None, repo, [str(msg)]).returncode == 1 else "passed", "refused")
+        expect(
+            "commit gate refuses unapproved protected change",
+            "refused" if run(COMMIT_GATE, None, repo, [str(msg)]).returncode == 1 else "passed",
+            "refused",
+        )
         msg.write_text("update readme\n\napproved: README.md\n", encoding="utf-8")
-        expect("commit gate passes with approved line",
-               "passed" if run(COMMIT_GATE, None, repo, [str(msg)]).returncode == 0 else "refused", "passed")
+        expect(
+            "commit gate passes with approved line",
+            "passed" if run(COMMIT_GATE, None, repo, [str(msg)]).returncode == 0 else "refused",
+            "passed",
+        )
 
         # garbage never blocks
-        broken = subprocess.run([sys.executable, str(HOOKS / "guard_edit.py")], input="not json", capture_output=True, text=True, cwd=repo, check=False)
-        expect("garbage payload fails open", "allow" if broken.returncode == 0 and not broken.stdout else "blocked", "allow")
+        broken = subprocess.run(
+            [sys.executable, str(HOOKS / "guard_edit.py")],
+            input="not json",
+            capture_output=True,
+            text=True,
+            cwd=repo,
+            check=False,
+        )
+        expect(
+            "garbage payload fails open",
+            "allow" if broken.returncode == 0 and not broken.stdout else "blocked",
+            "allow",
+        )
 
     if FAILURES:
         print("\nHOOK TESTS FAILED:")

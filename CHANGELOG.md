@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.1 (2026-09-21)
+
+Fixes from a walkthrough of intake with the 0.6.0 guards on.
+
+- **The guard no longer blocks intake.** 0.6.0 protected every tracked file until intake wrote `mode.md`, so `uv add` (which also rewrites `uv.lock`) and `pre-commit run --all-files` (which reformats tracked source) left the stop hook refusing to end the turn. Now the protected list applies before intake as well, source files are never guarded, a shell command that asked records every tracked file it actually changed (from a snapshot the guard takes before the command runs), and formatters (`pre-commit run`, `ruff format`, `ruff check --fix`) never ask. `test_hooks.py` covers all three cases plus an unknown command rewriting a protected file, which still blocks.
+- **Session start no longer re-indexes every turn.** The persona compared the commit named in the `AGENTS.md` managed section with HEAD; that commit only changes when `generate-claude-md` is re-run, so the check fired every session. It now reads `repowise status`. Refreshing the managed section is an explicit, protected edit offered at the health step.
+- **Python below 3.11.** Repowise needs 3.11; intake now says what to do in a repo pinned lower (`uv tool install`, no CI change gate, a ticket to move).
+- `.gitignore` added; a committed `__pycache__` removed. ADR 0004's body rewritten to match the code; a stale line about `.repowise/decisions.yaml` fixed; README context numbers corrected (~3,800 always loaded, not ~3,400).
+
 ## 0.6.0 (2026-09-20)
 
 The no-unapproved-change rule is enforced by hooks.

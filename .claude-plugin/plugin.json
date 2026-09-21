@@ -1,6 +1,6 @@
 {
   "name": "python-dev",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Senior Python engineer agent in guide mode. Runs Matt Pocock's process skills and Google's ADK skills by name, Repowise through its CLI, and its own Python craft, baseline and packs. Select it as your session agent.",
   "author": {
     "name": "Firdaush Bhadha"

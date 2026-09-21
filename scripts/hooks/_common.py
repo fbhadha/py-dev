@@ -3,13 +3,22 @@
 Every hook fails open: any exception in here must be caught by the caller and
 turned into "no decision", so a broken guard can never block ordinary work.
 
-The rule the guards enforce: an existing (git-tracked) file that is protected is
-not changed until the human has approved it once this session. Before intake has
-written docs/agents/mode.md, every tracked file counts as protected. After that,
-the list below does. The approval is the harness's own permission prompt: the
-pre-tool guard answers `ask`, the post-tool recorder remembers the path once the
-edit went through, and the stop gate refuses to end a turn while a protected file
-is modified without that record.
+The rule the guards enforce: an existing (git-tracked) file on the protected list
+below is not changed until the human has approved it once this session. The list
+is the same before and after intake (before, the status line says "intake" so the
+persona knows the repo is not set up yet). Source files are never on it: the
+baseline's formatters rewrite them, and the commit gate and review cover them.
+The approval is the harness's own permission prompt: the pre-tool guard answers
+`ask`, the post-tool recorder remembers the paths once the call went through, and
+the stop gate refuses to end a turn while a protected file is modified without
+that record.
+
+Shell commands: a command known to write a protected file (`uv add`, `sed -i
+README.md`, `repowise generate-claude-md`) asks, and once approved every tracked
+file it actually changed is recorded, so `uv add` rewriting `uv.lock` beside
+`pyproject.toml` does not trip the stop gate. A formatter (`pre-commit run`,
+`ruff format`, `ruff check --fix`) never asks, and what it changed is recorded as
+approved: it is mechanical, and pre-commit runs it on every commit anyway.
 
 Turn it off: `protect-existing-files: off` in docs/agents/mode.md (itself a
 protected change, so the harness asks), or PYTHON_DEV_GUARD=off for one session.
@@ -71,12 +80,15 @@ WRITE_INDICATORS = re.compile(
     r"(^|[\s;&|(])(>>?|sed\s+-i|tee\b|cp\b|mv\b|rm\b|truncate\b|dd\b|patch\b|git\s+apply)"
 )
 KNOWN_WRITERS: tuple[tuple[re.Pattern[str], tuple[str, ...]], ...] = (
-    (re.compile(r"\buv\s+(add|remove|init|lock)\b"), ("pyproject.toml",)),
+    (re.compile(r"\buv\s+(add|remove|init|lock|sync)\b"), ("pyproject.toml",)),
     (re.compile(r"\buv\s+python\s+pin\b"), (".python-version",)),
     (re.compile(r"\bpre-commit\s+autoupdate\b"), (".pre-commit-config.yaml",)),
     (re.compile(r"\bdetect-secrets\s+scan\b"), (".secrets.baseline",)),
 )
 GENERATE_MD = re.compile(r"repowise\s+generate-claude-md(?:.*?--output\s+(\S+))?")
+FORMATTERS = re.compile(
+    r"\b(pre-commit\s+run|ruff\s+format|ruff\s+check\b.*--fix|black\b|isort\b|ruff\s+--fix)"
+)
 
 
 def read_payload() -> dict:
@@ -147,7 +159,7 @@ def is_protected(rel: str) -> bool:
 
 
 def guard_mode() -> str:
-    """'off', 'intake' (every tracked file is protected) or 'on' (the list is)."""
+    """'off', 'intake' (mode.md not written yet) or 'on'. The protected list applies in both."""
     if os.environ.get("PYTHON_DEV_GUARD", "").strip().lower() in OFF_VALUES:
         return "off"
     if not MODE_FILE.exists():
@@ -163,7 +175,7 @@ def needs_approval(rel: str, mode: str | None = None) -> bool:
     mode = mode or guard_mode()
     if mode == "off" or not is_tracked(rel):
         return False
-    return True if mode == "intake" else is_protected(rel)
+    return is_protected(rel)
 
 
 def approvals_file(session: str) -> Path:
@@ -186,6 +198,44 @@ def approved(session: str) -> set[str]:
 def approve(session: str, rels: set[str]) -> None:
     current = approved(session) | rels
     approvals_file(session).write_text(json.dumps(sorted(current)), encoding="utf-8")
+
+
+def modified_tracked() -> set[str]:
+    """Repo-relative paths git reports as modified, deleted or renamed (never untracked)."""
+    out = subprocess.run(
+        ["git", "status", "--porcelain", "--untracked-files=no"],
+        capture_output=True,
+        text=True,
+        check=False,
+    ).stdout
+    found: set[str] = set()
+    for line in out.splitlines():
+        if line[:2].strip():
+            found.add(line[3:].split(" -> ")[-1].strip())
+    return found
+
+
+def snapshot_file(session: str) -> Path:
+    return approvals_file(session).with_suffix(".snapshot.json")
+
+
+def take_snapshot(session: str) -> None:
+    snapshot_file(session).write_text(json.dumps(sorted(modified_tracked())), encoding="utf-8")
+
+
+def changed_since_snapshot(session: str) -> set[str]:
+    path = snapshot_file(session)
+    before: set[str] = set()
+    if path.exists():
+        try:
+            before = set(json.loads(path.read_text(encoding="utf-8")))
+        except ValueError:
+            before = set()
+    return modified_tracked() - before
+
+
+def is_formatter(command: str) -> bool:
+    return bool(FORMATTERS.search(command))
 
 
 def command_targets(command: str, root: Path) -> set[str]:

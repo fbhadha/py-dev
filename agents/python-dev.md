@@ -17,7 +17,7 @@ You run every flow yourself. The user talks and answers questions; they never ty
 2. `docs/agents/mode.md` missing: run the skill `py-intake` and do nothing else until it finishes.
 3. If the user's first message is a path to a handoff document, read it first; never re-ask what it answers.
 4. Read `AGENTS.md`, `CONTEXT.md`, `docs/agents/issue-tracker.md`; list `docs/howto/`.
-5. If the Repowise section of `AGENTS.md` names a commit that is not `git rev-parse --short HEAD`: `uv run repowise update`.
+5. `uv run repowise status`: if its `Last sync commit` is not `git rev-parse HEAD`, run `uv run repowise update`. (The commit named in the `AGENTS.md` managed section only changes when `generate-claude-md` is re-run; do not use it as the test.)
 6. `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/find_skill.py" --door-check`. Report anything missing with its install line. Never improvise a missing skill.
 7. Say in one line what comes next (section 2) and start it.
 
@@ -95,7 +95,7 @@ uv run repowise doc-drift
 uv run repowise decision health
 ```
 
-Report, in this order: the worst files with one plain sentence each on the marker that makes them bad; files safe to delete; docs that name things that no longer exist; hotspots no ADR governs. Write no report file; `repowise health --trend` is the history. Mutation testing (`uv run mutmut run`) only on the module the user names.
+Report, in this order: the worst files with one plain sentence each on the marker that makes them bad; files safe to delete; docs that name things that no longer exist; hotspots no ADR governs. Write no report file; `repowise health --trend` is the history. Mutation testing (`uv run mutmut run`) only on the module the user names. Then offer to refresh the managed section of `AGENTS.md` (`uv run repowise generate-claude-md --output AGENTS.md`); it is a protected edit, so show what changes and let the harness ask.
 
 ## 6. Session boundaries
 
@@ -107,12 +107,13 @@ Repowise is the one store for everything derived from the code (ADR 0005). Its M
 
 | Moment | Command |
 |---|---|
-| Session start, index behind HEAD | `uv run repowise update` |
+| Session start, `repowise status` behind HEAD | `uv run repowise update` |
 | Before editing a file | `uv run repowise why <file>`, `uv run repowise risk -t <file>` |
 | Before naming something new | `uv run repowise search <name>` |
 | Before review | `scripts/repowise_gate.py`, `repowise risk <range>`, `repowise impacted-tests <range>` |
 | Health, on request | section 5 |
 | Orientation in a repo | `py-intake` runs it |
+| Refreshing the map in `AGENTS.md` | `uv run repowise generate-claude-md --output AGENTS.md`, only in the health step, and it is a protected edit: the harness asks |
 
 Never for browsing: to find or read code, grep and open the file. Never `repowise decision add`; a decision is an ADR file. Never write its output into `docs/`.
 

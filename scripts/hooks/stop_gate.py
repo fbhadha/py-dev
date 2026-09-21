@@ -3,10 +3,10 @@
 
 Two checks, in this order:
 
-1. `git status` lists a tracked, protected file (every tracked file while intake
-   is running) as modified, deleted or renamed, and no approved edit to it was
-   recorded this session. Block, naming the files: revert them, or redo the change
-   through the edit tool so the harness can ask the human.
+1. `git status` lists a tracked, protected file as modified, deleted or renamed,
+   and no approved edit to it was recorded this session. Block, naming the files:
+   revert them, or redo the change through the edit tool so the harness can ask
+   the human.
 2. `uv run ruff check` is red on the .py files this session changed, in a repo
    that has the baseline ([tool.ruff] in pyproject.toml). Block with the first
    lines of output.
@@ -88,7 +88,8 @@ def protected_problem(lines: list[str], session: str) -> str | None:
         "(`git checkout -- <file>`) and, if the change is wanted, show the user what "
         "will change and why, then make it through the edit tool so the harness can "
         "ask them. A command that must write the file (`uv add`, "
-        "`repowise generate-claude-md`) is run only after that explanation."
+        "`repowise generate-claude-md`) is run only after that explanation; once "
+        "approved, everything it changed counts as approved."
     )
 
 

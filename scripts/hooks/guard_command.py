@@ -7,8 +7,10 @@ force-deleting a branch. These are on the persona's never list.
 Asked (the harness prompts the human): a command that would write a protected,
 tracked file without going through the edit tool: a redirection, `sed -i`, `tee`,
 `cp`, `mv`, `rm`, `uv add`, `uv init`, `uv python pin`, `repowise
-generate-claude-md`, and so on. Once approved, record_edit.py remembers the
-paths for the session. This is a heuristic; stop_gate.py catches what it misses.
+generate-claude-md`, and so on. Before any shell command runs, the set of files
+git already reports modified is snapshotted, so record_edit.py can tell exactly
+which tracked files the command changed and record them once it was approved.
+Formatters never ask. This is a heuristic; stop_gate.py catches what it misses.
 
 Reads either harness's payload. Any failure exits 0 with no output.
 """
@@ -74,6 +76,8 @@ def main() -> int:
         command = str(c.tool_args(payload).get("command", ""))
         if not is_shell_tool(c.tool_name(payload)) or not command:
             return 0
+        if c.repo_root() is not None:
+            c.take_snapshot(c.session_id(payload))
         reason = denied(command)
         if reason:
             c.decision("deny", reason)

@@ -17,7 +17,7 @@ def main() -> int:
     try:
         mode = c.guard_mode()
         state = {
-            "intake": "ON, intake mode: every tracked file needs one yes",
+            "intake": "ON (repo not set up yet): each protected file needs one yes",
             "on": "ON: the protected list needs one yes per file",
             "off": "OFF (docs/agents/mode.md or PYTHON_DEV_GUARD)",
         }[mode]

@@ -6,7 +6,7 @@ It is one plugin in the [Agent Skills](https://agentskills.io) format, with a ma
 
 ## Install
 
-Prerequisites on the machine: `uv`, Python 3.11 or newer. Repowise is added to each target repo as a dev dependency by intake. Google's ADK skills are installed by intake only when the repo depends on `google-adk`.
+Prerequisites on the machine: `uv`, Python 3.11 or newer. Repowise is added to each target repo as a dev dependency by intake; a repo whose `requires-python` is below 3.11 gets it as a `uv tool` instead, loses the CI change gate until it moves, and gets a ticket saying so. Google's ADK skills are installed by intake only when the repo depends on `google-adk`.
 
 Two plugins, from two marketplaces: Matt Pocock's process skills and this one. The commands differ by harness; the shape does not.
 
@@ -61,7 +61,7 @@ The persona says it will not change an existing file without showing you the cha
 
 | Layer | Mechanism | What it catches |
 |---|---|---|
-| Ask the human, not the model | A pre-tool hook answers `ask` when the agent is about to edit a git-tracked file on the protected list (agent files, packaging, checks, CI, standard docs), or any tracked file while intake is running. The harness's own permission prompt shows you the file; approving is the one yes for that file this session, recorded by a post-tool hook. Shell commands that write those files (`sed -i`, redirection, `uv add`, `repowise generate-claude-md`) get the same prompt. | The model editing something it should have asked about |
+| Ask the human, not the model | A pre-tool hook answers `ask` when the agent is about to edit a git-tracked file on the protected list (agent files, packaging, checks, CI, standard docs; never source). The harness's own permission prompt shows you the file; approving is the one yes for that file this session, recorded by a post-tool hook. Shell commands that write those files (`sed -i`, redirection, `uv add`, `repowise generate-claude-md`) get the same prompt, and everything an approved command actually changed is covered by that yes, so `uv add` rewriting `uv.lock` does not trip the next layer. Formatters (`pre-commit run`, `ruff format`) never ask; what they rewrote is recorded as approved. | The model editing something it should have asked about |
 | The turn cannot end with an unapproved change | The stop hook runs `git status`; a modified protected file with no recorded approval blocks the turn, naming the files, until they are reverted or redone through the edit tool. | Anything the first layer's shell heuristic missed |
 | The commit gate in your repo | A commit-msg hook from the baseline refuses a commit that changes a protected file unless the message carries `approved: <files>`. Harness-independent. | Anything that reaches a commit without a visible approval |
 
@@ -90,7 +90,7 @@ Never for browsing: to find or read code the agent greps and opens the file. Dec
 
 ## Context cost
 
-What a harness loads every turn from this plugin is the persona and six skill descriptions, about 3,400 tokens at 3.6 characters per token. Skill bodies load only when a skill runs (`py-intake`, the largest, about 3,000 tokens, once per repo); `references/` files only when a skill opens them. Matt's skills add their descriptions when installed. Google's four are installed only in ADK repos. Every step is a numbered instruction or a command, so a smaller model can follow it; what a smaller model does worse is the judgement in the review's Craft axis and in grilling, and the mechanical checks do not get weaker.
+What a harness loads every turn from this plugin is the persona and six skill descriptions, about 3,800 tokens at 3.6 characters per token (persona ~3,400, descriptions ~400), plus the one-line guard status from the session-start hook. Skill bodies load only when a skill runs (`py-intake`, the largest, about 3,000 tokens, once per repo); `references/` files only when a skill opens them. Matt's skills add their descriptions when installed. Google's four are installed only in ADK repos. Every step is a numbered instruction or a command, so a smaller model can follow it; what a smaller model does worse is the judgement in the review's Craft axis and in grilling, and the mechanical checks do not get weaker.
 
 ## What the baseline installs in your repo
 

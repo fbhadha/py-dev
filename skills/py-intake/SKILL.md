@@ -27,7 +27,7 @@ A repo is "existing" when it has any commit before this session. In a repo with 
 | Need | Test | If missing |
 |---|---|---|
 | `uv`, `git` | on PATH | stop; say how to install |
-| `repowise` | `uv run repowise --version` or on PATH | `uv add --group dev repowise` (Python 3.11 or newer) |
+| `repowise` | not needed until step 6; step 5's `uv sync` installs it from the dev group | a repo whose `requires-python` is below 3.11 cannot install it in its own environment: `uv tool install repowise` and call `repowise` on PATH instead of `uv run repowise`, skip the CI change-gate job, and create the ticket "move to Python 3.11" (say why: the change gate imports Repowise, which needs 3.11) |
 | Upstream skills | `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/find_skill.py" --door-check` prints nothing missing | it prints the install command per upstream; continue, but steps 4 and 7 wait for Matt Pocock's skills |
 
 Never improvise a missing skill's behaviour.
@@ -40,7 +40,7 @@ Establish facts from the repo, never by guessing. Present them as one table and 
 |---|---|
 | Greenfield or brownfield | brownfield when there is a `src/` or any `.py` outside scripts, and more than five commits |
 | Remote | `git remote -v`: GitHub, GitLab (including self-hosted hosts), or none. Public repo? (`gh repo view --json isPrivate`, `glab repo view`) |
-| Python | `.python-version`, `pyproject.toml` `requires-python`, else `python3 --version` |
+| Python | `.python-version`, `pyproject.toml` `requires-python`, else `python3 --version`. Below 3.11: see the door check's Repowise row |
 | Package name | the directory under `src/` with an `__init__.py`, else `[project] name` |
 | Packaging | `uv.lock` (on uv already); `pyproject.toml` without a lock; `setup.py`, `setup.cfg`, `requirements*.txt`, `Pipfile`, `poetry.lock` (not on uv: see step 5) |
 | Tooling present | `pyproject.toml` `[tool.*]` tables, `.pre-commit-config.yaml`, CI files under `.github/workflows/` or `.gitlab-ci.yml` |
@@ -165,7 +165,7 @@ Copilot's cloud agent on github.com cannot run intake or grilling and installs n
 1. `uv run pre-commit run --all-files` and `uv run pytest -m "not eval"`; show the output; on brownfield, red is recorded as the first tickets, not fixed now.
 2. Commit in groups with messages that name the decision (`intake: baseline tool tables`, `intake: ADR 1, adapters never normalise`, ...). Never one commit called "setup". Every existing file the commit touches was approved by name; the message says so (`approved: pyproject.toml, .gitignore`).
 3. ADK 1.x found in step 1: say that `adk-migrate` is the first ticket and create it.
-4. Say this once, in these words or close to them: "The protected-file guard stays on. From now on the harness asks you before I change an agent file, packaging, a check, CI or a doc, once per file per session, and a commit touching one must name it as approved. To turn it off, tell me and I will change `protect-existing-files` to `off` in `docs/agents/mode.md`; the harness will ask you to confirm that edit. `PYTHON_DEV_GUARD=off` turns it off for one session without changing the repo."
+4. Say this once, in these words or close to them: "The protected-file guard stays on. From now on the harness asks you before I change an agent file, packaging, a check, CI or a doc, once per file per session; a command I run that writes one asks the same way and everything it changes is covered by that yes; formatters never ask; and a commit touching one of those files must name it as approved. Source files are never guarded; the checks and the review cover them. To turn it off, tell me and I will change `protect-existing-files` to `off` in `docs/agents/mode.md`; the harness will ask you to confirm that edit. `PYTHON_DEV_GUARD=off` turns it off for one session without changing the repo."
 5. Say in one line what comes next (the persona's table) and start it: greenfield, `grill-with-docs` on the user's idea; brownfield, `improve-codebase-architecture` on the worst file, or the first `later` ticket the user wants back.
 
 ## 11. `later`
