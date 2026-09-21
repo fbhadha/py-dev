@@ -13,7 +13,8 @@ Usage:
 
 Exit codes: 0 all accepted ADRs are bound; 1 an ADR could not be bound (no Status
 or Scope section, no matching decision, or Repowise refused); 2 repowise is not
-installed. `docs/adr/README.md` is the template and is skipped.
+installed. A `README.md` there is skipped (an older layout kept the template in it; Repowise
+turns every file under docs/adr/ into a decision, so the template now lives in docs/agents/).
 
 An ADR in Matt Pocock's short form (a title and a paragraph, no `## Status`) is
 reported, not skipped: Repowise reads it as a candidate only, so it governs

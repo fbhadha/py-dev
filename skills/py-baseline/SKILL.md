@@ -20,10 +20,12 @@ The skeleton every repo this agent touches ends up with, so a junior reader can 
 | `scripts/check_test_diff.py` | fails when the `tests/` diff deletes a test, adds a skip or loses assertions, unless a commit message carries `test-override:` | `templates/check_test_diff.py` |
 | `.secrets.baseline` | detect-secrets baseline, created by `uv run detect-secrets scan > .secrets.baseline` | created by `detect-secrets` |
 | `.env.example` | every key the code reads, with a comment, no values | `templates/env.example` |
-| `AGENTS.md` | pointers only, under 40 lines, above the Repowise managed section (`repowise generate-claude-md --output AGENTS.md`) | `templates/AGENTS.md` |
+| `AGENTS.md` | pointers only, under 40 lines; the map is a link | `templates/AGENTS.md` |
+| `docs/agents/repowise-map.md` | the architecture map, entry points and health line; written only by `repowise generate-claude-md --stdout` (`--output` overwrites its target whole) | Repowise |
 | `CLAUDE.md` | one line: `@AGENTS.md` | `templates/CLAUDE.md` |
 | `CONTEXT.md` | the glossary, Matt Pocock's format, created lazily | `templates/CONTEXT.md` |
-| `docs/adr/` | decisions, Nygard headings with `## Status` Accepted and `## Scope` paths; Repowise reads them | `templates/adr-template.md` |
+| `docs/adr/` | decisions only, one file each, Nygard headings with `## Status` Accepted and `## Scope` paths; Repowise turns every file there into a decision, so nothing else lives there | created empty |
+| `docs/agents/adr-template.md` | the ADR shape, for people and the agent | `templates/adr-template.md` |
 | `scripts/adr_sync.py` | re-indexes and binds each accepted ADR to its Scope paths in Repowise | `templates/adr_sync.py` |
 | `docs/agents/mode.md` | the mode line the skills read | `templates/mode.md` |
 | `docs/howto/add-a-<shape>.md` | one per shape, mirrors an `example/` that compiles | `templates/howto-template.md` |
@@ -59,7 +61,7 @@ Two layers. Line-level tools run at commit on the changed files. Repowise (`docs
 
 Reads: the source tree, git history, `docs/adr/*.md` (Nygard headings; `## Status` Accepted makes it govern, `## Scope` paths are bound by `scripts/adr_sync.py`), `# WHY:` / `# DECISION:` comments, and `coverage.lcov` when ingested with `repowise coverage add coverage.lcov`. Writes: `.repowise/` (gitignored, rebuilt anywhere in seconds) and the managed section between `REPOWISE:START` and `REPOWISE:END` in `AGENTS.md`. Nothing else. No `docs/health/`, no orientation page, no decisions store in git: the ADR files and the code are the truth and the index is derived from them.
 
-Repowise rules: every scripted call is `DO_NOT_TRACK=1 repowise <cmd> --no-editor-setup` where the flag exists; `.repowise/` is gitignored entirely (the ADR files carry the decisions); the index is rebuilt in CI with `repowise init --no-prose --no-editor-setup -y` (under ten seconds on the repos tried). The editor wiring (`.mcp.json`, hooks in `~/.claude/settings.json`) is never done by a skill; the agent uses the CLI.
+Repowise rules: every scripted call is `DO_NOT_TRACK=1 repowise <cmd> --no-editor-setup` where the flag exists; `.repowise/` is gitignored entirely (the ADR files carry the decisions); the index is rebuilt with `repowise init --no-prose --no-editor-setup --no-save-key -y`, in CI and at every refresh (under ten seconds on the repos tried); `repowise update` is never run because it writes `.claude/CLAUDE.md` and `.vscode/` files and ignores every flag and variable meant to stop it. The editor wiring (`.mcp.json`, hooks in `~/.claude/settings.json`) is never done by a skill; the agent uses the CLI.
 
 ## Decisions baked into the templates
 

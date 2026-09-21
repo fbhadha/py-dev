@@ -22,5 +22,5 @@ The paths this decision governs, one per line. Repowise binds the decision to th
 
 What becomes easier, what becomes harder, and what would make us revisit this.
 
-<!-- Repowise reads this file when the repo is indexed. "Accepted" under Status makes it
-     a governing decision; anything else makes it a candidate. Date: {{DATE}}. -->
+<!-- Copy this file to docs/adr/NNNN-slug.md. Repowise turns every file under docs/adr/ into a
+     decision; scripts/adr_sync.py confirms an Accepted one and binds it to its Scope paths. Date: {{DATE}}. -->

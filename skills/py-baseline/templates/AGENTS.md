@@ -1,6 +1,6 @@
 # {{PROJECT}}
 
-Pointers only. Every harness reads this file; `CLAUDE.md` includes it. Keep this section under 40 lines. Below the `REPOWISE:START` marker is the section Repowise maintains (architecture map, entry points, health, its tools); do not edit inside the markers.
+Pointers only. Every harness reads this file; `CLAUDE.md` includes it. Keep this section under 40 lines. The live map (architecture, entry points, health) is `docs/agents/repowise-map.md`, written only by Repowise; do not edit it.
 
 ## Read first
 

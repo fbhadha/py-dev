@@ -4,7 +4,7 @@ The answer to "my tests are not real tests". Every test gets a class, the class 
 
 ## 1. Gather evidence, say nothing yet
 
-1. `uv run repowise update`, then `uv run repowise health --format json` filtered to the target directory. The advisory markers: `assertion_free_test` (runs code, checks nothing), `mock_saturated_test` (mostly mock setup), `large_assertion_block`, `duplicated_assertion_block`.
+1. `DO_NOT_TRACK=1 uv run repowise init --no-prose --no-editor-setup --no-save-key -y`, then `uv run repowise health --format json` filtered to the target directory. The advisory markers: `assertion_free_test` (runs code, checks nothing), `mock_saturated_test` (mostly mock setup), `large_assertion_block`, `duplicated_assertion_block`.
 2. Coverage, if present: `uv run repowise coverage status`. Missing: `uv run pytest --cov --cov-report=lcov:coverage.lcov`, then `uv run repowise coverage add coverage.lcov`.
 3. Mutation, on request or when the directory finishes in minutes: `uv run mutmut run --paths-to-mutate <module the tests cover>`, then `uv run mutmut results`. Survivors name the code no test constrains.
 4. Read every test file in the directory in full, and the module each one imports.

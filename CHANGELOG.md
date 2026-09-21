@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.8 (2026-09-21)
+
+Three Repowise behaviours found by running intake on a scratch repo, each verified directly, each a plugin defect until now (decision 41, research record updated).
+
+- **`repowise update` is never run.** It writes `.claude/CLAUDE.md` (which Claude Code loads on every turn) and `.vscode/` files, and ignores `REPOWISE_SKIP_EDITOR_SETUP`. The session-start, health and before-review refresh is `init --no-prose --no-editor-setup --no-save-key -y`, idempotent and seconds long. Intake names stray `.claude/CLAUDE.md` or `.vscode/mcp.json` files and proposes deleting them.
+- **The map is `docs/agents/repowise-map.md`.** `generate-claude-md --output AGENTS.md` overwrote the whole file, pointers included; the agent lost its `AGENTS.md` mid-intake and rebuilt it from memory. Now `generate-claude-md --stdout` is cut to its markers into a file only Repowise writes; `AGENTS.md` links to it. Side effect: the map no longer loads through `@AGENTS.md` on every turn, about 1,500 tokens saved per turn on a small repo.
+- **`docs/adr/` holds decisions only.** Every `.md` there becomes a Repowise decision, the template README included, which showed up as a candidate the agent had to dismiss. The template is now `docs/agents/adr-template.md`; the persona and intake write ADRs from it.
+- `decision dismiss` gets `--yes`; intake runs `init` once and greps the saved output instead of running it three times.
+
 ## 0.8.7 (2026-09-21)
 
 Found by running intake on a scratch pandas repo as a user would.

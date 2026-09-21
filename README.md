@@ -80,7 +80,7 @@ Repowise is the one store for everything derived from the code: structure, calle
 
 | Moment | Command |
 |---|---|
-| Session start, when the index is behind HEAD | `uv run repowise update` |
+| Session start, when the index is behind HEAD | `DO_NOT_TRACK=1 uv run repowise init --no-prose --no-editor-setup --no-save-key -y` (never `update`: it writes editor files no flag stops) |
 | Before editing, once per ticket | `uv run repowise risk -t <f1> -t <f2> ...` for every file the ticket touches; `why <file>` only for a file that call marks governed or bug-magnet |
 | Before naming something new | `uv run repowise search <name>` |
 | Before review | `scripts/repowise_gate.py`, `repowise risk <range>`, `repowise impacted-tests <range>` |

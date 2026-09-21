@@ -27,7 +27,7 @@ The plugin's hooks run in the session on every harness it declares them for. The
 
 | File | What it is for | Who writes it after intake |
 |---|---|---|
-| `AGENTS.md` (`CLAUDE.md` is `@AGENTS.md`) | Pointers only: read this first, these commands, these rules, these packs. Below its markers, Repowise keeps a managed section with the architecture map, entry points and the current health line. | You or the agent, above the markers; Repowise below. |
+| `AGENTS.md` (`CLAUDE.md` is `@AGENTS.md`) | Pointers only: read this first, these commands, these rules, these packs. The architecture map, entry points and the current health line are in `docs/agents/repowise-map.md`, a file only Repowise writes, opened when a step needs it rather than loaded every turn. | You or the agent, above the markers; Repowise below. |
 | `CONTEXT.md` | The glossary. The words the code, the tickets and the docs share. | Grilling adds a term whenever one is settled. |
 | `docs/adr/` | Decisions that were hard to reverse, in Nygard headings with `## Scope` listing the paths each governs. Repowise reads them and warns whoever edits a governed path. | The agent writes one when you make such a decision, then runs `scripts/adr_sync.py`. |
 | `docs/howto/add-a-<shape>.md` | One recipe per kind of addition the repo makes, mirroring a real example package that compiles and has a test. | The agent, at intake for the dominant shape, and whenever grilling settles a new shape. |

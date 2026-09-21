@@ -34,7 +34,7 @@ Consequences of the table:
 - `docs/health/`, the orientation page, and the `py-orient` skill are gone. Brownfield orientation is `repowise init` followed by reading the overview, the health report, the dead-code report and the decision candidates, then grilling the user on what those surfaced.
 - `docs/architecture.md` states the layering rules and the composition root only. The live map is Repowise.
 - The agent never calls `repowise decision add`. A decision is an ADR file. `scripts/adr_sync.py` re-indexes and binds each accepted ADR to its `## Scope` paths so Repowise can push it back at the agent when it edits a governed file. `.repowise/` stays gitignored; the ADR files are the shared truth.
-- `AGENTS.md` carries the plugin's pointers above the Repowise managed section, which `repowise generate-claude-md --output AGENTS.md` maintains between its markers. `CLAUDE.md` is `@AGENTS.md`.
+- `AGENTS.md` carries the plugin's pointers and links to `docs/agents/repowise-map.md`, which only `repowise generate-claude-md --stdout` writes (amended 0.8.8: `--output` overwrites its target whole, and a map inside `AGENTS.md` would load through `CLAUDE.md` on every turn). `CLAUDE.md` is `@AGENTS.md`.
 - The Repowise plugin is a prerequisite beside Matt Pocock's, checked at the door with its six skill names. The plugin's own skills are not re-described here; ours call them.
 
 ## Consequences
