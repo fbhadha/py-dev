@@ -27,6 +27,8 @@ dev = [
 target-version = "py{{PYTHON_NODOT}}"
 line-length = 100
 src = ["src", "tests"]
+extend-exclude = ["prototypes"]   # throwaway code that answers one question, on prototype/ branches only
+force-exclude = true              # so the commit hook and the stop gate, which name files, skip it too
 
 [tool.ruff.lint]
 select = [
@@ -135,7 +137,7 @@ show_missing = true
 
 # ---------------------------------------------------------------- bandit
 [tool.bandit]
-exclude_dirs = ["tests"]
+exclude_dirs = ["tests", "prototypes"]
 
 # ---------------------------------------------------------------- mutmut
 [tool.mutmut]

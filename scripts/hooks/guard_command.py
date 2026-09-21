@@ -11,6 +11,10 @@ command), a push to main (explicit, or a bare push while on main), and merging a
 pull or merge request from the command line (`gh pr merge`, `glab mr merge`). On
 a branch, nothing asks: commit, push and merging main into the branch are free.
 
+Also asked: a commit on a `shaping/` branch that carries files under src/ or
+tests/ (staged, or modified when the commit has -a). Shaping decides; a ticket
+builds; the reason says so and names the files.
+
 Also asked: anything that sends content to a repo other than this project's
 `origin`. A `gh` or `glab` command with `-R`/`--repo` naming another repo, a
 `gh api` call that writes under another repo's path, a gist, or a `git push` to
@@ -63,6 +67,9 @@ API_WRITE = re.compile(
 GIST = re.compile(r"\bgh\s+gist\s+create\b")
 READ_VERBS = re.compile(r"\b(?:gh|glab)\s+\w+\s+(view|list|status|diff|checks|download|clone)\b")
 PUSH_TARGET = re.compile(r"\bgit\b[^|;&]*\bpush\b(?:\s+-\S+)*\s+(\S+)")
+SHAPING = "shaping/"
+PRODUCT = re.compile(r"^(src|tests)/")
+COMMIT_ALL = re.compile(GIT + r"\bcommit\b[^|;&]*\s-(?:-all|[a-zA-Z]*a[a-zA-Z]*)\b")
 
 
 def is_shell_tool(name: str) -> bool:
@@ -134,6 +141,16 @@ def leaves_project(command: str) -> tuple[str, str] | None:
     return None
 
 
+def shaping_builds(command: str, branch: str) -> list[str]:
+    """Product files a commit on a shaping branch would carry; empty anywhere else."""
+    if not branch.startswith(SHAPING) or not COMMIT.search(command):
+        return []
+    files = c.git_lines("diff", "--cached", "--name-only")
+    if COMMIT_ALL.search(command):
+        files += c.git_lines("diff", "--name-only")
+    return sorted({path for path in files if PRODUCT.match(path)})
+
+
 def ask_leaving(command: str) -> bool:
     found = leaves_project(command)
     if not found:
@@ -163,7 +180,18 @@ def main() -> int:
             return 0
         if ask_leaving(command):
             return 0
-        action = lands_on_main(command, c.current_branch())
+        branch = c.current_branch()
+        built = shaping_builds(command, branch)
+        if built:
+            c.decision(
+                "ask",
+                f"python-dev: this shaping branch is about to commit product code "
+                f"({', '.join(built[:5])}). Shaping decides; a ticket builds. Approve only if "
+                "you asked for this in your own words; otherwise the change belongs on a "
+                "prototype/<slug> branch or in a ticket.",
+            )
+            return 0
+        action = lands_on_main(command, branch)
         if action:
             c.decision(
                 "ask",

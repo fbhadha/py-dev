@@ -7,7 +7,9 @@ invocation we assume (`model` = we call it through the Skill tool, `user` = the
 harness refuses it and we open the file). Clones each repository at the pinned
 commit into a temp dir, finds each SKILL.md by directory name or frontmatter
 name, and fails when a skill is missing or its `disable-model-invocation`
-flag no longer matches the assumption.
+flag no longer matches the assumption. A `reference` entry (kind "reference",
+with `dir` and `terms`) is a repository of files the persona links to instead
+of skills it calls; each `<dir>/<term>.md` must exist at the pin.
 
 With --latest it checks the default branch instead of the pin and reports
 drift as warnings, so a scheduled run can say "upstream moved" without failing.
@@ -72,6 +74,18 @@ def index_skills(skills_dir: Path) -> dict[str, Path]:
     return found
 
 
+def check_reference(upstream: dict, dest: Path) -> list[str]:
+    """Every term the plugin links to is a file `<dir>/<term>.md` in the reference repo."""
+    problems: list[str] = []
+    for term in upstream["terms"]:
+        path = dest / upstream["dir"] / f"{term}.md"
+        if path.exists():
+            print(f"  ok  {term} (reference)")
+        else:
+            problems.append(f"{upstream['repo']}: term {term!r} not found under {upstream['dir']}")
+    return problems
+
+
 def check_upstream(upstream: dict, latest: bool, workdir: Path) -> list[str]:
     repo = upstream["repo"]
     ref = upstream["default_branch"] if latest else upstream["commit"]
@@ -79,6 +93,8 @@ def check_upstream(upstream: dict, latest: bool, workdir: Path) -> list[str]:
     print(f"{repo} @ {ref}")
     if not clone(repo, ref, dest):
         return [f"{repo}: could not fetch {ref}"]
+    if upstream.get("kind") == "reference":
+        return check_reference(upstream, dest)
     skills = index_skills(dest / upstream["skills_dir"])
     problems: list[str] = []
     for name, expected in upstream["skills"].items():

@@ -79,6 +79,14 @@ def is_main(branch: str) -> bool:
     return branch in MAIN_BRANCHES
 
 
+def git_lines(*args: str) -> list[str]:
+    """The non-empty stdout lines of a git command; empty when it fails."""
+    result = subprocess.run(["git", *args], capture_output=True, text=True, check=False)
+    if result.returncode != 0:
+        return []
+    return [line.strip() for line in result.stdout.splitlines() if line.strip()]
+
+
 def normalize_repo(ref: str, default_host: str = "github.com") -> str:
     """'host/owner/repo' from a URL, an ssh address, 'host/owner/repo' or 'owner/repo'."""
     ref = re.sub(r"\.git/?$", "", ref.strip().strip("'\""))

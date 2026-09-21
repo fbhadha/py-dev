@@ -29,6 +29,8 @@ The skeleton every repo this agent touches ends up with, so a junior reader can 
 | `scripts/adr_sync.py` | re-indexes and binds each accepted ADR to its Scope paths in Repowise | `templates/adr_sync.py` |
 | `docs/agents/mode.md` | the mode line the skills read | `templates/mode.md` |
 | `docs/howto/add-a-<shape>.md` | one per shape, mirrors an `example/` that compiles | `templates/howto-template.md` |
+| `docs/research/<slug>.md` | one note per question answered from outside the repo, dated on its first line, one citation per claim; written by Matt Pocock's `research`, read into the grill that asked; a fact on a date, never a decision | created lazily |
+| `prototypes/` | throwaway code that answers one design question, on a `prototype/<slug>` branch only, never on `main`; ruff (`force-exclude`) and bandit skip it; mypy, pylint and coverage never look there; detect-secrets still reads it, so a key never goes in a prototype either. A prototype costs no polish | created lazily |
 | `docs/architecture.md` | the layering rules and the composition root only; the live map is Repowise | `templates/architecture.md` |
 | `README.md` | run, test, where to start reading; commands in ```bash ci``` blocks are executed in CI | `templates/README-skeleton.md` |
 

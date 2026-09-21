@@ -25,6 +25,10 @@ The person every file and doc is written for: reads Python, has never seen this 
 
 A constraint the user accepted, written as an ADR in `docs/adr/` with the paths it governs. Repowise reads the ADRs and warns whoever edits a governed path. Nothing else counts as a decision: not a comment, not a chat message, not a candidate Repowise mined from history.
 
+### Shaping
+
+The work before a ticket exists: the grill, a research note in `docs/research/` for a fact from outside this repo, a prototype on a `prototype/<slug>` branch for a question talking cannot settle, and a wayfinder map on the tracker when the idea is more than one session. It produces terms, decisions, notes and prototype branches, never product code; that is a ticket's work. It lives on a `shaping/<slug>` branch until it merges.
+
 ## Decisions with a page of their own
 
 See `docs/adr/`. Only decisions that were hard to reverse, contested, or surprising get one.

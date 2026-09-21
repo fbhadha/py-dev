@@ -8,6 +8,7 @@ Pointers only. Every harness reads this file; `CLAUDE.md` includes it. Keep this
 - `docs/architecture.md`: the layering rules and the composition root. The import-linter contract in `pyproject.toml` enforces them. The live map of modules and callers is Repowise, below.
 - `docs/howto/`: one file per kind of addition (a shape). Build by the matching how-to; if none matches, it is a new shape and needs the interview first.
 - `docs/adr/`: decisions already taken. Repowise binds each to the paths it governs and warns you when you edit one. Do not reopen a decision without a new ADR.
+- `docs/research/`: what was checked outside this repo and when, one dated, cited note per question. Facts, not decisions; a decision is an ADR.
 - `docs/agents/mode.md`: guide mode settings. `docs/agents/issue-tracker.md`: where tickets live.
 
 ## Commands
@@ -30,4 +31,4 @@ Modules under 400 lines, tests under 150. No `utils`/`helpers`/`common`/`misc` m
 
 ## Agent
 
-The `python-dev` persona (plugin `python-dev`, repo `fbhadha/py-dev`) is the intended session agent. Its skills: `py-intake` (set up or re-orient), `py-design` (craft), `py-baseline` (this layout), the packs listed above. Process skills come from Matt Pocock's plugin, called by name; codebase intelligence from the Repowise CLI.
+The `python-dev` persona (plugin `python-dev`, repo `fbhadha/py-dev`) is the intended session agent. Its skills: `py-intake` (set up or re-orient), `py-design` (craft), `py-baseline` (this layout), the packs listed above. Process skills come from Matt Pocock's plugin, called by name; codebase intelligence from the Repowise CLI. The words of AI coding itself (session, handoff, spec, ticket, grilling) are his AI Coding Dictionary, <https://github.com/mattpocock/dictionary-of-ai-coding>; `CONTEXT.md` holds this repo's words only.

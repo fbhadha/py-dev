@@ -113,7 +113,7 @@ PACK_SECTIONS = (
 
 def upstream_names() -> set[str]:
     data = json.loads((ROOT / "upstream.json").read_text(encoding="utf-8"))
-    return {name for up in data["upstreams"] for name in up["skills"]}
+    return {name for up in data["upstreams"] for name in up.get("skills", {})}
 
 
 def resolve_ref(ref: str, here: Path, line: str, upstream: set[str]) -> bool:

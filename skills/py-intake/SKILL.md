@@ -17,11 +17,12 @@ Intake runs on a branch, `intake/baseline`, and lands on `main` by one merge the
 
 | Need | Test | If missing |
 |---|---|---|
-| `uv`, `git` | on PATH | stop; say how to install |
+| `uv`, `git` | on PATH | a wizard stage (below) |
+| `gh` signed in (GitHub remote), `glab` signed in (GitLab), `node` (no remote: Backlog.md runs on it) | `gh auth status`, `glab auth status`, `node --version`; `git remote -v` says which one applies | a wizard stage |
 | `repowise` | not needed until step 6; step 5's `uv sync` installs it from the dev group | a repo whose `requires-python` is below 3.11 cannot install it in its own environment: `uv tool install repowise` and call `repowise` on PATH instead of `uv run repowise`, skip the CI change-gate job, and create the ticket "move to Python 3.11" (say why: the change gate imports Repowise, which needs 3.11) |
-| Upstream skills | `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/find_skill.py" --door-check` prints nothing missing | it prints the install command per upstream; continue, but steps 4 and 7 wait for Matt Pocock's skills |
+| Upstream skills | `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/find_skill.py" --door-check` prints nothing missing | it prints the install command per upstream. Matt Pocock's plugin itself: its lines go in the chat, because `wizard` is in it. Google's: you run it in step 1. Continue, but steps 4 and 7 wait for Matt Pocock's skills |
 
-Never improvise a missing skill's behaviour.
+Everything missing goes into one script: Skill `wizard`, one stage per item (the install line, the page to open, the command that proves it), saved to the OS temp dir. Say how to run it in another terminal and stop; the next session starts here again, and a stage already done is skipped. Never improvise a missing skill's behaviour.
 
 ## 1. Explore (write nothing)
 
@@ -38,7 +39,7 @@ Establish facts from the repo, never by guessing. Present them as one table and 
 | Agent files | `AGENTS.md`, `CLAUDE.md`, `.github/copilot-instructions.md`, `.cursorrules`, `.cursor/rules/`, `GEMINI.md`: which exist, and whether each is a one-line include or has real content |
 | ADK | `google-adk` in dependencies and its version: `1.x` means `adk-migrate` is the first ticket after intake; `2.x` means the `pack-adk` pack is selected. Either way install Google's skills from their repo: `npx skills@latest add google/adk-python -s adk-agent-builder,adk-architecture,adk-debug,adk-style -a '*' -y` |
 | Packs | dependencies that select a knowledge pack (`pack-adk`: google-adk 2.x; `pack-data-engineering`: dlt, pandas, polars, pyarrow, sqlalchemy, duckdb, dbt-core, pandera, pyspark, prefect, dagster, airflow). A selected pack's "extra checks" section is applied in step 5 and its name is written under `## Packs` in `AGENTS.md` |
-| Docs already there | `CONTEXT.md`, `docs/adr/`, `docs/agents/`, `docs/howto/`, `README.md` |
+| Docs already there | `CONTEXT.md`, `docs/adr/`, `docs/agents/`, `docs/howto/`, `docs/research/`, `README.md` |
 | Matt Pocock's skills already set up | `docs/agents/issue-tracker.md`, `docs/agents/domain.md`, `docs/agents/triage-labels.md`, an `## Agent skills` block in `AGENTS.md` or `CLAUDE.md`, a `backlog/` directory: which exist. Any of them means his setup ran before; steps 4 and 7 keep what it wrote and ask only about what is missing |
 | Repowise already in use | `.repowise/` present; `docs/agents/repowise-map.md` or a `REPOWISE:START` marker in `AGENTS.md` or `.claude/CLAUDE.md` (an older layout, or `repowise update` run by hand: the map moves to its own file, the marker section is removed from the agent file, shown first); `.mcp.json` or `.claude/settings.json` names repowise (the user wired the editor themselves); `uv run repowise decision list` shows decisions that have no ADR file behind them; `uv run repowise status` for when the index was last synced. Anything found means the user has used Repowise here; step 6 keeps the index and the wiring and step 7 turns stored decisions into ADRs |
 
@@ -86,7 +87,7 @@ Call the Skill tool with "py-baseline" and follow its application rules: merge, 
 3. `.pre-commit-config.yaml`, `uv run pre-commit install`, `uv run detect-secrets scan > .secrets.baseline`. An existing pre-commit config gets our hooks appended, shown first.
 4. `scripts/repowise_gate.py`, `scripts/adr_sync.py`, `scripts/run_readme_blocks.py`, `scripts/check_test_diff.py`.
 5. **CI.** No workflow yet: `.github/workflows/ci.yml` on a GitHub remote, `.gitlab-ci.yml` on GitLab, both when there is no remote. A workflow already exists: never edit it. Add ours beside it as `.github/workflows/python-dev-checks.yml`, or on GitLab a `python-dev-checks.yml` that the user includes from `.gitlab-ci.yml` (that one-line include is a change to their file: show it, ask). Their pipeline keeps running; ours adds pre-commit on changed lines, the test-diff check, coverage on changed lines and the change gate.
-6. `.env.example`; `.gitignore` gets `.env`, `.repowise/`, `coverage.lcov`, `.mutmut-cache/`; `.secrets.baseline` stays tracked. An existing `.gitignore` is a change: show the lines you will add.
+6. `.env.example`; `.gitignore` gets `.env`, `.repowise/`, `coverage.lcov`, `.mutmut-cache/`; `.secrets.baseline` stays tracked. An existing `.gitignore` is a change: show the lines you will add. Then the keys: every variable in `.env.example` a person must obtain (an API key, a token; a pack's keys, such as `GOOGLE_API_KEY` for ADK) and every `secrets.*` the CI file reads is a step only the user can take. One or more of them: Skill `wizard`, scoped from those two files, writes the script that opens each provider's page, captures the value blind and writes it to `.env` and the CI secrets. The user runs it themselves; no value ever passes through the chat.
 7. `CONTEXT.md` from the template if absent; `docs/agents/adr-template.md` from `templates/adr-template.md`; `docs/adr/` created empty (any `.md` in it becomes a Repowise decision, so no README there).
 8. **Packs.** For each pack step 1 selected, open its `SKILL.md` and apply its "Extra checks this pack turns on" section: the ruff groups into `select`, the import-linter contract, the pre-commit hook, the dev dependencies (`uv add --group dev ...`). Write the pack's name under `## Packs` in `AGENTS.md`. No pack selected: leave the section's comment as it is.
 
@@ -143,7 +144,7 @@ Done when `README.md` has at least one ```bash ci``` block that runs, `docs/arch
 
 - `README.md`: propose merging `templates/README-skeleton.md` into what exists, section by section; never delete a section a person wrote; show the result, get the yes. Run `uv run python scripts/run_readme_blocks.py README.md` and show it passing.
 - `docs/architecture.md` from the template: rules only, the map is Repowise.
-- The first how-to: brownfield, the shape from step 7 (or the most repeated module family in the map), mirrored on the best existing example of it; greenfield, wait for the first `grill-with-docs` and write it then. A how-to with no compiling example is not done.
+- The first how-to: brownfield, the shape from step 7 (or the most repeated module family in the map), mirrored on the best existing example of it; greenfield, wait for the first shape to settle in shaping (the first grill, or the map ticket that names one) and write it then. A how-to with no compiling example is not done.
 
 ## 9. Harness shells
 
@@ -174,7 +175,7 @@ Copilot's cloud agent on github.com cannot run intake or grilling and installs n
    ```
 
    GitLab: `glab api -X POST "projects/:id/protected_branches" -f name=main -f push_access_level=0 -f merge_access_level=30` and `glab api -X PUT "projects/:id" -f only_allow_merge_if_pipeline_succeeds=true`. No remote: nothing to set; the hook is the guard.
-7. Say in one line what comes next (the report's first ticket, from the persona's table) and start it: greenfield, `grill-with-docs` on the user's idea; brownfield, `improve-codebase-architecture` on the worst file, or the first `later` ticket the user wants back.
+7. Say in one line what comes next (the report's first ticket, from the persona's table) and start it: greenfield, shaping (the persona's section 2) on the user's idea, the grill first and a `wayfinder` map when the idea is more than one session; brownfield, `improve-codebase-architecture` on the worst file, or the first `later` ticket the user wants back.
 
 ## 11. `later`
 
