@@ -1,6 +1,6 @@
 ---
 name: py-intake
-description: "Set up a Python repo for python-dev or re-orient in one: explore, mode, agent files, tracker, baseline, Repowise index, brownfield read-back and grilling, the human docs, harness shells. Resumable; changes no existing file without showing the change and getting a yes. `py-intake later` reviews parked tickets."
+description: "Set up a Python repo for python-dev or re-orient in one: explore, mode, agent files, tracker, baseline, Repowise index, brownfield read-back and grilling, the human docs, harness shells, the intake report. Resumable; changes no existing file without showing the change and getting a yes. `py-intake later` reviews parked tickets."
 ---
 
 # Python intake
@@ -11,7 +11,7 @@ Run once per repo, and again whenever you come back after a long gap. Every step
 
 ## The branch rule
 
-Intake runs on a branch, `intake/baseline`, and lands on `main` by one merge the user says yes to at the end (step 10). Create it first: `git switch -c intake/baseline` (a repo with no commits yet: make the first commit, `init`, on `main`; the hook asks once; then branch). On the branch you change files freely, and for every existing file you still say, before the change, which file and what you will do to it in one sentence, then show the result with the new parts marked. Nobody waits per file; the diff at the merge is where the user says yes. Never let a step "just fix" a file because a later step needs it that way without saying so.
+Intake runs on a branch, `intake/baseline`, and lands on `main` by one merge the user says yes to at the end (step 10), after the intake report has said what was set up. Create it first: `git switch -c intake/baseline` (a repo with no commits yet: make the first commit, `init`, on `main`; the hook asks once; then branch). On the branch you change files freely, and for every existing file you still say, before the change, which file and what you will do to it in one sentence, then show the result with the new parts marked. Nobody waits per file; the diff at the merge is where the user says yes. Never let a step "just fix" a file because a later step needs it that way without saying so.
 
 ## Door check, before anything
 
@@ -161,8 +161,9 @@ Copilot's cloud agent on github.com cannot run intake or grilling and installs n
 1. `uv run repowise distill uv run pre-commit run --all-files`, `uv run lint-imports`, and `uv run repowise distill uv run pytest -m "not eval"`; show the distilled output; on brownfield, red is recorded as the first tickets, not fixed now. The commit hook checks staged files only, so intake's own commits go through while CI stays red; never `pre-commit uninstall`.
 2. Commit in groups with messages that name the decision (`intake: baseline tool tables`, `intake: ADR 1, adapters never normalise`, ...). Never one commit called "setup".
 3. ADK 1.x found in step 1: say that `adk-migrate` is the first ticket and create it.
-4. Land it. `git push -u origin intake/baseline`; on GitHub or GitLab, `gh pr create` (`glab mr create`) with the list of what intake wrote and changed, so CI runs on it. Show the merge summary (files that existed before, one sentence each; then the new files; then the check results) and ask: "Merge to main?" Yes: `gh pr merge --merge --delete-branch` (`glab mr merge`), or with no remote `git switch main && git merge --no-ff intake/baseline && git branch -d intake/baseline`. The hook asks once more; same yes.
-5. After the merge, and only when CI is green on it (or there is no remote): one question: "Protect `main` on the server, so nothing lands there except a merge with green checks, from any tool or person?" CI red on brownfield: a `later` ticket "turn on branch protection when CI is green", blocked by the layering ticket, and say so. Yes, GitHub:
+4. **The intake report.** Fill `templates/intake-summary.md` and show it as one message; a harness that renders a Markdown file may render it instead. Every placeholder is a fact an earlier step established, never a guess: `{{PROJECT}}`; `{{PACK_TOOLS}}`, one table row per dev dependency a pack added in step 5, or nothing; `{{RED_NOW}}`, the tickets sub-step 1 recorded for red checks, or nothing; `{{HOWTO}}`, the how-to step 8 wrote, or "None yet: the first is written when the first grilling settles a shape"; `{{CI_FILE}}`, the workflow step 5 wrote; `{{TRACKER}}`, from step 4; `{{ORIENTATION}}`, the step 7 read-back one line per item, then the ADRs written and the `later` tickets parked (greenfield: the "Does the score find the bugs?" line from step 6, and that the map fills as code lands); `{{FIRST_TICKET}}`, from sub-step 7; `{{PACKS}}`, the names under `## Packs` or "none selected". Delete the row or phrase for anything intake skipped (the change gate on a repo below Python 3.11, the pack row, the pull-request and branch-protection rows when there is no remote): the report says what happened, not what the template offers. Do not commit it: every fact in it lives in `AGENTS.md`, the tool tables, `docs/adr/` or Repowise, and a copy would be the first doc-drift finding (persona section 12).
+5. Land it. `git push -u origin intake/baseline`; on GitHub or GitLab, `gh pr create` (`glab mr create`) with the report as the body, so CI runs on it and the report stays with the merge. Show the merge summary (files that existed before, one sentence each; then the commit list; then the check results; the new files are in the report, do not list them again) and ask: "Merge to main?" Yes: `gh pr merge --merge --delete-branch` (`glab mr merge`), or with no remote `git switch main && git merge --no-ff intake/baseline && git branch -d intake/baseline`. The hook asks once more; same yes.
+6. After the merge, and only when CI is green on it (or there is no remote): one question: "Protect `main` on the server, so nothing lands there except a merge with green checks, from any tool or person?" CI red on brownfield: a `later` ticket "turn on branch protection when CI is green", blocked by the layering ticket, and say so. Yes, GitHub:
 
    ```bash
    gh api -X PUT "repos/{owner}/{repo}/branches/main/protection" --input - <<'JSON'
@@ -172,8 +173,7 @@ Copilot's cloud agent on github.com cannot run intake or grilling and installs n
    ```
 
    GitLab: `glab api -X POST "projects/:id/protected_branches" -f name=main -f push_access_level=0 -f merge_access_level=30` and `glab api -X PUT "projects/:id" -f only_allow_merge_if_pipeline_succeeds=true`. No remote: nothing to set; the hook is the guard.
-6. Say this once, in these words or close to them: "From here on I work on a branch per ticket and never on `main`. When a ticket is done I show you the diff and the checks and ask to merge; that yes is the one approval. The hook asks you before anything that lands on `main`, so nothing gets there by accident."
-7. Say in one line what comes next (the persona's table) and start it: greenfield, `grill-with-docs` on the user's idea; brownfield, `improve-codebase-architecture` on the worst file, or the first `later` ticket the user wants back.
+7. Say in one line what comes next (the report's first ticket, from the persona's table) and start it: greenfield, `grill-with-docs` on the user's idea; brownfield, `improve-codebase-architecture` on the worst file, or the first `later` ticket the user wants back.
 
 ## 11. `later`
 
