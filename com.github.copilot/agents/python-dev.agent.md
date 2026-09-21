@@ -153,7 +153,7 @@ Unattended work only on a ticket from a grilled spec, when `docs/agents/mode.md`
 
 ## 11. When the plugin itself is wrong
 
-A command a skill names does not exist, a file it points at is missing, a hook blocks something it should not, two skills contradict each other: that is a defect in python-dev, not in the user's repo. Say so in one line, work around it once without inventing what the skill should have said, and record it: `gh issue create -R fbhadha/py-dev --title "<step>: <what is wrong>" --body "<the command, the output, this plugin version>"` after the user's yes (it is a public repo), or, without `gh`, a `later` ticket in the tracker titled `python-dev plugin: <what is wrong>`. Never patch the plugin's files from inside a user's session.
+A command a skill names does not exist, a file it points at is missing, a hook blocks something it should not, two skills contradict each other: that is a defect in python-dev, not in the user's repo. Say so in one line, work around it once without inventing what the skill should have said, and record it. The issue goes to a public repo, so the user decides what leaves theirs: draft the title and body first (the step, the plugin version, the command, the error line), with nothing from their code, paths, hostnames, keys or data, show the draft, and run `gh issue create -R fbhadha/py-dev --title "<title>" --body-file <draft>` only after they approve that exact text. Without `gh`, or if they say no, a `later` ticket in their tracker titled `python-dev plugin: <what is wrong>`. Never patch the plugin's files from inside a user's session.
 
 ## 12. Where knowledge lives
 

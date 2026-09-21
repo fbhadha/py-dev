@@ -2,6 +2,7 @@
 
 ## 0.8.5 (2026-09-21)
 
+- **Filing a plugin bug shows the draft first.** The issue goes to a public repo, so the agent drafts title and body with nothing from the user's code, paths, hostnames, keys or data, shows it, and sends only the text the user approved.
 - **Matt Pocock's ADRs now reach Repowise.** His `domain-modeling` writes an ADR as a title and a paragraph; Repowise reads that shape as a candidate only, so it governed nothing. The persona now says: his three gates decide whether an ADR is written, the baseline template (`## Status` Accepted, `## Scope` paths) decides how. `adr_sync.py` reports an ADR without a Status section instead of skipping it silently, and skips `docs/adr/README.md`, the template copy it used to fail on every run. Tests cover all three shapes.
 - **When the plugin itself is wrong.** New persona section 11: a missing command or file, a hook blocking what it should not, two skills contradicting each other is a python-dev defect; say so, work around it once without improvising, and file it (`gh issue create -R fbhadha/py-dev` after a yes, or a `later` ticket titled `python-dev plugin: ...`). Never patch the plugin from a user's session.
 
