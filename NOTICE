@@ -9,6 +9,10 @@ This plugin calls, by name and at runtime, skills it does not include:
 - Google's ADK skills (https://github.com/google/adk-python, .agents/skills/),
   Apache-2.0. Installed from Google's repository with the skills.sh installer;
   nothing from it is copied here.
+- Matt Pocock's AI Coding Dictionary
+  (https://github.com/mattpocock/dictionary-of-ai-coding). That repository
+  states no licence. The persona links to its entries and reads them at
+  runtime; nothing from it is copied here or into a target repository.
 
 The baseline templates configure, but do not include, these tools in the
 target repository:

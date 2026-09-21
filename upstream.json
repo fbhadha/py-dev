@@ -1,6 +1,6 @@
 {
-  "description": "Skills this plugin calls by name but does not include. `model` means we call it through the Skill tool; `user` means the harness refuses it and the persona opens the file via scripts/find_skill.py. scripts/check_upstream_skills.py verifies every entry against the pinned commit; --latest reports drift on the default branch. Repowise is not here: the agent uses its CLI, not its skills.",
-  "verified": "2026-09-20",
+  "description": "Everything upstream this plugin depends on by name and never copies. Skills: `model` means we call it through the Skill tool; `user` means the harness refuses it and the persona opens the file via scripts/find_skill.py. A `reference` entry lists the term files the persona links to. scripts/check_upstream_skills.py verifies every entry against the pinned commit; --latest reports drift on the default branch. Repowise is not here: the agent uses its CLI, not its skills.",
+  "verified": "2026-09-21",
   "upstreams": [
     {
       "repo": "mattpocock/skills",
@@ -30,7 +30,8 @@
         "triage": "user",
         "wayfinder": "user",
         "handoff": "user",
-        "wait-what": "user"
+        "wait-what": "user",
+        "teach": "user"
       }
     },
     {
@@ -47,6 +48,33 @@
         "adk-style": "model"
       },
       "only_when_dependency": "google-adk"
+    },
+    {
+      "repo": "mattpocock/dictionary-of-ai-coding",
+      "commit": "251fec7ec3b08059e4203863024e6123090a54e3",
+      "default_branch": "main",
+      "kind": "reference",
+      "dir": "dictionary",
+      "licence": "none stated in the repository; the persona reads and links entries, never copies one",
+      "page": "https://github.com/mattpocock/dictionary-of-ai-coding#<term-as-a-slug>",
+      "raw": "https://raw.githubusercontent.com/mattpocock/dictionary-of-ai-coding/main/dictionary/<Term>.md",
+      "terms": [
+        "Smart zone",
+        "Session",
+        "Context",
+        "Handoff",
+        "Spec",
+        "Ticket",
+        "Grilling",
+        "Prototyping",
+        "Primary source",
+        "Context pointer",
+        "Human-in-the-loop",
+        "AFK",
+        "Skill",
+        "Agent",
+        "Harness"
+      ]
     }
   ]
 }

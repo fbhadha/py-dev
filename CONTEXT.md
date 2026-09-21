@@ -43,3 +43,7 @@ _Avoid_: bot, assistant, copilot (a product name)
 **Hook**:
 A harness-native script that runs at a lifecycle point (before a tool call, after an edit, at session start, when the agent tries to stop) and can inject context or block the action. Best-effort and harness-specific; never the only enforcement of a rule.
 _Avoid_: guardrail (that is the rule; the hook is one place it runs), trigger
+
+**Shaping**:
+The work between an idea and its first ticket: the grill, a research note for a fact from outside the repo, a prototype for a question talking cannot settle, and a wayfinder map when it is more than one session. Produces terms, ADRs, notes and prototype branches, never product code; lives on a `shaping/<slug>` branch until it merges. The name is aihero.dev's own grouping of Matt Pocock's three skills.
+_Avoid_: planning (the tracker's word for tickets), discovery, spike (a prototype is the word for code that answers a question)

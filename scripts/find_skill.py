@@ -110,6 +110,8 @@ def door_check(*, use_cache: bool = True) -> int:
     pyproject = CWD / "pyproject.toml"
     deps = pyproject.read_text(encoding="utf-8", errors="replace") if pyproject.exists() else ""
     for upstream in data["upstreams"]:
+        if "skills" not in upstream:
+            continue  # a reference the persona links to, not skills to find on disk
         needs = upstream.get("only_when_dependency")
         if needs and needs not in deps:
             continue

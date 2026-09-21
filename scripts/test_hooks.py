@@ -2,8 +2,8 @@
 """Run the hook scripts and the baseline's test-diff check against a scratch git repo.
 
 CI runs this. It builds a throwaway repo on `main`, drives the command guard with
-payloads in both harnesses' shapes on main and on a branch, and asserts the answer:
-ask, deny or allow. Then the stop gate, the session-start line, and
+payloads in both harnesses' shapes on main, on a branch and on a shaping branch,
+and asserts the answer: ask, deny or allow. Then the stop gate, the session-start line, and
 check_test_diff.py on a weakened and a clean test change.
 
 Usage: python scripts/test_hooks.py
@@ -190,6 +190,41 @@ def check_guard(repo: Path) -> None:
     git(repo, "switch", "-q", "main")
 
 
+def check_shaping(repo: Path) -> None:
+    """On a shaping branch a commit that carries src/ or tests/ asks; docs pass; prototypes are free."""
+    s = f"t-{uuid.uuid4()}"
+    git(repo, "switch", "-q", "-c", "shaping/idea")
+    (repo / "docs").mkdir(exist_ok=True)
+    (repo / "docs" / "note.md").write_text("# note\n", encoding="utf-8")
+    git(repo, "add", "docs/note.md")
+    expect("shaping: commit of docs passes", guard("git commit -m 'term: note'", repo, s), "allow")
+    (repo / "src" / "x.py").write_text("X = 3\n", encoding="utf-8")
+    expect(
+        "shaping: staged docs only, unstaged src, plain commit passes",
+        guard("git commit -m 'term: note'", repo, s),
+        "allow",
+    )
+    expect("shaping: commit -a with src asks", guard("git commit -am 'build it'", repo, s), "ask")
+    git(repo, "add", "src/x.py")
+    expect("shaping: staged src asks", guard("git commit -m 'build it'", repo, s), "ask")
+    expect(
+        "shaping: copilot payload asks too", guard("git commit -m x", repo, s, copilot=True), "ask"
+    )
+    git(repo, "reset", "-q", "--", "src/x.py", "docs/note.md")
+    git(repo, "checkout", "--", "src/x.py")
+    (repo / "docs" / "note.md").unlink()
+    git(repo, "switch", "-q", "-c", "prototype/idea")
+    (repo / "src" / "x.py").write_text("X = 3\n", encoding="utf-8")
+    git(repo, "add", "src/x.py")
+    expect(
+        "prototype branch: commit with src passes", guard("git commit -m 'proto'", repo, s), "allow"
+    )
+    git(repo, "reset", "-q", "--", "src/x.py")
+    git(repo, "checkout", "--", "src/x.py")
+    git(repo, "switch", "-q", "main")
+    git(repo, "branch", "-q", "-D", "shaping/idea", "prototype/idea")
+
+
 def check_stop_and_start(repo: Path) -> None:
     expect(
         "stop gate passes on a clean tree",
@@ -313,6 +348,7 @@ def main() -> int:
     with tempfile.TemporaryDirectory() as tmp:
         repo = make_repo(Path(tmp))
         check_guard(repo)
+        check_shaping(repo)
         check_stop_and_start(repo)
         check_test_diff(repo)
         check_adr_format(Path(tmp))

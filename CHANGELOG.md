@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.10.0 (2026-09-21)
+
+The persona had grown to 23,400 characters, about 6,500 tokens loaded on every turn, three quarters of what the plugin side loads at all. Grilled and decided (design decision 46):
+
+- **The persona is the router again.** It keeps identity, voice, pushback, session start, the routing table, the branch rules, session boundaries, the Repowise policy and three lines on filing a defect; it no longer carries a step list, a repeated command or a description of what the hook enforces anyway. Under 10,000 characters, about 2,800 tokens.
+- **Three skills carry the steps:** `py-shape` (an idea to its ticket: the grill, research, prototype, the wayfinder map, the shaping branch), `py-build` (a ticket to its merge: the shape, Repowise, the seams, `implement` with `tdd`, the gates, the review, the merge question, the handoff) and `py-review` (the four axes). The health step lives in `py-baseline`, which already owned the gates. Nothing wraps or restates Matt Pocock's skills; ours hold only our steps and call his by name.
+- **CI holds the line.** `check_plugin.py` fails when the persona passes 10,000 characters ("grow a skill, not the persona") or when a folder under `skills/` is named by no routing row.
+- Section numbers moved: voice is section 5, the Repowise and one-place rule section 4, filing a defect section 8; `py-intake` and `py-baseline` point at the new numbers.
+
+## 0.9.0 (2026-09-21)
+
+From aihero.dev/skills' own grouping of Matt Pocock's skills (Getting Started, The Main Flow, Shaping, Upkeep, Productivity, Reference): the Shaping group was in `upstream.json` but nothing routed to it, so an idea went from the grill to a spec whatever the fog.
+
+- **Shaping is a step of the flow, before any ticket.** The persona routes every idea, feature or new project through a shaping block: `grill-with-docs` first; his `research` as a background reader (one subagent, told to spawn nothing) that leaves a dated, cited note in `docs/research/`; his `prototype` on a `prototype/<slug>` branch under `prototypes/`, which the checks skip, for a question talking cannot settle; his `wayfinder` when the grill turns up more fog than one session can hold, worked one decision ticket per session and handed to `to-spec` when the map clears. Session count decides the route, not size. Shaping runs on a `shaping/<slug>` branch that holds decisions only and lands on `main` before `to-spec`, so every later session reads them; a one-session idea becomes one ticket on that branch renamed. Map sessions hand off like ticket sessions.
+- **The hook asks before a commit on a `shaping/` branch that carries `src/` or `tests/` files.** Building inside a plan is the wayfinder failure his docs report most; the answer is a prototype branch or a ticket, unless the user asked in their own words. `test_hooks.py` drives it.
+- **Steps only a person can take go through his `wizard`.** At the door check (`uv`, `gh` or `glab` signed in, Node for Backlog.md, Google's skills) and for a project's keys (every `.env.example` variable a person must obtain, every `secrets.*` CI reads), the agent writes the script that opens each page, captures each value blind and writes it where it belongs; the user runs it in another terminal. Only Matt's plugin itself is installed by hand, because `wizard` is in it. No key passes through the chat.
+- **His `teach` is routed**, with the workspace named explicitly (`~/learning/<topic>/`, never the repo) and the AI Coding Dictionary, his skill pages and `py-design`'s canonical repos as its first resources.
+- **His AI Coding Dictionary is the one definition for the words of AI coding.** The persona fetches an entry's `description` line when the user asks what a word means or a decision turns on one, and gives the page once. The repository states no licence, so it is linked and read, never copied. `upstream.json` gains a `reference` entry pinned to its commit; `check_upstream_skills.py` verifies the term files the plugin names exist there; `find_skill.py` and `check_plugin.py` skip reference entries. `docs/research/ai-coding-dictionary.md` records what was checked.
+- Baseline: `docs/research/` and `prototypes/` in the files table; ruff `extend-exclude` and `force-exclude` and bandit skip `prototypes/` (re-running intake merges the keys into a repo set up earlier); `AGENTS.md`, `CONTEXT.md` and the intake report carry the pointers. Intake's greenfield finish routes through shaping instead of straight to `grill-with-docs`. Design decisions 43 to 45.
+
 ## 0.8.11 (2026-09-21)
 
 - Intake's finish step starts by checking every earlier step's "done when" line. In the live run, "finish intake" made the agent skip the three human docs and the harness shells and go straight to committing.
