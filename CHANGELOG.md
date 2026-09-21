@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.9 (2026-09-21)
+
+Issue #1: intake ended with commits, a merge summary and a question, and no one place saying what had been set up.
+
+- **Intake ends with one report.** Step 10 now fills `skills/py-intake/templates/intake-summary.md` before it asks to merge: what is installed and each tool's job in plain words; the checks as a table of when each runs and what it refuses; every file intake wrote and when to read it; how work goes from here (a branch per ticket, the shape, tests first, the one yes at the merge); what Repowise found in the orientation step, with the ADRs written and the tickets parked; the first ticket, the health command, and how a pack gets selected later. Every placeholder is a fact an earlier step established, and a row for anything intake skipped is deleted, so the report says what happened, not what the template offers.
+- **Shown and used as the pull request body, never committed.** Every fact in it lives in `AGENTS.md`, the tool tables, `docs/adr/` or Repowise; a copy in the tree would be the first `doc-drift` finding (persona section 12, ADR 0005). The merge summary no longer relists the new files, and the spoken "from here on I work on a branch per ticket" line is gone: the report's workflow section says it once. The template lives under `py-intake`, not `py-baseline`, because it never lands in a repo.
+- Design decision 42.
+
 ## 0.8.8 (2026-09-21)
 
 Three Repowise behaviours found by running intake on a scratch repo, each verified directly, each a plugin defect until now (decision 41, research record updated).
