@@ -80,7 +80,7 @@ def guard_off() -> bool:
 
 
 def staged_protected() -> list[str]:
-    out = subprocess.run(
+    out = subprocess.run(  # noqa: S603 - fixed argument list, no user input
         [GIT, "diff", "--cached", "--name-only", "--diff-filter=MDR"],
         capture_output=True,
         text=True,
