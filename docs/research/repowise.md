@@ -37,6 +37,14 @@ A local codebase-intelligence engine. `repowise init` parses the repo with tree-
 
 Change-level: after adding a 5-deep function to a clean file, the Python API `ChangeReviewService.review()` returned `status: review_required`, `introduced_total: 1`, naming the function and lines. The `repowise risk` CLI does **not** carry that health delta; only the API and the `get_change_risk` MCP tool do. `repowise health` has no threshold flag and always exits 0. The only Repowise command that exits non-zero on findings is `repowise workspace check` (multi-repo architecture rules).
 
+## Corrections from a live intake run (2026-09-21, repowise 0.52.0)
+
+- `repowise update` performs editor setup every time: it writes `.claude/CLAUDE.md` (which Claude Code then loads on every turn), `.vscode/mcp.json` and `.vscode/extensions.json`. `--help` offers no flag against it and `REPOWISE_SKIP_EDITOR_SETUP=1` is ignored. The plugin never runs `update`; the refresh is `init --no-prose --no-editor-setup --no-save-key -y`, which honours its flag and is idempotent.
+- `repowise generate-claude-md --output <file>` overwrites the whole target, markers or not; the "never modified outside the markers" merge holds only for the default `.claude/CLAUDE.md`. `--stdout` prints the same content; the plugin pipes it through `sed -n '/REPOWISE:START/,/REPOWISE:END/p'` into `docs/agents/repowise-map.md`, a file only Repowise writes. The map out of `AGENTS.md` also keeps it out of the `@AGENTS.md` include on every turn (about 5.7 KB on a four-file repo).
+- Every `.md` under `docs/adr/` becomes a decision record with the H1 as its title, a fenced template included. A README there shows up as a candidate called "Decisions". The ADR template therefore lives at `docs/agents/adr-template.md`.
+- An ADR with `## Status` Accepted lands as `proposed` on `init` (56% confidence, "no scope"), not accepted; `scripts/adr_sync.py`'s `decision confirm --scope` is what makes it govern. The line below that says Accepted becomes active on `init` was too strong.
+- `repowise decision dismiss <id>` prompts; `--yes` skips it.
+
 ## Decisions and ADRs, verified
 
 - An ADR under `docs/adr/` with Nygard headings and `## Status` containing `Accepted` becomes an active decision on `repowise init`, accepted by the file itself. Matt Pocock's one-line `Status: accepted` form lands as a candidate only.

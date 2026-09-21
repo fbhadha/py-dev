@@ -1,6 +1,6 @@
 # Architecture
 
-The rules only. The live map (modules, callers, entry points, hotspots) is Repowise: `get_overview()` from an agent, `uv run repowise serve` for the dashboard, or the managed section at the bottom of `AGENTS.md`. Nothing here repeats what the index can answer.
+The rules only. The live map (modules, callers, entry points, hotspots) is Repowise: `docs/agents/repowise-map.md`, `uv run repowise context <file>`, or `uv run repowise serve` for the dashboard. Nothing here repeats what the index can answer.
 
 ## Layers
 

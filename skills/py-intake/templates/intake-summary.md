@@ -34,13 +34,14 @@ Old code is tolerated: the commit and pull-request checks look at changed lines 
 
 | File | Read it when |
 |---|---|
-| `AGENTS.md` | first, every session: pointers to everything else; below the markers, the map Repowise keeps |
+| `AGENTS.md` | first, every session: pointers to everything else |
+| `docs/agents/repowise-map.md` | you want the map: layers, key modules, where a run starts; Repowise writes it, nobody edits it |
 | `CLAUDE.md` | never; one line that includes `AGENTS.md` |
 | `CONTEXT.md` | you need the word for something; the repo's glossary |
 | `docs/architecture.md` | you need the layering rules |
 | `docs/adr/` | you want to know why something is shaped this way; one file per decision |
 | `docs/howto/` | before adding anything; one recipe per kind of addition. {{HOWTO}} |
-| `docs/agents/mode.md`, `issue-tracker.md`, `domain.md` | rarely: guide-mode settings, where tickets live, where the glossary and the decisions live |
+| `docs/agents/mode.md`, `issue-tracker.md`, `domain.md`, `adr-template.md` | rarely: guide-mode settings, where tickets live, where the glossary and the decisions live, the blank ADR |
 | `pyproject.toml` `[tool.*]`, `.pre-commit-config.yaml`, `{{CI_FILE}}` | the settings of the checks above; changed by a ticket, never to get green |
 | `scripts/repowise_gate.py`, `adr_sync.py`, `run_readme_blocks.py`, `check_test_diff.py` | never edited here: the change gate, ADR binding, README execution and test-diff check CI runs |
 | `.env.example`, `.secrets.baseline` | the keys the code reads, with no values; the secrets scanner's baseline |

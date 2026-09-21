@@ -16,8 +16,8 @@ You run every flow yourself. The user talks and answers questions; they never ty
 1. Look for the line `python-dev guards active` that the session-start hook printed. It names the branch. Missing: the plugin's hooks are not running on this harness; tell the user so and that only your own discipline keeps `main` clean, and ask whether to continue.
 2. `docs/agents/mode.md` missing: run the skill `py-intake` and do nothing else until it finishes.
 3. If the user's first message is a path to a handoff document, read it first; never re-ask what it answers. It names the branch: `git switch <branch>` and `git merge origin/main` if it is behind.
-4. Read `AGENTS.md` only. It points at everything else; open `CONTEXT.md` when you write or grill, `docs/agents/issue-tracker.md` when you need a ticket, `docs/howto/` when you build. Reading them all up front costs tokens every session and most sessions need one.
-5. `uv run repowise status`: if its `Last sync commit` is not `git rev-parse HEAD`, run `uv run repowise update`. (The commit named in the `AGENTS.md` managed section only changes when `generate-claude-md` is re-run; do not use it as the test.)
+4. Read `AGENTS.md` only. It points at everything else; open `CONTEXT.md` when you write or grill, `docs/agents/issue-tracker.md` when you need a ticket, `docs/howto/` when you build, `docs/agents/repowise-map.md` when you need the map. Reading them all up front costs tokens every session and most sessions need one.
+5. `uv run repowise status`: if its `Last sync commit` is not `git rev-parse HEAD`, run `DO_NOT_TRACK=1 uv run repowise init --no-prose --no-editor-setup --no-save-key -y`. Never `repowise update`: it writes `.claude/CLAUDE.md` and `.vscode/` files whatever you pass it, and Claude Code would then load that file every turn.
 6. `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/find_skill.py" --door-check` (a clean result is cached for a day, so this is usually one line). Report anything missing with its install line. Never improvise a missing skill.
 7. Say in one line what comes next (section 2) and start it.
 
@@ -36,7 +36,7 @@ You can run three kinds of thing. **Skill**: invoke the skill by name through yo
 | "Where is this repo ugly?" | Health (section 5), then File `improve-codebase-architecture` on the worst file |
 | Tests the user does not trust | `uv run repowise health --format json` for that directory, then classify each test by `py-design/references/test-audit.md` |
 | "Why is it built this way?" | `uv run repowise why <file>`, then the ADR it names in `docs/adr/` |
-| A decision was just made | Write the ADR from `docs/adr/README.md` (`## Status` Accepted, `## Scope` paths), then `uv run python scripts/adr_sync.py`. This holds when Matt Pocock's `domain-modeling` offers the ADR too: his three gates decide whether, this template decides how, because Repowise reads his short form as a candidate only |
+| A decision was just made | Write the ADR into `docs/adr/` from `docs/agents/adr-template.md` (`## Status` Accepted, `## Scope` paths), then `uv run python scripts/adr_sync.py`. Nothing but decisions goes in `docs/adr/`: Repowise turns every file there into one. This holds when Matt Pocock's `domain-modeling` offers the ADR too: his three gates decide whether, this template decides how, because Repowise reads his short form as a candidate only |
 | Designing a module, class, seam or layout | Skill `py-design` |
 | Tooling, checks, CI, the repo's standard docs | Skill `py-baseline` |
 | Google ADK 2.x work | Skill `pack-adk`, then Google's Skill `adk-agent-builder` |
@@ -72,7 +72,7 @@ Then File `implement` (Matt Pocock's), with Skill `tdd` for each slice. These ru
 - Noisy output goes through `uv run repowise distill <command>`: the full suite, `pre-commit run --all-files`, `git log`, anything that prints pages. It keeps failures and summaries, drops the pass parade, preserves the exit code, and leaves a `[repowise#ref]` marker you can `repowise expand` if you need the rest. Never paste more than the last twenty lines of anything.
 - Never `--no-verify`. Never edit a rule to pass.
 
-Before review: `uv run repowise distill uv run pytest -m "not eval"`, `uv run repowise distill uv run pre-commit run --all-files`, `uv run python scripts/check_test_diff.py`, `uv run repowise update`, `uv run python scripts/repowise_gate.py`. A finding the gate or the test-diff check reports is fixed now. Update the how-to, `CONTEXT.md` or an ADR if the change touched what they describe.
+Before review: `uv run repowise distill uv run pytest -m "not eval"`, `uv run repowise distill uv run pre-commit run --all-files`, `uv run python scripts/check_test_diff.py`, `DO_NOT_TRACK=1 uv run repowise init --no-prose --no-editor-setup --no-save-key -y`, `uv run python scripts/repowise_gate.py`. A finding the gate or the test-diff check reports is fixed now. Update the how-to, `CONTEXT.md` or an ADR if the change touched what they describe.
 
 Commit as you go, with the ticket id and the decision in the message, never "wip". Then review (section 4) and fix the 🔴. Then land it:
 
@@ -95,14 +95,14 @@ End with one line per axis: count and worst finding. No overall verdict. Then as
 ## 5. Health
 
 ```bash
-uv run repowise update
+DO_NOT_TRACK=1 uv run repowise init --no-prose --no-editor-setup --no-save-key -y
 uv run repowise health --refactoring-targets
 uv run repowise dead-code --safe-only
 uv run repowise doc-drift
 uv run repowise decision health
 ```
 
-Report, in this order: the worst files with one plain sentence each on the marker that makes them bad; files safe to delete; docs that name things that no longer exist; hotspots no ADR governs. Write no report file; `repowise health --trend` is the history. Mutation testing (`uv run mutmut run`) only on the module the user names. Then offer to refresh the managed section of `AGENTS.md` (`uv run repowise generate-claude-md --output AGENTS.md`) on the current branch; it lands with the next merge.
+Report, in this order: the worst files with one plain sentence each on the marker that makes them bad; files safe to delete; docs that name things that no longer exist; hotspots no ADR governs. Write no report file; `repowise health --trend` is the history. Mutation testing (`uv run mutmut run`) only on the module the user names. Then refresh the map: `uv run repowise generate-claude-md --stdout | sed -n '/REPOWISE:START/,/REPOWISE:END/p' > docs/agents/repowise-map.md`. Repowise is the only writer of that file; it lands with the next merge.
 
 ## 6. Session boundaries
 
@@ -114,13 +114,14 @@ Repowise is the one store for everything derived from the code (ADR 0005). Its M
 
 | Moment | Command |
 |---|---|
-| Session start, `repowise status` behind HEAD | `uv run repowise update` |
+| Session start, `repowise status` behind HEAD | `DO_NOT_TRACK=1 uv run repowise init --no-prose --no-editor-setup --no-save-key -y` (never `update`: it writes editor files) |
 | Before editing a file | `uv run repowise why <file>`, `uv run repowise risk -t <file>` |
 | Before naming something new | `uv run repowise search <name>` |
 | Before review | `scripts/repowise_gate.py`, `repowise risk <range>`, `repowise impacted-tests <range>` |
 | Health, on request | section 5 |
 | Orientation in a repo | `py-intake` runs it |
-| Refreshing the map in `AGENTS.md` | `uv run repowise generate-claude-md --output AGENTS.md`, only in the health step |
+| Refreshing the map, `docs/agents/repowise-map.md` | `uv run repowise generate-claude-md --stdout | sed -n '/REPOWISE:START/,/REPOWISE:END/p' > docs/agents/repowise-map.md`, only in the health step. `--output` would overwrite the target file whole; never point it at `AGENTS.md` |
+| The map itself | open `docs/agents/repowise-map.md` when orienting or naming, never at session start |
 
 Never for browsing: to find or read code, grep and open the file. Never `repowise decision add`; a decision is an ADR file. Never write its output into `docs/`.
 

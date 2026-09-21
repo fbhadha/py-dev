@@ -40,7 +40,7 @@ Establish facts from the repo, never by guessing. Present them as one table and 
 | Packs | dependencies that select a knowledge pack (`pack-adk`: google-adk 2.x; `pack-data-engineering`: dlt, pandas, polars, pyarrow, sqlalchemy, duckdb, dbt-core, pandera, pyspark, prefect, dagster, airflow). A selected pack's "extra checks" section is applied in step 5 and its name is written under `## Packs` in `AGENTS.md` |
 | Docs already there | `CONTEXT.md`, `docs/adr/`, `docs/agents/`, `docs/howto/`, `README.md` |
 | Matt Pocock's skills already set up | `docs/agents/issue-tracker.md`, `docs/agents/domain.md`, `docs/agents/triage-labels.md`, an `## Agent skills` block in `AGENTS.md` or `CLAUDE.md`, a `backlog/` directory: which exist. Any of them means his setup ran before; steps 4 and 7 keep what it wrote and ask only about what is missing |
-| Repowise already in use | `.repowise/` present; `AGENTS.md` has a `REPOWISE:START` marker; `.mcp.json` or `.claude/settings.json` names repowise (the user wired the editor themselves); `uv run repowise decision list` shows decisions that have no ADR file behind them; `uv run repowise status` for when the index was last synced. Anything found means the user has used Repowise here; step 6 keeps the index and the wiring and step 7 turns stored decisions into ADRs |
+| Repowise already in use | `.repowise/` present; `docs/agents/repowise-map.md` or a `REPOWISE:START` marker in `AGENTS.md` or `.claude/CLAUDE.md` (an older layout, or `repowise update` run by hand: the map moves to its own file, the marker section is removed from the agent file, shown first); `.mcp.json` or `.claude/settings.json` names repowise (the user wired the editor themselves); `uv run repowise decision list` shows decisions that have no ADR file behind them; `uv run repowise status` for when the index was last synced. Anything found means the user has used Repowise here; step 6 keeps the index and the wiring and step 7 turns stored decisions into ADRs |
 
 ## 2. Mode
 
@@ -87,7 +87,7 @@ Call the Skill tool with "py-baseline" and follow its application rules: merge, 
 4. `scripts/repowise_gate.py`, `scripts/adr_sync.py`, `scripts/run_readme_blocks.py`, `scripts/check_test_diff.py`.
 5. **CI.** No workflow yet: `.github/workflows/ci.yml` on a GitHub remote, `.gitlab-ci.yml` on GitLab, both when there is no remote. A workflow already exists: never edit it. Add ours beside it as `.github/workflows/python-dev-checks.yml`, or on GitLab a `python-dev-checks.yml` that the user includes from `.gitlab-ci.yml` (that one-line include is a change to their file: show it, ask). Their pipeline keeps running; ours adds pre-commit on changed lines, the test-diff check, coverage on changed lines and the change gate.
 6. `.env.example`; `.gitignore` gets `.env`, `.repowise/`, `coverage.lcov`, `.mutmut-cache/`; `.secrets.baseline` stays tracked. An existing `.gitignore` is a change: show the lines you will add.
-7. `CONTEXT.md` from the template if absent; `docs/adr/` with the template as `docs/adr/README.md`.
+7. `CONTEXT.md` from the template if absent; `docs/agents/adr-template.md` from `templates/adr-template.md`; `docs/adr/` created empty (any `.md` in it becomes a Repowise decision, so no README there).
 8. **Packs.** For each pack step 1 selected, open its `SKILL.md` and apply its "Extra checks this pack turns on" section: the ruff groups into `select`, the import-linter contract, the pre-commit hook, the dev dependencies (`uv add --group dev ...`). Write the pack's name under `## Packs` in `AGENTS.md`. No pack selected: leave the section's comment as it is.
 
 Brownfield: do not apply everything in one commit. Propose the baseline as tickets on the tracker, one file group each (tool tables and pre-commit; CI; scripts and docs), and apply the first one now. Turning strict checks on over ten thousand lines at once is the horizontal slice that never lands. Strictness applies to changed lines only (pre-commit on staged files, CI from `origin/main`), so old code is tolerated and new mess is blocked.
@@ -96,19 +96,19 @@ Prove each gate bites before moving on: make one violation on a scratch file (a 
 
 ## 6. Repowise
 
-Done when `.repowise/` exists and `AGENTS.md` has the managed section.
+Done when `.repowise/` exists and `docs/agents/repowise-map.md` exists.
 
-Already in use (step 1 found `.repowise/`): do not run `init` again; `uv run repowise update` brings the index to HEAD and `generate-claude-md` is idempotent, so only the missing piece runs. Editor wiring the user made (`.mcp.json`, hooks) stays; say once that the agent itself uses the CLI. Confirm with the user before any of it: "You have used Repowise here before; I will keep the index and your wiring and only add what is missing. Right?"
+Already in use (step 1 found `.repowise/`): keep the index and any editor wiring the user made; run only the lines below that are missing their result, and confirm first in one line: "You have used Repowise here before; I will keep the index and your wiring and only add what is missing. Right?"
 
 ```bash
-DO_NOT_TRACK=1 uv run repowise init --no-prose --no-editor-setup --no-save-key -y
-uv run repowise generate-claude-md --output AGENTS.md
+DO_NOT_TRACK=1 uv run repowise init --no-prose --no-editor-setup --no-save-key -y . > /tmp/repowise-init.txt 2>&1; grep -i "find the bug\|health score" /tmp/repowise-init.txt
+uv run repowise generate-claude-md --stdout | sed -n '/REPOWISE:START/,/REPOWISE:END/p' > docs/agents/repowise-map.md
 uv run python scripts/adr_sync.py --no-index
 ```
 
-`generate-claude-md` appends a managed section between `REPOWISE:START` and `REPOWISE:END` markers to `AGENTS.md` and touches nothing above them. It is still a change to an existing file: say what it will add, get the yes, run it.
+Three facts about Repowise 0.52 that shape those lines: `repowise update` writes `.claude/CLAUDE.md` and `.vscode/` files and no flag or variable stops it, so the plugin never runs `update`; `init` with `--no-editor-setup` is the refresh, idempotent and seconds long. `generate-claude-md --output <file>` overwrites the whole file, so the map lives in its own file that only Repowise writes, and `AGENTS.md` points at it. Every `.md` under `docs/adr/` becomes a decision candidate, so the ADR template lives in `docs/agents/`, not there. `.claude/CLAUDE.md` or `.vscode/mcp.json` found in the tree with no `.claude/settings.json` of the user's own: say they came from `repowise update` and propose deleting them.
 
-Read the "Does the score find the bugs?" line `init` prints and repeat it to the user: it is the evidence that the health score means something on this repo, or that the repo is too young to say.
+Read the "Does the score find the bugs?" line from the saved output (run `init` once, never three times to grep it) and repeat it to the user: it is the evidence that the health score means something on this repo, or that the repo is too young to say.
 
 Do not wire Repowise into the editor (`.mcp.json`, `~/.claude/settings.json`). The agent uses the CLI for everything it needs; its MCP tool definitions are a fixed cost on every turn, how large depends on the harness, and the CLI is pay-per-use. Say so in one sentence. If the user asks for it anyway, the command is `uv run repowise init -y`, and it is theirs to run.
 
@@ -118,7 +118,7 @@ Done when `CONTEXT.md` has at least three terms from this repo and every decisio
 
 Read, in this order, and say nothing until you have all of it:
 
-1. The map: the `AGENTS.md` managed section (architecture, key modules, entry points), then `uv run repowise context <file>` on at most three entry points, the ones the section lists first. `context` takes files and symbols (`path.py::Name`), not directories, and its output is long; three is enough to describe the repo.
+1. The map: `docs/agents/repowise-map.md` (architecture, key modules, entry points), then `uv run repowise context <file>` on at most three entry points, the ones the map lists first. `context` takes files and symbols (`path.py::Name`), not directories, and its output is long; three is enough to describe the repo.
 2. Health: `uv run repowise health --refactoring-targets`.
 3. Dead code: `uv run repowise dead-code --safe-only`.
 4. Decisions: `uv run repowise decision list` first: any accepted decision with no ADR file in `docs/adr/` was added through Repowise directly; then `uv run repowise decision candidates` and `uv run repowise decision health` (ungoverned hotspots).
@@ -128,8 +128,8 @@ Then tell the user what the repo is, in one message, one or two sentences per it
 
 Now the grill. Call the Skill tool with "grilling". The questions come from what Repowise surfaced and from step 3, one at a time, each with your recommended answer and its cost:
 
-- Every stored decision with no ADR behind it: "You recorded this in Repowise: <title>. Still true?" Yes: write the ADR from `templates/adr-template.md` with the same title and its paths under `## Scope`, then `uv run python scripts/adr_sync.py` (the ADR is the one write path, ADR 0005; the store entry is kept, now bound to the file). No: `uv run repowise decision deprecate <id>`.
-- Every decision candidate: "Repowise found this in `<evidence>`: <quote>. Is this a rule of the repo?" Yes: write the ADR from `templates/adr-template.md` with the paths under `## Scope`, then `uv run python scripts/adr_sync.py`. No: `uv run repowise decision dismiss <id>`. Not now: a `later` ticket.
+- Every stored decision with no ADR behind it (`decision list` shows an ADR-sourced one as `proposed` until `adr_sync.py` confirms it; that is normal, not a stored decision): "You recorded this in Repowise: <title>. Still true?" Yes: write the ADR from `docs/agents/adr-template.md` with the same title and its paths under `## Scope`, then `uv run python scripts/adr_sync.py` (the ADR is the one write path, ADR 0005; the store entry is kept, now bound to the file). No: `uv run repowise decision deprecate <id>`.
+- Every decision candidate: "Repowise found this in `<evidence>`: <quote>. Is this a rule of the repo?" Yes: write the ADR from `docs/agents/adr-template.md` with the paths under `## Scope`, then `uv run python scripts/adr_sync.py`. No: `uv run repowise decision dismiss <id> --yes`. Not now: a `later` ticket.
 - Every ungoverned hotspot: "This file is fixed often and no decision covers it. Why is it shaped this way?" The answer is an ADR, a `CONTEXT.md` term, or a `later` ticket titled with the question.
 - Every prose rule carried over into `AGENTS.md` in step 3: "A check enforces this now (`<rule>`): delete the sentence?" or "Nothing enforces this. Should a check, an ADR, or neither?" Deleting the sentence is a change to `AGENTS.md`: show it, get the yes.
 - Every repeated shape without a how-to: "You have four adapters that look alike. Is adding another one a thing people do here?" Yes: the first how-to in step 8 is that shape.
