@@ -11,8 +11,13 @@ Usage:
     uv run python scripts/adr_sync.py            # re-index, then bind
     uv run python scripts/adr_sync.py --no-index # bind against the current index (CI)
 
-Exit codes: 0 all accepted ADRs are bound; 1 an ADR could not be bound (no Scope
-section, no matching decision, or Repowise refused); 2 repowise is not installed.
+Exit codes: 0 all accepted ADRs are bound; 1 an ADR could not be bound (no Status
+or Scope section, no matching decision, or Repowise refused); 2 repowise is not
+installed. `docs/adr/README.md` is the template and is skipped.
+
+An ADR in Matt Pocock's short form (a title and a paragraph, no `## Status`) is
+reported, not skipped: Repowise reads it as a candidate only, so it governs
+nothing until it carries `## Status` Accepted and `## Scope` paths.
 """
 
 from __future__ import annotations
@@ -62,16 +67,41 @@ def repowise(*args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(["repowise", *args], capture_output=True, text=True, check=False, env=env)
 
 
+def format_problem(adr: Path, text: str) -> str | None:
+    """Why this file cannot govern anything yet, or None when its shape is right."""
+    parts = sections(text)
+    if "status" not in parts:
+        return (
+            f"{adr}: no '## Status' section, so Repowise reads it as a candidate only. "
+            "Add '## Status' with Accepted and a '## Scope' list of the paths it governs."
+        )
+    status = parts["status"].split()
+    if (
+        status
+        and status[0].lower() in ("accepted", "approved")
+        and not scope_paths(parts.get("scope", ""))
+    ):
+        return f"{adr}: accepted but has no '## Scope' paths; add the paths it governs"
+    return None
+
+
+def is_template(adr: Path, text: str) -> bool:
+    return adr.name.lower() == "readme.md" or "{{" in title_of(text)
+
+
 def bind(adr: Path, by_title: dict[str, dict[str, str]]) -> str | None:
     """Bind one ADR. Returns an error message, or None when bound or not accepted."""
     text = adr.read_text(encoding="utf-8")
+    if is_template(adr, text):
+        return None
+    problem = format_problem(adr, text)
+    if problem:
+        return problem
     parts = sections(text)
-    status = parts.get("status", "").split()
+    status = parts["status"].split()
     if not status or status[0].lower() not in ("accepted", "approved"):
         return None
     paths = scope_paths(parts.get("scope", ""))
-    if not paths:
-        return f"{adr}: accepted but has no '## Scope' paths; add the paths it governs"
     title = title_of(text)
     decision = by_title.get(title.lower())
     if decision is None:

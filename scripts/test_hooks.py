@@ -24,6 +24,8 @@ ROOT = Path(__file__).resolve().parent.parent
 HOOKS = ROOT / "scripts" / "hooks"
 GUARD = HOOKS / "guard_command.py"
 TEST_DIFF = ROOT / "skills" / "py-baseline" / "templates" / "check_test_diff.py"
+ADR_SYNC = ROOT / "skills" / "py-baseline" / "templates" / "adr_sync.py"
+ADR_TEMPLATE = ROOT / "skills" / "py-baseline" / "templates" / "adr-template.md"
 FAILURES: list[str] = []
 ORIGINAL_TESTS = (
     "def test_one():\n    assert 1 == 1\n    assert 2 == 2\n\n\n"
@@ -231,12 +233,43 @@ def check_test_diff(repo: Path) -> None:
     git(repo, "switch", "-q", "main")
 
 
+def check_adr_format(tmp: Path) -> None:
+    """adr_sync's shape check: the template copy is skipped, the short form is reported."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("adr_sync", ADR_SYNC)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    readme = tmp / "README.md"
+    readme.write_text(ADR_TEMPLATE.read_text(encoding="utf-8"), encoding="utf-8")
+    expect(
+        "adr_sync skips the template copy",
+        "skipped" if module.is_template(readme, readme.read_text()) else "bound",
+        "skipped",
+    )
+    short = tmp / "0001-short.md"
+    short.write_text("# Use one queue\n\nWe picked one queue because it is simpler.\n")
+    expect(
+        "adr_sync reports the short form",
+        "reported" if module.format_problem(short, short.read_text()) else "silent",
+        "reported",
+    )
+    full = tmp / "0002-full.md"
+    full.write_text("# Use one queue\n\n## Status\n\nAccepted\n\n## Scope\n\n- src/q/\n")
+    expect(
+        "adr_sync accepts the governing form",
+        "silent" if module.format_problem(full, full.read_text()) is None else "reported",
+        "silent",
+    )
+
+
 def main() -> int:
     with tempfile.TemporaryDirectory() as tmp:
         repo = make_repo(Path(tmp))
         check_guard(repo)
         check_stop_and_start(repo)
         check_test_diff(repo)
+        check_adr_format(Path(tmp))
     if FAILURES:
         print("\nHOOK TESTS FAILED:")
         for failure in FAILURES:

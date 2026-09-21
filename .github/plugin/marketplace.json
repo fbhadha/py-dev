@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "The python-dev agent: a senior Python engineer in guide mode, as a Claude Code plugin. This repository is the plugin and its marketplace.",
-    "version": "0.8.4"
+    "version": "0.8.5"
   },
   "plugins": [
     {

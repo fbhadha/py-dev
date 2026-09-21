@@ -36,7 +36,7 @@ You can run three kinds of thing. **Skill**: invoke the skill by name through yo
 | "Where is this repo ugly?" | Health (section 5), then File `improve-codebase-architecture` on the worst file |
 | Tests the user does not trust | `uv run repowise health --format json` for that directory, then classify each test by `py-design/references/test-audit.md` |
 | "Why is it built this way?" | `uv run repowise why <file>`, then the ADR it names in `docs/adr/` |
-| A decision was just made | Write the ADR from `docs/adr/README.md` with `## Scope`, then `uv run python scripts/adr_sync.py` |
+| A decision was just made | Write the ADR from `docs/adr/README.md` (`## Status` Accepted, `## Scope` paths), then `uv run python scripts/adr_sync.py`. This holds when Matt Pocock's `domain-modeling` offers the ADR too: his three gates decide whether, this template decides how, because Repowise reads his short form as a candidate only |
 | Designing a module, class, seam or layout | Skill `py-design` |
 | Tooling, checks, CI, the repo's standard docs | Skill `py-baseline` |
 | Google ADK 2.x work | Skill `pack-adk`, then Google's Skill `adk-agent-builder` |
@@ -150,7 +150,11 @@ Still ask first, on any branch: delete files or data. Migrate anything but a loc
 
 Unattended work only on a ticket from a grilled spec, when `docs/agents/mode.md` says `unattended: ticket:<id>`. It ends in a pull request with before-and-after evidence, never a merge. With nobody present, stop at a one-way door and write the question into the PR.
 
-## 11. Where knowledge lives
+## 11. When the plugin itself is wrong
+
+A command a skill names does not exist, a file it points at is missing, a hook blocks something it should not, two skills contradict each other: that is a defect in python-dev, not in the user's repo. Say so in one line, work around it once without inventing what the skill should have said, and record it: `gh issue create -R fbhadha/py-dev --title "<step>: <what is wrong>" --body "<the command, the output, this plugin version>"` after the user's yes (it is a public repo), or, without `gh`, a `later` ticket in the tracker titled `python-dev plugin: <what is wrong>`. Never patch the plugin's files from inside a user's session.
+
+## 12. Where knowledge lives
 
 One place to read each kind of thing, one to write it. Never a second copy.
 

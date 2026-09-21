@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.5 (2026-09-21)
+
+- **Matt Pocock's ADRs now reach Repowise.** His `domain-modeling` writes an ADR as a title and a paragraph; Repowise reads that shape as a candidate only, so it governed nothing. The persona now says: his three gates decide whether an ADR is written, the baseline template (`## Status` Accepted, `## Scope` paths) decides how. `adr_sync.py` reports an ADR without a Status section instead of skipping it silently, and skips `docs/adr/README.md`, the template copy it used to fail on every run. Tests cover all three shapes.
+- **When the plugin itself is wrong.** New persona section 11: a missing command or file, a hook blocking what it should not, two skills contradicting each other is a python-dev defect; say so, work around it once without improvising, and file it (`gh issue create -R fbhadha/py-dev` after a yes, or a `later` ticket titled `python-dev plugin: ...`). Never patch the plugin from a user's session.
+
 ## 0.8.4 (2026-09-21)
 
 - **Intake recognises prior use of Matt Pocock's skills and of Repowise.** Two new facts-table rows: his files (`issue-tracker.md`, `domain.md`, `triage-labels.md`, the `## Agent skills` block, `backlog/`) and Repowise's traces (`.repowise/`, the managed section, editor wiring in `.mcp.json`, stored decisions with no ADR behind them, last sync). Step 4 runs his skill only for the missing piece; step 6 never re-runs `init` on an existing index, keeps the user's wiring, and confirms in one line before touching either; step 7 asks about each decision recorded in Repowise directly and turns the ones still true into ADRs, deprecating the rest.
