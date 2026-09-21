@@ -18,6 +18,9 @@ jobs:
         run: python scripts/check_plugin.py
       - name: Every hook decision, against a scratch git repo
         run: python scripts/test_hooks.py
+      - uses: astral-sh/setup-uv@v6
+      - name: The baseline's dev dependency group resolves with Repowise
+        run: python scripts/check_template_deps.py
 
   upstream-skills:
     runs-on: ubuntu-latest

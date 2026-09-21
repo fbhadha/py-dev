@@ -9,11 +9,11 @@ requires-python = ">={{PYTHON}}"
 [dependency-groups]
 dev = [
   "ruff>=0.16",
-  "mypy>=2.3",
+  "mypy>=1.10",
   "pytest>=9",
   "pytest-cov>=7",
   "diff-cover>=9",   # coverage on the lines a change added, enforced in CI
-  "import-linter>=2.15",
+  "import-linter>=2.0",  # floors stay low: repowise pins rich<14 and pathspec<1, uv picks the newest that fits
   "pylint>=4",
   "pre-commit>=4.6",
   "detect-secrets>=1.5",

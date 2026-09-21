@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.7 (2026-09-21)
+
+Found by running intake on a scratch pandas repo as a user would.
+
+- **The baseline's dev group did not resolve.** `mypy>=2.3` names a version that does not exist, and `import-linter>=2.15` needs `rich>=14.2` while Repowise pins `rich<14`; `uv sync` failed and the agent spent twenty turns probing PyPI before pinning around it. Floors lowered to `mypy>=1.10` and `import-linter>=2.0` so `uv` picks the newest set that fits. New `scripts/check_template_deps.py` locks the template's dev group in CI, so a floor that stops resolving fails here, not in a user's intake. Intake now says what to do on a conflict: lower the floor, let `uv` pick, file the plugin defect, no probing.
+- **One question fewer.** The agent asked whether to keep the default triage labels although intake had settled it; the tracker step now names every answer his setup skill's questions have.
+
 ## 0.8.6 (2026-09-21)
 
 - **Nothing leaves the project without a prompt.** The command guard asks before any `gh` or `glab` command with `-R`/`--repo` naming a repo other than this project's `origin`, a `gh api` write under another repo's path, a gist, or a `git push` to a remote or URL that is not origin. Reads pass. The prompt names both repos. Origin is read from `git remote get-url origin` and normalized across https, ssh, `host/owner/repo` and `owner/repo` forms, GitLab subgroups included. Nine tests. The persona's plugin-bug report now says the hook asks as well.
