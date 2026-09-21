@@ -62,6 +62,7 @@ The skills are shared; they are plain `SKILL.md` folders every harness reads. Wh
 | Layer | Mechanism | What it catches |
 |---|---|---|
 | The hook asks before `main` | A pre-tool hook on shell commands answers `ask` for anything that lands on `main`: a commit while `main` is checked out, a merge into it, a push to it, `gh pr merge` or `glab mr merge`. The harness's own permission prompt is the yes. On a branch nothing asks. | The agent committing to `main` by habit, or merging without you |
+| Nothing leaves the project unseen | The same hook asks for any `gh`, `glab` or `git push` aimed at a repo that is not this project's `origin`: another `-R` repo, a write through `gh api`, a gist, a push to a fork or a URL. Reads (`view`, `list`, `status`, `diff`) pass. The prompt names both repos. | Content from your repo going to a public issue, a gist or someone else's fork without your eyes on it |
 | Branch protection on the server | Set at the end of intake with your yes (`gh api`, `glab api`): no push to `main`, no merge until the CI jobs are green. | Any tool or person, hook or no hook |
 | The turn cannot end red | The stop hook runs ruff on the files the session changed and blocks until it is clean. | A turn ending mid-mess |
 

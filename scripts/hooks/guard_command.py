@@ -10,6 +10,12 @@ command), a push to main (explicit, or a bare push while on main), and merging a
 pull or merge request from the command line (`gh pr merge`, `glab mr merge`). On
 a branch, nothing asks: commit, push and merging main into the branch are free.
 
+Also asked: anything that sends content to a repo other than this project's
+`origin`. A `gh` or `glab` command with `-R`/`--repo` naming another repo, a
+`gh api` call that writes under another repo's path, a gist, or a `git push` to
+a remote or URL that is not origin. Reads (`view`, `list`, `status`, `diff`) do
+not ask. The reason names both repos so the human can see what is leaving.
+
 Reads either harness's payload. Any failure exits 0 with no output.
 """
 
@@ -46,6 +52,14 @@ PUSH = re.compile(GIT + r"\bpush\b")
 PUSH_TO_MAIN = re.compile(GIT + r"\bpush\b[^|;&]*\s(\S+\s+)?(\S+:)?" + MAIN + r"\b")
 SWITCH_TO_MAIN = re.compile(GIT + r"\b(switch|checkout)\s+(-q\s+)?" + MAIN + r"\b")
 PR_MERGE = re.compile(r"\b(gh\s+pr\s+merge|glab\s+mr\s+merge)\b")
+REPO_FLAG = re.compile(r"\b(?:gh|glab)\b[^|;&]*?\s(?:-R|--repo)[\s=]+(\S+)")
+API_PATH = re.compile(r"\bgh\s+api\b[^|;&]*?\s(?:/)?(?:repos|projects)/([\w.-]+/[\w.-]+)")
+API_WRITE = re.compile(
+    r"\bgh\s+api\b[^|;&]*?(\s-X\s*(POST|PUT|PATCH|DELETE)\b|\s(-f|-F|--field|--raw-field|--input)\b)"
+)
+GIST = re.compile(r"\bgh\s+gist\s+create\b")
+READ_VERBS = re.compile(r"\b(?:gh|glab)\s+\w+\s+(view|list|status|diff|checks|download|clone)\b")
+PUSH_TARGET = re.compile(r"\bgit\b[^|;&]*\bpush\b(?:\s+-\S+)*\s+(\S+)")
 
 
 def is_shell_tool(name: str) -> bool:
@@ -78,6 +92,48 @@ def lands_on_main(command: str, branch: str) -> str | None:
     return None
 
 
+def leaves_project(command: str) -> tuple[str, str] | None:
+    """(what, target) when the command sends content outside this project's origin."""
+    origin = c.remote_repo("origin")
+    host = origin.split("/")[0] if origin else "github.com"
+    if GIST.search(command):
+        return "create a gist", "a gist outside this repo"
+    flagged = REPO_FLAG.search(command)
+    if flagged and not READ_VERBS.search(command):
+        target = c.normalize_repo(flagged.group(1), host)
+        if target != origin:
+            return "send to another repo", target
+    api = API_PATH.search(command)
+    if api and API_WRITE.search(command):
+        target = c.normalize_repo(api.group(1), host)
+        if target != origin:
+            return "write to another repo through the API", target
+    push = PUSH_TARGET.search(command)
+    if push and not push.group(1).startswith("-"):
+        name = push.group(1)
+        target = (
+            c.remote_repo(name) if not re.search(r"[:/]", name) else c.normalize_repo(name, host)
+        )
+        if name != "origin" and target and target != origin:
+            return "push to another repo", target
+    return None
+
+
+def ask_leaving(command: str) -> bool:
+    found = leaves_project(command)
+    if not found:
+        return False
+    what, target = found
+    origin = c.remote_repo("origin") or "no origin remote"
+    c.decision(
+        "ask",
+        f"python-dev: this would {what}: {target}. This project's repo is {origin}. "
+        "Approve only if you have seen exactly what will be sent; nothing from this repo's "
+        "code, paths, hosts, keys or data should leave without your say-so.",
+    )
+    return True
+
+
 def main() -> int:
     try:
         payload = c.read_payload()
@@ -89,6 +145,8 @@ def main() -> int:
             c.decision("deny", reason)
             return 0
         if c.guard_off() or c.repo_root() is None:
+            return 0
+        if ask_leaving(command):
             return 0
         action = lands_on_main(command, c.current_branch())
         if action:

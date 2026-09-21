@@ -72,6 +72,8 @@ def make_repo(tmp: Path) -> Path:
     (repo / "src" / "x.py").write_text("X = 1\n", encoding="utf-8")
     (repo / "tests" / "test_x.py").write_text(ORIGINAL_TESTS, encoding="utf-8")
     git(repo, "init", "-q", "-b", "main")
+    git(repo, "remote", "add", "origin", "git@github.com:me/proj.git")
+    git(repo, "remote", "add", "fork", "https://github.com/other/proj.git")
     git(repo, "add", ".")
     git(repo, "commit", "-q", "-m", "init")
     return repo
@@ -129,6 +131,44 @@ def check_guard(repo: Path) -> None:
     )
     expect("branch: gh pr merge asks", guard("gh pr merge 12 --merge", repo, s), "ask")
     expect("branch: glab mr merge asks", guard("glab mr merge 12", repo, s), "ask")
+    # sending content outside this project's repo asks; reads and own-repo writes do not
+    expect(
+        "other repo: gh issue create -R asks",
+        guard("gh issue create -R fbhadha/py-dev --title x --body-file d.md", repo, s),
+        "ask",
+    )
+    expect(
+        "other repo: gh api POST asks",
+        guard("gh api -X POST repos/fbhadha/py-dev/issues -f title=x", repo, s),
+        "ask",
+    )
+    expect("other repo: gist asks", guard("gh gist create notes.md", repo, s), "ask")
+    expect("other repo: push to a fork asks", guard("git push fork ticket/1", repo, s), "ask")
+    expect(
+        "other repo: push to a URL asks",
+        guard("git push https://github.com/other/x.git ticket/1", repo, s),
+        "ask",
+    )
+    expect(
+        "other repo: gh issue view -R passes",
+        guard("gh issue view -R fbhadha/py-dev 12", repo, s),
+        "allow",
+    )
+    expect(
+        "own repo: gh issue create passes",
+        guard("gh issue create --title x --body y", repo, s),
+        "allow",
+    )
+    expect(
+        "own repo: gh issue create -R me/proj passes",
+        guard("gh issue create -R me/proj --title x", repo, s),
+        "allow",
+    )
+    expect(
+        "own repo: gh api GET passes",
+        guard("gh api repos/fbhadha/py-dev/releases/latest", repo, s),
+        "allow",
+    )
     # the never list, on any branch
     expect("force-push denied", guard("git push --force origin ticket/1", repo, s), "deny")
     expect("rebase denied", guard("git rebase main", repo, s), "deny")

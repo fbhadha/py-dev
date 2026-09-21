@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.6 (2026-09-21)
+
+- **Nothing leaves the project without a prompt.** The command guard asks before any `gh` or `glab` command with `-R`/`--repo` naming a repo other than this project's `origin`, a `gh api` write under another repo's path, a gist, or a `git push` to a remote or URL that is not origin. Reads pass. The prompt names both repos. Origin is read from `git remote get-url origin` and normalized across https, ssh, `host/owner/repo` and `owner/repo` forms, GitLab subgroups included. Nine tests. The persona's plugin-bug report now says the hook asks as well.
+
 ## 0.8.5 (2026-09-21)
 
 - **Filing a plugin bug shows the draft first.** The issue goes to a public repo, so the agent drafts title and body with nothing from the user's code, paths, hostnames, keys or data, shows it, and sends only the text the user approved.

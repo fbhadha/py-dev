@@ -79,6 +79,28 @@ def is_main(branch: str) -> bool:
     return branch in MAIN_BRANCHES
 
 
+def normalize_repo(ref: str, default_host: str = "github.com") -> str:
+    """'host/owner/repo' from a URL, an ssh address, 'host/owner/repo' or 'owner/repo'."""
+    ref = re.sub(r"\.git/?$", "", ref.strip().strip("'\""))
+    url = re.match(r"^(?:https?|ssh)://(?:[^@/]+@)?([\w.-]+)/(.+)$", ref)
+    ssh = re.match(r"^[\w.-]+@([\w.-]+):(.+)$", ref)
+    m = url or ssh
+    if m:
+        return f"{m.group(1)}/{m.group(2).strip('/')}".lower()
+    parts = ref.strip("/").split("/")
+    if len(parts) >= 3 and "." in parts[0]:
+        return "/".join(parts).lower()
+    return f"{default_host}/{'/'.join(parts)}".lower()
+
+
+def remote_repo(name: str = "origin") -> str:
+    """The normalized repo a git remote points at; empty when there is no such remote."""
+    result = subprocess.run(
+        ["git", "remote", "get-url", name], capture_output=True, text=True, check=False
+    )
+    return normalize_repo(result.stdout) if result.returncode == 0 and result.stdout.strip() else ""
+
+
 def decision(kind: str, reason: str) -> None:
     """Answer in both harnesses' shapes: Claude Code nested, Copilot top level."""
     json.dump(
