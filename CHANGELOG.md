@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.3 (2026-09-21)
+
+- **Cross-references are checked in CI.** `check_plugin.py` now fails when a skill or the persona names a `templates/`, `references/` or `scripts/` file that does not exist (here, in `py-baseline`, or on a line naming the upstream skill it belongs to), calls a skill that is neither in `skills/` nor in `upstream.json`, refers to a step or section number past the last heading, or is a pack missing one of the template's six sections. This is the class of bug 0.8.2 fixed by hand; it found one more (`pack-adk` had no faults table) on its first run.
+
 ## 0.8.2 (2026-09-21)
 
 - **Packs verified and wired.** `docs/research/packs.md` records every library claim in `pack-adk`, `adk-migrate`, `pack-data-engineering` and the canonical examples, checked by fetching the file at Google's pinned ADK commit, dlt `devel`, requests `main` and the cosmic python repo. All hold. Two gaps fixed: intake's facts table promised the selected pack's extra checks would be applied in the baseline step, but the step had no line for it (now sub-step 8, which also writes `## Packs` in `AGENTS.md`); `pack-adk` lacked the template's Canonical repo, Extra checks and Tests sections, so `pytest-asyncio` and `asyncio_mode = "auto"` were never installed (now listed). An unverifiable "seven other skills" count is gone.

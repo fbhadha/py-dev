@@ -97,6 +97,65 @@ def check_rendered_agents() -> list[str]:
         return []
     return [line.strip() for line in result.stdout.splitlines() if line.strip()]
 
+REF_RE = re.compile(r"`?((?:templates|references|scripts)/[A-Za-z0-9_.-]+\.[a-z]+)`?")
+CALL_RE = re.compile(r"(?:Skill|File) `([a-z][a-z0-9-]+)`|Skill tool with \"([a-z][a-z0-9-]+)\"")
+STEP_RE = re.compile(r"\b[Ss]tep (\d+)\b")
+SECTION_RE = re.compile(r"\bsection (\d+)\b")
+PACK_SECTIONS = (
+    "## Selected when",
+    "## Shapes",
+    "## Canonical repo",
+    "## Extra checks this pack turns on",
+    "## Faults this pack looks for",
+    "## Tests",
+)
+
+
+def upstream_names() -> set[str]:
+    data = json.loads((ROOT / "upstream.json").read_text(encoding="utf-8"))
+    return {name for up in data["upstreams"] for name in up["skills"]}
+
+
+def resolve_ref(ref: str, here: Path, line: str, upstream: set[str]) -> bool:
+    """A templates/, references/ or scripts/ path must exist here, in py-baseline, or upstream."""
+    candidates = [here / ref, ROOT / "skills" / "py-baseline" / ref, ROOT / ref]
+    if ref.startswith("scripts/"):
+        candidates.append(ROOT / "skills" / "py-baseline" / "templates" / Path(ref).name)
+    if ref.startswith("templates/"):
+        candidates += [d / ref for d in (ROOT / "skills").iterdir()]
+    if ref.startswith("references/"):
+        candidates += [d / ref for d in (ROOT / "skills").iterdir()]
+    if any(c.exists() for c in candidates):
+        return True
+    return ref.startswith("references/") and any(name in line for name in upstream)
+
+
+def check_references(doc: Path) -> list[str]:
+    """Every file, skill, step and section a document names must exist."""
+    problems: list[str] = []
+    rel = doc.relative_to(ROOT)
+    text = doc.read_text(encoding="utf-8")
+    upstream = upstream_names()
+    local = {d.name for d in (ROOT / "skills").iterdir() if d.is_dir()}
+    headings = len(re.findall(r"^## \d+\.", text, re.M))
+    for line in text.splitlines():
+        for ref in REF_RE.findall(line):
+            if not resolve_ref(ref, doc.parent, line, upstream):
+                problems.append(f"{rel}: names `{ref}`, which does not exist")
+        for a, b in CALL_RE.findall(line):
+            name = a or b
+            if name not in local | upstream:
+                problems.append(f"{rel}: calls skill `{name}`, not in skills/ or upstream.json")
+        pattern = STEP_RE if "py-intake" in str(rel) else SECTION_RE
+        for num in pattern.findall(line):
+            if headings and int(num) > headings:
+                problems.append(f"{rel}: refers to {pattern.pattern[3:-3]} {num}; only {headings} exist")
+    if doc.parent.name.startswith("pack-"):
+        for section in PACK_SECTIONS:
+            if section not in text:
+                problems.append(f"{rel}: pack is missing the template section `{section}`")
+    return problems
+
 
 def main() -> int:
     problems: list[str] = []
@@ -125,6 +184,8 @@ def main() -> int:
             print(f"ok  {agent_md.relative_to(ROOT)}")
 
     problems += check_rendered_agents()
+    for doc in [*skill_files, *agent_files]:
+        problems += check_references(doc)
 
     plugin = parsed.get(".claude-plugin/plugin.json")
     marketplace = parsed.get(".claude-plugin/marketplace.json")

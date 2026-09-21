@@ -32,7 +32,7 @@ Never improvise what one of Google's skills would say; open it. Their references
 2. **Types at every node edge.** Node inputs, outputs, `output_schema` and state values are Pydantic models named from `CONTEXT.md`, never `dict[str, Any]` (Google's first rule, and `py-design` rule 2).
 3. **Exceptions in tools are interface.** A tool catches the specific error it can turn into a useful result and lets everything else propagate. A broad `except` inside a tool hides the failure from the runtime's retry and human-in-the-loop handling and from the user. ruff `BLE001` flags it; the reviewer flags the narrower version.
 4. **State goes through events.** `Event(state=...)`, never `ctx.state[key] = ...`; one output event per node; a node yields or returns, never both; `{var}` in an instruction reads state, not `node_input`. All from Google's `best-practices.md`; the reviewer checks them because no linter does.
-5. **Three test tiers.** `tests/unit/`: `InMemoryRunner` with a faked model, following Google's `references/testing.md`, no network. `tests/integration/`: adapters against a local substitute. `tests/evals/`: live model runs, marked `eval`, excluded from the commit gate and CI (`pytest -m "not eval"`), run on demand. `asyncio_mode = "auto"` in the pytest table.
+5. **Three test tiers.** `tests/unit/`: `InMemoryRunner` with a faked model, following `adk-agent-builder`'s `references/testing.md`, no network. `tests/integration/`: adapters against a local substitute. `tests/evals/`: live model runs, marked `eval`, excluded from the commit gate and CI (`pytest -m "not eval"`), run on demand. `asyncio_mode = "auto"` in the pytest table.
 6. **Secrets.** `.env` beside `agent.py` is gitignored; `.env.example` at the repo root lists every key; `pydantic-settings` reads them once at the entrypoint.
 
 ## Canonical repo
@@ -56,6 +56,18 @@ Added by `py-intake` step 5 when the pack is selected:
 | Node or workflow | `add-a-node.md`: typed input and output models, state through events | `InMemoryRunner`, asserting on the events |
 
 Building any of them goes through the persona's build steps (name the shape, ask the index, Matt Pocock's `implement` with `tdd`). Open the Google reference for the task first and say in two sentences what pattern it recommends and why it fits here. The review's Craft axis carries the four rules above that no linter enforces.
+
+## Faults this pack looks for (beyond the catalogue)
+
+The four runtime rules no linter sees, each a silent failure in `adk-agent-builder`'s `references/best-practices.md`:
+
+| Fault | Tell | Fix |
+|---|---|---|
+| Untyped edge | `dict[str, Any]` as a node input, output or `output_schema` | A Pydantic model named from `CONTEXT.md` |
+| Direct state write | `ctx.state[key] = ...` | `Event(state={key: ...})`; reads stay `ctx.state[...]` |
+| Two outputs, or yield and return | Two `Event(output=...)` in one node; a generator with `return Event(...)` | One output event; the rest carry state only; a function yields or returns |
+| Input as placeholder | `{node_input}` in an instruction | `{var}` reads state; the input arrives as the user message |
+| Blind except in a tool | `except Exception` inside `application/tools/` | Catch the one error the tool can turn into a result; let the rest reach the runtime |
 
 ## Tests
 
