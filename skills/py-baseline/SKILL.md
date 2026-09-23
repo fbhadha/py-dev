@@ -20,7 +20,7 @@ The skeleton every repo this agent touches ends up with, so a junior reader can 
 | `scripts/check_test_diff.py` | fails when the `tests/` diff deletes a test, adds a skip or loses assertions, unless a commit message carries `test-override:` | `templates/check_test_diff.py` |
 | `.secrets.baseline` | detect-secrets baseline, created by `uv run detect-secrets scan > .secrets.baseline` | created by `detect-secrets` |
 | `.env.example` | every key the code reads, with a comment, no values | `templates/env.example` |
-| `AGENTS.md` | pointers only, under 40 lines; the map is a link | `templates/AGENTS.md` |
+| `AGENTS.md` | the rules of work every agent follows (no ticket, no code; shape first; plans in tickets; one branch per ticket) and pointers, under 60 lines; the map is a link | `templates/AGENTS.md` |
 | `docs/agents/repowise-map.md` | the architecture map, entry points and health line; written only by `repowise generate-claude-md --stdout` (`--output` overwrites its target whole) | Repowise |
 | `CLAUDE.md` | one line: `@AGENTS.md` | `templates/CLAUDE.md` |
 | `CONTEXT.md` | the glossary, Matt Pocock's format, created lazily | `templates/CONTEXT.md` |
@@ -93,4 +93,4 @@ Report, in this order: the worst files with one plain sentence each on the marke
 2. Fill placeholders from the repo, never by guessing: `{{PROJECT}}` (repo name), `{{PACKAGE}}` (import name under `src/`), `{{PYTHON}}` (e.g. `3.12`), `{{PYTHON_NODOT}}` (`312`), `{{SHAPE}}`, `{{LAYERS}}`, `{{PORT}}` (per how-to), `{{NUMBER}}`, `{{TITLE}}`, `{{DATE}}` (per ADR).
 3. Brownfield: propose the baseline as tickets, one file group at a time, each green before the next.
 4. Prove each gate bites before finishing: make a violation on a scratch file, watch the gate fail, revert, watch it pass.
-5. Never `pre-commit uninstall` and never `--no-verify` (both denied by the hook). A check that blocks a commit it should not is a placement defect: file it (persona section 8) and move the check to CI in that repo, with the user's yes.
+5. Never `pre-commit uninstall` and never `--no-verify` (both denied by the hook). A check that blocks a commit it should not is a placement defect: file it (persona section 9) and move the check to CI in that repo, with the user's yes.

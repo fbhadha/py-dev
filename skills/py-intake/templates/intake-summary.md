@@ -23,6 +23,7 @@ Everything runs through `uv run`; nothing needs an activated environment.
 
 | When | What runs | What it refuses |
 |---|---|---|
+| While I work (Copilot CLI and Claude Code) | the plugin's guard | an edit to `src/` or `tests/` off a ticket branch, a commit or push that lands on `main`, until you say yes |
 | Every commit | ruff, mypy, import-linter, module length, detect-secrets, on the files in the commit | a print, a swallowed exception, a TODO with no owner, a 401-line file, a wrong-way import, a secret |
 | Every pull request | the same on the lines the branch changed; the test-diff check; the whole test suite; coverage on the new lines; the change gate; the README's command blocks | a deleted or skipped test, fewer assertions, new lines under 90% covered, a change that made a touched file worse, a README command that no longer runs |
 | Before a merge | branch protection on the server, offered after this merge | a merge with a red check; a push straight to `main` |
@@ -49,14 +50,14 @@ Old code is tolerated: the commit and pull-request checks look at changed lines 
 
 ## How work goes from here
 
-1. You say what you want. I grill you until it is clear. A fact I need from outside this repo is read by a background researcher into `docs/research/`; a question talking cannot settle gets a throwaway prototype you react to; an idea bigger than one session becomes a map of decision tickets in {{TRACKER}}, worked one per session. Then the spec and the tickets, in {{TRACKER}}.
-2. Each ticket is one session on its own branch, `ticket/<id>`. Never a commit on `main`.
-3. I name the shape (which how-to it fits), ask Repowise what the files depend on, search before naming anything new, and agree with you where the tests go.
-4. Tests first, then code; the checks run after every green.
-5. Done: I show you the diff, the commits and the checks and ask "Merge to main?" That yes is the one approval. The hook asks you before anything that lands on `main`, so nothing gets there by accident.
-6. Merge commits, never squash: Repowise reads the history.
+1. You say what you want. I say which kind of request it is (a new idea, a change to something already decided, a ticket, a bug, a question), then what I think we should build, what I would leave out, and why, before I ask anything. If I think it should not be built, I say so.
+2. I grill you in rounds of a few numbered questions, each with my recommended answer, the reason and what the other answer costs. A fact I need from outside this repo is read by a background researcher into `docs/research/`; a question talking cannot settle gets a throwaway prototype you react to; an idea bigger than one session becomes a map of decision tickets in {{TRACKER}}, worked one per session.
+3. In the same session: the spec (the design, the order of work), then the tickets in {{TRACKER}}. Every ticket carries its plan: the files, the functions and their signatures, the tests in the order they get written, the commands that prove it. You approve the breakdown before anything is published.
+4. No ticket, no code: a one-line fix gets a one-line ticket. Each ticket is one session on its own branch, `ticket/<id>`, never `main`.
+5. Before the first line of code I check the plan against the code and show it to you: "Go?". Then tests first, one slice at a time, the checks after every green, and a line after each slice saying what changed.
+6. Done: I show you the diff, the commits and the checks and ask "Merge to main?". That yes is the one approval; the hook asks before anything that lands on `main`. Merge commits, never squash: Repowise reads the history.
 
-Lost: say so. Parked ideas are `later` tickets; "what is parked?" lists them. A word about AI coding itself (session, handoff, spec, ticket, grilling): Matt Pocock's AI Coding Dictionary, <https://github.com/mattpocock/dictionary-of-ai-coding>. A step only you can take (an install, a sign-in, a key) comes as a script that walks you through it; nothing secret goes through this chat.
+Change your mind about something already decided and I re-grill that part, update the spec and the tickets, then carry on; nothing gets quietly built around it. Lost: say so. Parked ideas are `later` tickets; "what is parked?" lists them. How much I explain is `explain:` in `docs/agents/mode.md` (`decisions`, `teach` or `brief`). A word about AI coding itself (session, handoff, spec, ticket, grilling): Matt Pocock's AI Coding Dictionary, <https://github.com/mattpocock/dictionary-of-ai-coding>. A step only you can take (an install, a sign-in, a key) comes as a script that walks you through it; nothing secret goes through this chat.
 
 ## What Repowise found
 

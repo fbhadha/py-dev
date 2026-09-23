@@ -3,12 +3,15 @@
 The skills read this file at session start. One key per line; unknown keys are ignored.
 
 mode: guide
-explain: before-and-after
+explain: decisions
 unattended: never
 
 <!--
 mode        guide is the only mode in v1. partner is reserved.
-explain     before-and-after (default) or after-only.
+explain     decisions (default): the full reasoning at every decision and plan,
+            before and after each step, and a verdict for each command.
+            teach: also what each command does and the idea behind each rule.
+            brief: one sentence before and after a step; decisions keep their reasons.
 unattended  never (default), or ticket:<id> to allow one unattended run on that
             ticket, which must come from a grilled spec and must end in a pull
             request. the agent clears the value when the run ends.

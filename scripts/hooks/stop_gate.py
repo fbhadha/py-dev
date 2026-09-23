@@ -5,12 +5,14 @@
 ([tool.ruff] in pyproject.toml). Red blocks the turn with the first lines of output.
 
 Honours stop_hook_active (Claude Code) so it never blocks twice in a row; Copilot
-caps block loops itself. Exits 0 silently on any error of its own.
+caps block loops itself. Runs in the project from the payload's cwd, not where the
+harness started it. Exits 0 silently on any error of its own.
 """
 
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -70,8 +72,11 @@ def ruff_problem() -> str | None:
 def main() -> int:
     try:
         payload = c.read_payload()
-        if payload.get("stop_hook_active") or c.repo_root() is None:
+        c.enter_project(payload)
+        root = c.repo_root()
+        if payload.get("stop_hook_active") or root is None:
             return 0
+        os.chdir(root)
         reason = ruff_problem()
         if reason:
             json.dump({"decision": "block", "reason": reason}, sys.stdout)

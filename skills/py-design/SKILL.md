@@ -1,6 +1,6 @@
 ---
 name: py-design
-description: "Python craft reference: rules, the fault catalogue, three canonical repos to cite. Use when designing a module, class, function or layout, placing a seam or Protocol, or reviewing Python for structure faults."
+description: "Python craft reference: the design rules, the order to build things in, the edges (timeouts, retries, parsing, errors, config, logs, contract tests), the fault catalogue, three canonical repos to cite. Use when designing a module, class, function or layout, placing a seam or Protocol, ordering tickets or a ticket's plan, or reviewing Python."
 ---
 
 # Python design
@@ -34,7 +34,7 @@ Names come from `CONTEXT.md`. The layering is enforced by import-linter, not req
 1. **A class earns its place** when it owns state across calls, satisfies a Protocol at a seam, or is a value object. Otherwise write a function. Data is a frozen `dataclass` or a Pydantic model; behaviour at a seam is a Protocol; transformation is a function.
 2. **Parse at the edge, trust inside.** External data becomes a typed model in the adapter that received it. Domain code never sees a raw `dict`, a DataFrame, or a JSON string.
 3. **Accept dependencies, return results.** Constructors take their ports as keyword arguments. Functions return values instead of mutating what they were given.
-4. **Ports are Protocols. Two adapters justify a seam.** A `Source` Protocol exists because there is a `JiraSource` and an `InMemorySource`. One adapter means the seam is hypothetical: inline it.
+4. **Ports are Protocols. Two adapters justify a seam.** A `Source` Protocol exists because there is a `JiraSource` and an `InMemorySource`, and both pass one contract suite (`references/boundaries.md`). One adapter means the seam is hypothetical: inline it.
 5. **Composition over inheritance.** Subclass only for a real is-a where every method of the parent still makes sense on the child. Reuse by passing collaborators in, the way `logging.Logger` takes handlers and filters.
 6. **Exceptions are interface.** Each package defines a small hierarchy; each public function says what it raises; callers catch the specific type or let it propagate. Never `except Exception: pass`, never `except: return None`. In an ADK tool, a broad except also disables the framework's retry and human-in-the-loop machinery.
 7. **Signatures that cannot be misread.** Keyword-only (`*`) after the first parameter whenever two parameters share a type. No boolean flag parameters; two functions or an enum instead. No mutable defaults. `X | None` only when absence means something; say what.
@@ -44,6 +44,14 @@ Names come from `CONTEXT.md`. The layering is enforced by import-linter, not req
 11. **No grab bags.** No directory or module named `utils`, `helpers`, `common`, `misc`. A function belongs to the domain concept it serves; if it serves none, it does not belong.
 12. **Comments say why.** A comment states something the code cannot: the constraint, the reason, the gotcha. A docstring states the contract when it is subtle (invariants, ordering, errors); it never restates the signature. A comment that reads like an instruction to a model is a defect.
 13. **The deletion test.** Before adding a layer, imagine deleting it. If the callers would simply call the next thing down with the same arguments, it was a pass-through.
+
+## Planning the work
+
+What to build first and in what order, between tickets and inside one; what every step of a plan names; one-way and two-way doors; sizing: [references/planning.md](references/planning.md). `py-shape` cuts tickets by it and `py-build` checks each plan against it.
+
+## The edges
+
+Timeouts, retries and idempotency on calls out; parsing at the edge into named types; money, time and identifiers; error hierarchies; configuration; logs and the run summary; async; one contract suite per port that every adapter runs: [references/boundaries.md](references/boundaries.md). Open it whenever a plan touches an adapter, an entrypoint or a port.
 
 ## The worked shape: adapter, model, writer
 

@@ -7,7 +7,7 @@ description: "Move a Google ADK 1.x codebase to 2.x: detect every 1.x pattern me
 
 ADK 2.x replaced the 1.x orchestration classes with a graph runtime: `Workflow` schedules nodes along declared edges, `BaseAgent` is a node, state travels in events. The old shells still import and run in 2.x, so a repo can upgrade the dependency and look fine while its state writes vanish on replay. This skill separates what must change from what merely should. Guide voice: each pattern gets one plain sentence on what it did in 1.x and what replaces it.
 
-The facts here come from Google's `adk-agent-builder` references (`multi-agent.md`, `best-practices.md`, `state-and-events.md`, `advanced-patterns.md`) and the installed package's source. Open them (`find_skill.py adk-agent-builder`) before rewriting anything; the references name the exact replacement.
+The facts here come from Google's `adk-agent-builder` references (`multi-agent.md`, `best-practices.md`, `state-and-events.md`, `advanced-patterns.md`) and the installed package's source. Open them (`python3 <scripts>/find_skill.py adk-agent-builder`, `<scripts>` as the persona's section 5 says) before rewriting anything; the references name the exact replacement.
 
 ## 1. Detect (mechanical, whole repo)
 
@@ -43,10 +43,10 @@ A migration without a way to tell a regression from a refactor is a rewrite. Bef
 
 ## 4. Tickets as expand, migrate, contract
 
-Open Matt Pocock's `to-tickets` (via `find_skill.py`, read and follow) with this structure already decided, so it only quizzes the user on granularity:
+Cut the tickets by `py-shape`'s section 5 with this structure already decided, so the breakdown table only asks the user about granularity; each ticket carries its plan from `py-shape`'s `references/ticket.md`:
 
 1. **Expand.** Add `google-adk>=2.0` beside the current pin only if both can coexist; otherwise the upgrade is the first migrate ticket and the evals are its gate. Add the 2.x shapes beside the old: the `Workflow` next to the `SequentialAgent`, the `Event(state=...)` writes next to the `ctx.state` writes, feature-flagged at the composition root.
-2. **Migrate.** One ticket per forced row, one agent per ticket, each green on the evals before the next. Rewrite by the Google reference for that pattern, through the persona's build steps (Matt Pocock's `implement`, test first at the `InMemoryRunner` seam).
+2. **Migrate.** One ticket per forced row, one agent per ticket, each green on the evals before the next. Rewrite by the Google reference for that pattern, through Skill `py-build` (the plan shown first, the test first at the `InMemoryRunner` seam).
 3. **Contract.** Delete the 1.x forms once no caller remains; one ticket blocked by every migrate ticket. The `later` families stay open with their file lists.
 
 Each ticket names the eval it must keep green and the Google reference it follows.

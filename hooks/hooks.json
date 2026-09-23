@@ -1,12 +1,12 @@
 {
-  "description": "python-dev in-session guards: main changes only by a merge the human approved (a commit, merge or push that lands on main asks), no destructive git, no ending a turn with red ruff. Pre-commit, CI and branch protection in the target repo are the floor.",
+  "description": "python-dev in-session guards: main changes only by a merge the human approved (a commit, merge or push that lands on main asks), no product-code edit off a ticket branch without asking, no destructive git, no ending a turn with red ruff. Pre-commit, CI and branch protection in the target repo are the floor.",
   "hooks": {
     "SessionStart": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/session_start.py\"",
+            "command": "f=\"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/session_start.py\"; [ -f \"$f\" ] && command -v python3 >/dev/null 2>&1 && exec python3 \"$f\"; exit 0",
             "timeout": 5
           }
         ]
@@ -14,11 +14,11 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "Bash|Edit|Write|MultiEdit|NotebookEdit",
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/guard_command.py\"",
+            "command": "f=\"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/guard_command.py\"; [ -f \"$f\" ] && command -v python3 >/dev/null 2>&1 && exec python3 \"$f\"; exit 0",
             "timeout": 5
           }
         ]
@@ -29,7 +29,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/stop_gate.py\"",
+            "command": "f=\"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/stop_gate.py\"; [ -f \"$f\" ] && command -v python3 >/dev/null 2>&1 && exec python3 \"$f\"; exit 0",
             "timeout": 60
           }
         ]

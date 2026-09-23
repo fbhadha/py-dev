@@ -3,8 +3,11 @@
 
 CI runs this. It builds a throwaway repo on `main`, drives the command guard with
 payloads in both harnesses' shapes on main, on a branch and on a shaping branch,
-and asserts the answer: ask, deny or allow. Then the stop gate, the session-start line, and
-check_test_diff.py on a weakened and a clean test change.
+and asserts the answer: ask, deny or allow. Copilot-shaped payloads run from a
+folder outside the repo with the repo in the payload's `cwd`, because that is how
+Copilot CLI starts plugin hooks. Then the edit guard (no ticket, no code), the stop
+gate, the session-start line, the hook manifests failing open when the plugin root
+is not expanded, and check_test_diff.py on a weakened and a clean test change.
 
 Usage: python scripts/test_hooks.py
 """
@@ -79,19 +82,22 @@ def make_repo(tmp: Path) -> Path:
     return repo
 
 
-def bash(command: str, session: str, *, copilot: bool = False) -> dict:
-    if copilot:
+def bash(command: str, session: str, repo: Path, *, copilot: bool = False) -> dict:
+    if copilot:  # the shape Copilot CLI 1.0.88 sends, captured from a live session
         return {
             "sessionId": session,
-            "toolName": "shell",
-            "toolArgs": json.dumps({"command": command}),
+            "timestamp": 0,
+            "cwd": str(repo),
+            "toolName": "bash",
+            "toolArgs": {"command": command, "description": "run"},
         }
     return {"session_id": session, "tool_name": "Bash", "tool_input": {"command": command}}
 
 
-def guard(command: str, repo: Path, session: str, **kw) -> str:
-    env = kw.pop("env", None)
-    return decision_of(run(GUARD, bash(command, session, **kw), repo, env=env))
+def guard(command: str, repo: Path, session: str, *, copilot: bool = False, env=None) -> str:
+    # Copilot CLI starts plugin hooks in the plugin's folder; only the payload names the repo
+    where = repo.parent if copilot else repo
+    return decision_of(run(GUARD, bash(command, session, repo, copilot=copilot), where, env=env))
 
 
 def check_guard(repo: Path) -> None:
@@ -102,6 +108,16 @@ def check_guard(repo: Path) -> None:
     expect("main: bare push asks", guard("git push", repo, s), "ask")
     expect("main: push origin main asks", guard("git push origin main", repo, s), "ask")
     expect("main: copilot payload asks too", guard("git commit -m x", repo, s, copilot=True), "ask")
+    string_args = {
+        "cwd": str(repo),
+        "toolName": "shell",
+        "toolArgs": json.dumps({"command": "git commit -m x"}),
+    }
+    expect(
+        "main: copilot payload with string toolArgs asks",
+        decision_of(run(GUARD, string_args, repo.parent)),
+        "ask",
+    )
     expect(
         "main: reading commands pass", guard("git status && git log --oneline", repo, s), "allow"
     )
@@ -226,9 +242,10 @@ def check_shaping(repo: Path) -> None:
 
 
 def check_stop_and_start(repo: Path) -> None:
+    stop = HOOKS / "stop_gate.py"
     expect(
         "stop gate passes on a clean tree",
-        decision_of(run(HOOKS / "stop_gate.py", {"session_id": "s"}, repo)),
+        decision_of(run(stop, {"session_id": "s"}, repo)),
         "allow",
     )
     if shutil.which("ruff"):
@@ -237,30 +254,160 @@ def check_stop_and_start(repo: Path) -> None:
         )
         (repo / "src" / "y.py").write_text("import os\n", encoding="utf-8")
         expect(
-            "stop gate blocks red ruff",
-            decision_of(run(HOOKS / "stop_gate.py", {"session_id": "s"}, repo)),
+            "stop gate blocks red ruff", decision_of(run(stop, {"session_id": "s"}, repo)), "block"
+        )
+        expect(
+            "stop gate blocks red ruff when started outside the repo (Copilot CLI)",
+            decision_of(run(stop, {"sessionId": "s", "cwd": str(repo)}, repo.parent)),
             "block",
         )
         expect(
             "stop gate never blocks twice",
-            decision_of(
-                run(HOOKS / "stop_gate.py", {"session_id": "s", "stop_hook_active": True}, repo)
-            ),
+            decision_of(run(stop, {"session_id": "s", "stop_hook_active": True}, repo)),
             "allow",
         )
         (repo / "src" / "y.py").unlink()
         git(repo, "checkout", "--", "pyproject.toml")
     else:
         print("skip stop gate ruff check: ruff not on PATH")
-    start = run(HOOKS / "session_start.py", {}, repo).stdout
+    out = run(HOOKS / "session_start.py", {"sessionId": "s", "cwd": str(repo)}, repo.parent).stdout
+    data = json.loads(out) if out.strip() else {}
+    text = str(data.get("additionalContext", ""))
+    nested = (data.get("hookSpecificOutput") or {}).get("additionalContext")
+    expect("session start is JSON Copilot reads", "json" if text else "not json", "json")
+    expect(
+        "session start is JSON Claude Code reads", "json" if nested == text else "missing", "json"
+    )
     expect(
         "session start names the guard",
-        "named" if "python-dev guards active" in start else "silent",
+        "named" if "python-dev guards active" in text else "silent",
         "named",
     )
     expect(
-        "session start names the branch", "named" if "Branch: main" in start else "silent", "named"
+        "session start names the branch from the payload's cwd",
+        "named" if "Branch: main" in text else "silent",
+        "named",
     )
+    expect(
+        "session start names the plugin scripts",
+        "named" if f"Plugin scripts: {ROOT / 'scripts'}" in text else "silent",
+        "named",
+    )
+
+
+def edit(tool: str, args: dict, repo: Path, *, copilot: bool = False, env=None) -> str:
+    if copilot:
+        payload = {"sessionId": "s", "cwd": str(repo), "toolName": tool, "toolArgs": args}
+        return decision_of(run(GUARD, payload, repo.parent, env=env))
+    return decision_of(run(GUARD, {"tool_name": tool, "tool_input": args}, repo, env=env))
+
+
+def check_edit_guard(repo: Path) -> None:
+    """No ticket, no code: product edits off a build branch ask, in a python-dev repo only."""
+    src = str(repo / "src" / "x.py")
+    expect(
+        "edit: a repo without mode.md is never asked about",
+        edit("Edit", {"file_path": src}, repo),
+        "allow",
+    )
+    mode = repo / "docs" / "agents" / "mode.md"
+    mode.parent.mkdir(parents=True, exist_ok=True)
+    mode.write_text("mode: guide\n", encoding="utf-8")
+    expect("edit: src on main asks", edit("Edit", {"file_path": src}, repo), "ask")
+    expect(
+        "edit: a relative tests path on main asks",
+        edit("Write", {"file_path": "tests/test_new.py"}, repo),
+        "ask",
+    )
+    expect(
+        "edit: docs on main pass", edit("Edit", {"file_path": "docs/agents/x.md"}, repo), "allow"
+    )
+    expect(
+        "edit: prototypes on main pass",
+        edit("Write", {"file_path": "prototypes/try.py"}, repo),
+        "allow",
+    )
+    expect(
+        "edit: a file outside the repo passes",
+        edit("Write", {"file_path": str(repo.parent / "elsewhere.py")}, repo),
+        "allow",
+    )
+    expect(
+        "edit: copilot create on main asks",
+        edit("create", {"path": src, "file_text": "X = 2\n"}, repo, copilot=True),
+        "ask",
+    )
+    patch = "*** Begin Patch\n*** Update File: src/x.py\n@@\n-X = 1\n+X = 2\n*** End Patch\n"
+    expect(
+        "edit: copilot apply_patch on main asks",
+        edit("apply_patch", {"input": patch}, repo, copilot=True),
+        "ask",
+    )
+    expect(
+        "edit: str_replace_editor view passes",
+        edit("str_replace_editor", {"command": "view", "path": src}, repo, copilot=True),
+        "allow",
+    )
+    expect(
+        "edit: guard off passes",
+        edit("Edit", {"file_path": src}, repo, env={"PYTHON_DEV_GUARD": "off"}),
+        "allow",
+    )
+    git(repo, "switch", "-q", "-c", "ticket/7-adapter")
+    expect("edit: src on a ticket branch passes", edit("Edit", {"file_path": src}, repo), "allow")
+    expect(
+        "edit: copilot edit on a ticket branch passes",
+        edit("edit", {"path": src}, repo, copilot=True),
+        "allow",
+    )
+    git(repo, "switch", "-q", "main")
+    git(repo, "switch", "-q", "-c", "shaping/idea2")
+    said = run(GUARD, {"tool_name": "Edit", "tool_input": {"file_path": src}}, repo).stdout
+    expect(
+        "edit: src on a shaping branch asks with the shaping reason",
+        "shaping reason" if "Shaping decides" in said else said[:80],
+        "shaping reason",
+    )
+    git(repo, "switch", "-q", "main")
+    git(repo, "branch", "-q", "-D", "ticket/7-adapter", "shaping/idea2")
+    shutil.rmtree(repo / "docs")
+
+
+def check_manifests_fail_open(repo: Path) -> None:
+    """A hook whose plugin root was not expanded exits 0 with no decision, never an error.
+
+    Copilot CLI and VS Code deny every tool call when a pre-tool command hook exits
+    non-zero, and VS Code expands no plugin root for an Agent Plugins manifest.
+    """
+    if not shutil.which("bash"):
+        print("skip manifest fail-open check: bash not on PATH")
+        return
+    copilot = json.loads((ROOT / "com.github.copilot" / "hooks" / "hooks.json").read_text())
+    claude = json.loads((ROOT / "hooks" / "hooks.json").read_text())
+    cases = (
+        ("copilot", copilot["hooks"]["preToolUse"][0]["bash"], "PLUGIN_ROOT"),
+        ("claude", claude["hooks"]["PreToolUse"][0]["hooks"][0]["command"], "CLAUDE_PLUGIN_ROOT"),
+    )
+    payload = json.dumps(bash("git commit -m x", "s", repo, copilot=True))
+    base = {k: v for k, v in os.environ.items() if k not in ("PLUGIN_ROOT", "CLAUDE_PLUGIN_ROOT")}
+    for name, command, var in cases:
+        for root, want in (("", "0:allow"), (str(ROOT), "0:ask")):
+            env = {**base, var: root} if root else base
+            result = subprocess.run(
+                ["bash", "-c", command],
+                input=payload,
+                capture_output=True,
+                text=True,
+                cwd=repo.parent,
+                env=env,
+                check=False,
+            )
+            label = "expanded" if root else "unexpanded"
+            expect(
+                f"manifest {name}: {label} plugin root",
+                f"{result.returncode}:{decision_of(result)}",
+                want,
+            )
 
 
 def test_diff(repo: Path) -> str:
@@ -349,6 +496,8 @@ def main() -> int:
         repo = make_repo(Path(tmp))
         check_guard(repo)
         check_shaping(repo)
+        check_edit_guard(repo)
+        check_manifests_fail_open(repo)
         check_stop_and_start(repo)
         check_test_diff(repo)
         check_adr_format(Path(tmp))

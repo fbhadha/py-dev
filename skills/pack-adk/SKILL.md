@@ -13,7 +13,7 @@ Google maintains the ADK skills in `google/adk-python` under `.agents/skills/`. 
 
 ## Door check
 
-`python3 "${CLAUDE_PLUGIN_ROOT}/scripts/find_skill.py" adk-agent-builder adk-architecture adk-debug adk-style` must print four paths. If not: `npx skills@latest add google/adk-python -s adk-agent-builder,adk-architecture,adk-debug,adk-style -a '*' -y` in the repo (installs to `.agents/skills/`, symlinked for Claude Code and Copilot). The other skills in that directory are for people contributing to adk-python itself; do not install them.
+`python3 <scripts>/find_skill.py adk-agent-builder adk-architecture adk-debug adk-style` must print four paths (`<scripts>` as the persona's section 5 says). If not: `npx skills@latest add google/adk-python -s adk-agent-builder,adk-architecture,adk-debug,adk-style -a '*' -y` in the repo (installs to `.agents/skills/`, symlinked for Claude Code and Copilot). The other skills in that directory are for people contributing to adk-python itself; do not install them.
 
 Never improvise what one of Google's skills would say; open it. Their references were checked against a stated `google-adk` version (the skill's head says which); when the installed version is newer, read `src/google/adk/` in the installed package before relying on a signature, as their skill tells you to.
 
@@ -55,7 +55,7 @@ Added by `py-intake` step 5 when the pack is selected:
 | Tool | `add-a-tool.md`: one typed function under `application/tools/`, its external system behind an adapter | the function, with an in-memory adapter |
 | Node or workflow | `add-a-node.md`: typed input and output models, state through events | `InMemoryRunner`, asserting on the events |
 
-Building any of them goes through the persona's build steps (name the shape, ask the index, Matt Pocock's `implement` with `tdd`). Open the Google reference for the task first and say in two sentences what pattern it recommends and why it fits here. The review's Craft axis carries the four rules above that no linter enforces.
+Building any of them goes through Skill `py-build` (name the shape, ask the index, the plan shown first, `tdd` slice by slice). Open the Google reference for the task first and say in two sentences what pattern it recommends and why it fits here. The review's Craft axis carries the four rules above that no linter enforces.
 
 ## Faults this pack looks for (beyond the catalogue)
 

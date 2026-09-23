@@ -18,7 +18,8 @@ and the directories searched go to stderr).
 Search order, first hit wins: Claude Code's installed plugin cache (the version
 marked in use), then project and user skill directories for Claude Code and the
 Agent Skills standard, then everything under ~/.copilot (Copilot CLI's installed
-plugins and skills), then Claude Code's marketplace clones.
+plugins and skills), then VS Code's agentPlugins folders, then Claude Code's
+marketplace clones.
 A match is a directory named <name>, or any SKILL.md whose frontmatter `name:`
 is <name> (some skills live in a directory named differently).
 """
@@ -36,6 +37,12 @@ from pathlib import Path
 
 HOME = Path.home()
 CWD = Path.cwd()
+VSCODE_APPS = ("Code", "Code - Insiders")
+VSCODE_USER_DIRS = [
+    HOME / ".config",  # Linux
+    HOME / "Library" / "Application Support",  # macOS
+    Path(os.environ.get("APPDATA", str(HOME / "AppData" / "Roaming"))),  # Windows
+]
 ROOTS: list[Path] = [
     HOME / ".claude" / "plugins" / "cache",
     CWD / ".claude" / "skills",
@@ -43,7 +50,9 @@ ROOTS: list[Path] = [
     CWD / ".agents" / "skills",
     HOME / ".agents" / "skills",
     CWD / ".github" / "skills",
-    HOME / ".copilot",  # Copilot CLI: installed plugins and user skills live under here
+    HOME / ".copilot",  # Copilot CLI: installed-plugins/ and user skills live under here
+    # VS Code's own plugin installs (chat.plugins.marketplaces), stable and Insiders
+    *(base / app / "agentPlugins" for base in VSCODE_USER_DIRS for app in VSCODE_APPS),
     HOME / ".claude" / "plugins" / "marketplaces",
 ]
 NAME_RE = re.compile(r"^name:\s*['\"]?([^'\"\n]+)", re.MULTILINE)
