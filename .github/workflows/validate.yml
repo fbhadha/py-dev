@@ -13,11 +13,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install pyyaml
+      - run: pip install pyyaml pytest ruff mypy
       - name: Skills, agents and manifests are well-formed
         run: python scripts/check_plugin.py
       - name: Every hook decision, against a scratch git repo
         run: python scripts/test_hooks.py
+      - name: The data-engineering pack's example is green under the baseline's checks
+        run: python scripts/check_pack_examples.py
       - uses: astral-sh/setup-uv@v6
       - name: The baseline's dev dependency group resolves with Repowise
         run: python scripts/check_template_deps.py
