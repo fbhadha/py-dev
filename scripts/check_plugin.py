@@ -13,8 +13,11 @@
   - the rendered Copilot agents under com.github.copilot/agents/ match what
     scripts/render_agents.py would write
   - every JSON file (manifests, both hooks files, upstream.json) parses
-  - agents/python-dev.md stays under PERSONA_MAX_CHARS: it is the router, loaded
-    every turn, and every step list belongs in a skill it names
+  - agents/python-dev.md stays under PERSONA_MAX_CHARS: it holds the loop, the voice,
+    the pushback and the routing table, loaded every turn; every step list belongs
+    in a skill it names
+  - the persona names the plugin version the manifests carry, because its status
+    line is how the user tells it from the default agent where no hook runs
   - every folder under skills/ is named by a routing row in agents/python-dev.md,
     so nothing moved out of the persona can become unreachable
 
@@ -102,7 +105,7 @@ def check_rendered_agents() -> list[str]:
     return [line.strip() for line in result.stdout.splitlines() if line.strip()]
 
 PERSONA = ROOT / "agents" / "python-dev.md"
-PERSONA_MAX_CHARS = 10_000  # about 2,800 tokens at 3.6 characters per token, loaded every turn
+PERSONA_MAX_CHARS = 14_000  # about 3,900 tokens at 3.6 characters per token, loaded every turn
 
 
 def check_persona_budget() -> list[str]:
@@ -231,6 +234,14 @@ def main() -> int:
                 f"plugin.json skills {listed} do not match the folders under skills/ {present}"
             )
     copilot = parsed.get("plugin.json")
+    if plugin is not None:
+        version = plugin.get("version")
+        persona = PERSONA.read_text(encoding="utf-8")
+        if f"python-dev {version}" not in persona:
+            problems.append(
+                f"agents/python-dev.md must name `python-dev {version}` (its status line); "
+                "bump it with the manifests"
+            )
     if plugin is not None and marketplace is not None and copilot is not None:
         versions = {
             ".claude-plugin/plugin.json": plugin.get("version"),
