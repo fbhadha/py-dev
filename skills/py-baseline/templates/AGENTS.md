@@ -1,6 +1,17 @@
 # {{PROJECT}}
 
-Pointers only. Every harness reads this file; `CLAUDE.md` includes it. Keep this section under 40 lines. The live map (architecture, entry points, health) is `docs/agents/repowise-map.md`, written only by Repowise; do not edit it.
+Pointers and the rules of work. Every harness reads this file; `CLAUDE.md` includes it. Keep it under 60 lines. The live map (architecture, entry points, health) is `docs/agents/repowise-map.md`, written only by Repowise; do not edit it.
+
+## How work happens here
+
+These hold for every agent and every person, whichever agent is selected.
+
+1. **No ticket, no code.** Every change starts as a ticket in the tracker named in `docs/agents/issue-tracker.md`; a one-line fix gets a one-line ticket.
+2. **Ideas are shaped before they are built**: a senior engineer's read of the idea (build it, change it, or drop it), a grilling on the open decisions, a spec, then tickets. A change to something already decided (a term, an ADR, a spec, a ticket) is re-shaped the same way before any code.
+3. **Every ticket carries its plan**: the files, the functions and their signatures, the tests in the order they are written, the commands that prove it. The plan is shown and agreed before the first line of code.
+4. **One ticket, one branch** (`ticket/<id>-<slug>`), tests first, the checks green; `main` changes only by a merge a person approved.
+
+The `python-dev` agent runs this loop for you: pick it in the agent picker (`copilot --agent python-dev:python-dev` in Copilot CLI).
 
 ## Read first
 
@@ -31,4 +42,4 @@ Modules under 400 lines, tests under 150. No `utils`/`helpers`/`common`/`misc` m
 
 ## Agent
 
-The `python-dev` persona (plugin `python-dev`, repo `fbhadha/py-dev`) is the intended session agent. Its skills: `py-intake` (set up or re-orient), `py-design` (craft), `py-baseline` (this layout), the packs listed above. Process skills come from Matt Pocock's plugin, called by name; codebase intelligence from the Repowise CLI. The words of AI coding itself (session, handoff, spec, ticket, grilling) are his AI Coding Dictionary, <https://github.com/mattpocock/dictionary-of-ai-coding>; `CONTEXT.md` holds this repo's words only.
+The `python-dev` persona (plugin `python-dev`, repo `fbhadha/py-dev`) is the intended session agent. Its skills: `py-intake` (set up or re-orient), `py-shape` (an idea to its tickets), `py-build` (a ticket to its merge), `py-review`, `py-design` (craft), `py-baseline` (this layout), the packs listed above. Process skills come from Matt Pocock's plugin, called by name; codebase intelligence from the Repowise CLI. The words of AI coding itself (session, handoff, spec, ticket, grilling) are his AI Coding Dictionary, <https://github.com/mattpocock/dictionary-of-ai-coding>; `CONTEXT.md` holds this repo's words only.

@@ -1,16 +1,15 @@
 {
-  "description": "Everything upstream this plugin depends on by name and never copies. Skills: `model` means we call it through the Skill tool; `user` means the harness refuses it and the persona opens the file via scripts/find_skill.py. A `reference` entry lists the term files the persona links to. scripts/check_upstream_skills.py verifies every entry against the pinned commit; --latest reports drift on the default branch. Repowise is not here: the agent uses its CLI, not its skills.",
-  "verified": "2026-09-21",
+  "description": "Everything upstream this plugin depends on by name and never copies. Skills: `model` means we call it through the Skill tool; `user` means the harness refuses it and the persona opens the file via scripts/find_skill.py. A `reference` entry lists the term files the persona links to. scripts/check_upstream_skills.py verifies every entry against the pinned commit; --latest reports drift on the default branch. Repowise is not here: the agent uses its CLI, not its skills. Since 0.11.0 the flow from idea to tickets (the view, the grill, the spec, the tickets with plans) and the build loop are python-dev's own (py-shape, py-build); his flow skills (grill-with-docs, to-spec, to-tickets, implement, handoff) are no longer called.",
+  "verified": "2026-09-23",
   "upstreams": [
     {
       "repo": "mattpocock/skills",
       "commit": "c55ee46073ed923f86ce59a5eb3b6d895095d1b7",
-      "version": "1.2.3",
+      "version": "1.2.3 + 54 commits (unreleased changesets; the v1.2.3 tag is 6acc160)",
       "default_branch": "main",
       "skills_dir": "skills",
       "install": "Claude Code: /plugin marketplace add mattpocock/skills, /plugin install mattpocock-skills@mattpocock. Elsewhere: npx skills@latest add mattpocock/skills --all",
       "skills": {
-        "grilling": "model",
         "domain-modeling": "model",
         "codebase-design": "model",
         "tdd": "model",
@@ -20,16 +19,10 @@
         "research": "model",
         "wizard": "model",
         "resolving-merge-conflicts": "model",
-        "writing-for-agents": "model",
-        "grill-with-docs": "user",
-        "to-spec": "user",
-        "to-tickets": "user",
-        "implement": "user",
         "improve-codebase-architecture": "user",
         "setup-matt-pocock-skills": "user",
         "triage": "user",
         "wayfinder": "user",
-        "handoff": "user",
         "wait-what": "user",
         "teach": "user"
       }
