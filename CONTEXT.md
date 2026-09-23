@@ -25,11 +25,11 @@ The judgement layer that applies to every Python repo: design rules, testing rul
 _Avoid_: persona, system prompt (those are where the core is pointed at from, not the core itself)
 
 **Knowledge pack**:
-A reference-only skill in the Agent Skills format, with a fixed shape (trigger dependencies, shapes it knows, canonical example repo, extra checks, fault list), covering one Python ecosystem such as ADK or data engineering. Selected at intake from the repo's dependencies; anyone can write one from the pack template.
+A reference-only skill in the Agent Skills format, with a fixed shape (trigger dependencies, shapes it knows, canonical example repo, extra checks, fault list, tests), covering one Python ecosystem such as ADK or data engineering. A pack may ship how-tos and a tested example package that intake copies into the repo. Selected at intake from the repo's dependencies; anyone can write one from the pack template.
 _Avoid_: plugin (the harness-level bundle), module, library
 
 **Persona**:
-The short, always-loaded file that defines the agent: identity, guide voice, the two-tier pushback, the must-ask list, the checkpoints, and the pointers that say when to load each piece of knowledge. About a page. Holds no craft knowledge itself.
+The always-loaded file that defines the agent: identity, the loop every message goes through, how it talks, the three tiers of pushback, the must-ask list, session start, and the routing table that says when to run each skill. Under 14,000 characters. Holds no craft knowledge and no step lists itself.
 _Avoid_: system prompt (harness term), CLAUDE.md (one container it can live in, not the thing)
 
 **Harness**:
@@ -45,5 +45,13 @@ A harness-native script that runs at a lifecycle point (before a tool call, afte
 _Avoid_: guardrail (that is the rule; the hook is one place it runs), trigger
 
 **Shaping**:
-The work between an idea and its first ticket: the grill, a research note for a fact from outside the repo, a prototype for a question talking cannot settle, and a wayfinder map when it is more than one session. Produces terms, ADRs, notes and prototype branches, never product code; lives on a `shaping/<slug>` branch until it merges. The name is aihero.dev's own grouping of Matt Pocock's three skills.
+The work between an idea and its tickets: the agent's view of the idea, the grill, a research note for a fact from outside the repo, a prototype for a question talking cannot settle, a wayfinder map when it is more than one session, then the spec and the tickets, in the session that grilled. Produces terms, ADRs, notes, prototype branches, a spec and tickets, never product code; lives on a `shaping/<slug>` branch until it merges. The name is aihero.dev's own grouping of Matt Pocock's three skills.
 _Avoid_: planning (the tracker's word for tickets), discovery, spike (a prototype is the word for code that answers a question)
+
+**Plan**:
+The ordered steps inside a ticket that make it buildable without new decisions: each step's file (checked to exist, or marked new), the function or class with its signature, the test by name with its seam and where its expected value comes from, and the command that proves it. Written by shaping, checked against the code and shown for a go before the first line is built.
+_Avoid_: task list, checklist (a plan names files and signatures), design (that is the spec's level)
+
+**Revision**:
+A change to something already decided: a `CONTEXT.md` term, an ADR, a spec, an open ticket or behaviour already merged. It is re-shaped (the agent's view, a grill on that branch only, the records updated) before any code, never parked as scope creep and never built around.
+_Avoid_: change request, scope creep (scope creep is work outside the ticket; a revision changes the ticket)
