@@ -4,21 +4,21 @@
     "sessionStart": [
       {
         "type": "command",
-        "bash": "python3 \"${PLUGIN_ROOT}/scripts/hooks/session_start.py\"",
+        "bash": "f=\"${PLUGIN_ROOT}/scripts/hooks/session_start.py\"; [ -f \"$f\" ] && command -v python3 >/dev/null 2>&1 && exec python3 \"$f\"; exit 0",
         "timeoutSec": 5
       }
     ],
     "preToolUse": [
       {
         "type": "command",
-        "bash": "python3 \"${PLUGIN_ROOT}/scripts/hooks/guard_command.py\"",
+        "bash": "f=\"${PLUGIN_ROOT}/scripts/hooks/guard_command.py\"; [ -f \"$f\" ] && command -v python3 >/dev/null 2>&1 && exec python3 \"$f\"; exit 0",
         "timeoutSec": 5
       }
     ],
     "agentStop": [
       {
         "type": "command",
-        "bash": "python3 \"${PLUGIN_ROOT}/scripts/hooks/stop_gate.py\"",
+        "bash": "f=\"${PLUGIN_ROOT}/scripts/hooks/stop_gate.py\"; [ -f \"$f\" ] && command -v python3 >/dev/null 2>&1 && exec python3 \"$f\"; exit 0",
         "timeoutSec": 60
       }
     ]

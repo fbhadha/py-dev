@@ -11,6 +11,9 @@ and the stop gate refuses to end a turn with red ruff. Nothing watches individua
 files: the diff the human reads before saying "merge" is the review of those.
 
 PYTHON_DEV_GUARD=off turns the asks off for one session. The denies stay.
+
+Where a hook runs: Copilot CLI starts plugin hooks in the plugin's install folder,
+not the project, so every hook calls enter_project() before its first git call.
 """
 
 from __future__ import annotations
@@ -24,6 +27,23 @@ from pathlib import Path
 
 MAIN_BRANCHES = {"main", "master", "trunk"}
 OFF_VALUES = {"off", "0", "false", "no"}
+PLUGIN_ROOT = Path(__file__).resolve().parent.parent.parent
+PROJECT_ENV = ("COPILOT_PROJECT_DIR", "CLAUDE_PROJECT_DIR")
+
+
+def enter_project(payload: dict) -> None:
+    """Change into the session's project: the payload's cwd, else the harness's project variable."""
+    for candidate in (payload.get("cwd"), *(os.environ.get(name) for name in PROJECT_ENV)):
+        if isinstance(candidate, str) and candidate and Path(candidate).is_dir():
+            os.chdir(candidate)
+            return
+
+
+def plugin_version() -> str:
+    try:
+        return str(json.loads((PLUGIN_ROOT / "plugin.json").read_text(encoding="utf-8"))["version"])
+    except (OSError, ValueError, KeyError):
+        return "unknown"
 
 
 def read_payload() -> dict:

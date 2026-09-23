@@ -21,6 +21,10 @@ Also asked: anything that sends content to a repo other than this project's
 a remote or URL that is not origin. Reads (`view`, `list`, `status`, `diff`) do
 not ask. The reason names both repos so the human can see what is leaving.
 
+Edit tools are handed to guard_edit.py (no ticket, no code), so one pre-tool
+entry per harness covers both. Runs in the project named by the payload's cwd:
+Copilot CLI starts plugin hooks in the plugin's own folder.
+
 Reads either harness's payload. Any failure exits 0 with no output.
 """
 
@@ -30,6 +34,7 @@ import re
 import sys
 
 import _common as c
+import guard_edit
 
 GIT = r"\bgit\b[^|;&]*"
 DENY: list[tuple[re.Pattern[str], str]] = [
@@ -151,55 +156,70 @@ def shaping_builds(command: str, branch: str) -> list[str]:
     return sorted({path for path in files if PRODUCT.match(path)})
 
 
-def ask_leaving(command: str) -> bool:
+def leaving_reason(command: str) -> str | None:
     found = leaves_project(command)
     if not found:
-        return False
+        return None
     what, target = found
     origin = c.remote_repo("origin") or "no origin remote"
-    c.decision(
-        "ask",
+    return (
         f"python-dev: this would {what}: {target}. This project's repo is {origin}. "
         "Approve only if you have seen exactly what will be sent; nothing from this repo's "
-        "code, paths, hosts, keys or data should leave without your say-so.",
+        "code, paths, hosts, keys or data should leave without your say-so."
     )
-    return True
+
+
+def shaping_reason(command: str, branch: str) -> str | None:
+    built = shaping_builds(command, branch)
+    if not built:
+        return None
+    return (
+        f"python-dev: this shaping branch is about to commit product code "
+        f"({', '.join(built[:5])}). Shaping decides; a ticket builds. Approve only if "
+        "you asked for this in your own words; otherwise the change belongs on a "
+        "prototype/<slug> branch or in a ticket."
+    )
+
+
+def main_reason(command: str, branch: str) -> str | None:
+    action = lands_on_main(command, branch)
+    if not action:
+        return None
+    return (
+        f"python-dev: this would {action}. Main changes only by a merge you said yes "
+        "to, after the checks and the review. If this is that merge, approve it. If "
+        "the agent is committing straight to main, it should be on a branch "
+        "(`git switch -c ticket/<id>`)."
+    )
+
+
+def decide(payload: dict) -> tuple[str, str] | None:
+    """(decision, reason) for this tool call, or None to let it through."""
+    name = c.tool_name(payload)
+    if guard_edit.is_edit_tool(name):
+        return guard_edit.check(payload)
+    command = str(c.tool_args(payload).get("command", ""))
+    if not is_shell_tool(name) or not command:
+        return None
+    reason = denied(command)
+    if reason:
+        return "deny", reason
+    if c.guard_off() or c.repo_root() is None:
+        return None
+    branch = c.current_branch()
+    asked = (
+        leaving_reason(command) or shaping_reason(command, branch) or main_reason(command, branch)
+    )
+    return ("ask", asked) if asked else None
 
 
 def main() -> int:
     try:
         payload = c.read_payload()
-        command = str(c.tool_args(payload).get("command", ""))
-        if not is_shell_tool(c.tool_name(payload)) or not command:
-            return 0
-        reason = denied(command)
-        if reason:
-            c.decision("deny", reason)
-            return 0
-        if c.guard_off() or c.repo_root() is None:
-            return 0
-        if ask_leaving(command):
-            return 0
-        branch = c.current_branch()
-        built = shaping_builds(command, branch)
-        if built:
-            c.decision(
-                "ask",
-                f"python-dev: this shaping branch is about to commit product code "
-                f"({', '.join(built[:5])}). Shaping decides; a ticket builds. Approve only if "
-                "you asked for this in your own words; otherwise the change belongs on a "
-                "prototype/<slug> branch or in a ticket.",
-            )
-            return 0
-        action = lands_on_main(command, branch)
-        if action:
-            c.decision(
-                "ask",
-                f"python-dev: this would {action}. Main changes only by a merge you said yes "
-                "to, after the checks and the review. If this is that merge, approve it. If "
-                "the agent is committing straight to main, it should be on a branch "
-                "(`git switch -c ticket/<id>`).",
-            )
+        c.enter_project(payload)
+        found = decide(payload)
+        if found:
+            c.decision(*found)
     except Exception:  # noqa: BLE001 - a hook must fail open
         return 0
     return 0
