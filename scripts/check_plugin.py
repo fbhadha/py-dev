@@ -20,6 +20,9 @@
     line is how the user tells it from the default agent where no hook runs
   - every folder under skills/ is named by a routing row in agents/python-dev.md,
     so nothing moved out of the persona can become unreachable
+  - every skill a skill or agent file names exists here or in upstream.json, and one
+    only a person can start (`user` in upstream.json) is given to the user as `User types`,
+    never called as `Skill`, which no harness lets the model do
 
 Exit code is non-zero on any failure.
 
@@ -134,7 +137,7 @@ def check_persona_budget() -> list[str]:
 
 
 REF_RE = re.compile(r"`?((?:templates|references|scripts)/[A-Za-z0-9_.-]+\.[a-z]+)`?")
-CALL_RE = re.compile(r"(?:Skill|File) `([a-z][a-z0-9-]+)`|Skill tool with \"([a-z][a-z0-9-]+)\"")
+CALL_RE = re.compile(r"(Skill|File|User types) `([a-z][a-z0-9-]+)`|Skill tool with \"([a-z][a-z0-9-]+)\"")
 STEP_RE = re.compile(r"\b[Ss]tep (\d+)\b")
 SECTION_RE = re.compile(r"\bsection (\d+)\b")
 PACK_SECTIONS = (
@@ -147,9 +150,14 @@ PACK_SECTIONS = (
 )
 
 
-def upstream_names() -> set[str]:
+def upstream_invocations() -> dict[str, str]:
+    """Every upstream skill we name, with how it starts: `model` (the Skill tool) or `user` (a person types it)."""
     data = json.loads((ROOT / "upstream.json").read_text(encoding="utf-8"))
-    return {name for up in data["upstreams"] for name in up.get("skills", {})}
+    return {name: how for up in data["upstreams"] for name, how in up.get("skills", {}).items()}
+
+
+def upstream_names() -> set[str]:
+    return set(upstream_invocations())
 
 
 def resolve_ref(ref: str, here: Path, line: str, upstream: set[str]) -> bool:
@@ -171,17 +179,25 @@ def check_references(doc: Path) -> list[str]:
     problems: list[str] = []
     rel = doc.relative_to(ROOT)
     text = doc.read_text(encoding="utf-8")
-    upstream = upstream_names()
+    invocations = upstream_invocations()
+    upstream = set(invocations)
     local = {d.name for d in (ROOT / "skills").iterdir() if d.is_dir()}
     headings = len(re.findall(r"^## \d+\.", text, re.M))
     for line in text.splitlines():
         for ref in REF_RE.findall(line):
             if not resolve_ref(ref, doc.parent, line, upstream):
                 problems.append(f"{rel}: names `{ref}`, which does not exist")
-        for a, b in CALL_RE.findall(line):
+        for verb, a, b in CALL_RE.findall(line):
             name = a or b
             if name not in local | upstream:
                 problems.append(f"{rel}: calls skill `{name}`, not in skills/ or upstream.json")
+            elif verb == "User types" and invocations.get(name) != "user":
+                problems.append(f"{rel}: gives the user `{name}` to type, but the agent can start it itself: Skill `{name}`")
+            elif verb in ("Skill", "") and invocations.get(name) == "user":
+                problems.append(
+                    f"{rel}: calls `{name}` as a Skill, which no harness allows: only a person can "
+                    f"start it, so give the user the line (User types `{name}`)"
+                )
         pattern = STEP_RE if "py-intake" in str(rel) else SECTION_RE
         for num in pattern.findall(line):
             if headings and int(num) > headings:

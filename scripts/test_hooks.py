@@ -7,7 +7,8 @@ and asserts the answer: ask, deny or allow. Copilot-shaped payloads run from a
 folder outside the repo with the repo in the payload's `cwd`, because that is how
 Copilot CLI starts plugin hooks. Then the edit guard (no ticket, no code), the stop
 gate, the session-start line, the hook manifests failing open when the plugin root
-is not expanded, and check_test_diff.py on a weakened and a clean test change.
+is not expanded, check_test_diff.py on a weakened and a clean test change, and the
+line find_skill.py --typed gives the user for a skill only a person can start.
 
 Usage: python scripts/test_hooks.py
 """
@@ -491,6 +492,38 @@ def check_adr_format(tmp: Path) -> None:
     )
 
 
+def check_typed_lines(tmp: Path) -> None:
+    """find_skill.py --typed: the exact line a person types, which the persona gives the user.
+
+    Copilot CLI 1.0.88 starts a plugin's user-only skill from `/<plugin>:<skill>` and
+    answers "Unknown command" to the bare name; a skill installed on its own is `/<skill>`.
+    """
+    home = tmp / "typed-home"
+    plugin = home / ".copilot" / "installed-plugins" / "mattpocock" / "mattpocock-skills"
+    (plugin / ".claude-plugin").mkdir(parents=True)
+    (plugin / ".claude-plugin" / "plugin.json").write_text('{"name": "mattpocock-skills"}')
+    skill = plugin / "skills" / "engineering" / "wayfinder"
+    skill.mkdir(parents=True)
+    (skill / "SKILL.md").write_text("---\nname: wayfinder\ndisable-model-invocation: true\n---\n")
+    project = tmp / "typed-project"
+    (project / ".claude-plugin").mkdir(parents=True)
+    (project / ".claude-plugin" / "plugin.json").write_text('{"name": "their-own-plugin"}')
+    own = project / ".agents" / "skills" / "triage"
+    own.mkdir(parents=True)
+    (own / "SKILL.md").write_text("---\nname: triage\ndisable-model-invocation: true\n---\n")
+    locator = ROOT / "scripts" / "find_skill.py"
+
+    def typed(name: str) -> tuple[str, int]:
+        result = run(locator, None, project, ["--typed", name], env={"HOME": str(home)})
+        return result.stdout.strip(), result.returncode
+
+    expect("typed: a plugin skill carries its plugin's name", typed("wayfinder")[0], "/mattpocock-skills:wayfinder")
+    expect("typed: a skill installed on its own is bare, whatever the project ships", typed("triage")[0], "/triage")
+    line, code = typed("teach")
+    expect("typed: a missing skill gets upstream.json's plugin", line, "/mattpocock-skills:teach")
+    expect("typed: a missing skill exits 1", str(code), "1")
+
+
 def main() -> int:
     with tempfile.TemporaryDirectory() as tmp:
         repo = make_repo(Path(tmp))
@@ -501,6 +534,7 @@ def main() -> int:
         check_stop_and_start(repo)
         check_test_diff(repo)
         check_adr_format(Path(tmp))
+        check_typed_lines(Path(tmp))
     if FAILURES:
         print("\nHOOK TESTS FAILED:")
         for failure in FAILURES:
