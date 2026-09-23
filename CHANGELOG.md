@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.11.1 (2026-09-23)
+
+Six of the Matt Pocock skills python-dev routes to can be started only by a person (`disable-model-invocation: true`), and no harness lets an agent start one. The agent used to read their files and follow them itself, and nothing told the user they existed or when to reach for one. Asked for: make the agent aware of when the user should start one and tell them what to do. Decision 53.
+
+- **The agent gives you the line.** For the six still routed (`setup-matt-pocock-skills` at intake; `wayfinder` for an idea too big for one session and at the start of every session on its map; `improve-codebase-architecture` after the health step; `triage` for issues from other people; `wait-what` when a message did not land; `teach` for a topic over several sessions), the persona says why now, gives the exact line alone in a code block, says what the skill will ask and which answers it will give itself, and waits. Typed, the skill runs in the conversation under the persona's rules. "You run it" falls back to the old way: the agent reads the file and follows it.
+- **The line is `/mattpocock-skills:<name>`**, printed by the new `scripts/find_skill.py --typed <name>` (`/<name>` when his skills were installed with `npx skills add`). Checked on Copilot CLI 1.0.88 with a scripted model: the model's skill tool answers "Skill not found" for these skills; the prefixed line loads them in an interactive session, with python-dev selected and as the `-i` start prompt; the bare `/wayfinder` answers "Unknown command"; `copilot -p` never expands a typed skill. Claude Code and VS Code (the Chat view) take the prefixed line by their docs; VS Code's Agents window cannot start these skills yet (microsoft/vscode#331477).
+- **A map session starts with the line.** The handoff after charting or working a map gives the next session's first message: `/mattpocock-skills:wayfinder <map> <handoff path>`.
+- **Typing one of his retired flow skills** (`grill-with-docs`, `to-spec`, `to-tickets`, `implement`, `handoff`) gets the step of python-dev's that replaces it, what his leaves out (the view and pushback, each ticket's plan, the plan check, the gates, the merge question), a recommendation, and then your choice.
+- The intake report and a new README section list the lines. `upstream.json` records his plugin's name and gives the Copilot CLI and VS Code install lines, matching the README. `CONTEXT.md` gains **Typed skill**.
+- **CI:** `check_plugin.py` fails a `Skill` call to a skill only a person can start, and a `User types` line for one the agent can start. `check_upstream_skills.py` checks his plugin's name at the pin, because it prefixes every line. `test_hooks.py` checks the typed lines (80 checks).
+- The persona is about 13,500 characters (ceiling 14,000), about 400 tokens a turn more than 0.11.0. `docs/smoke-test.md` gains section 6.
+- Smoke test for this release: not yet run on a live model. The scripted Copilot CLI 1.0.88 run covered the typed line, the refused skill tool, the bare name and `-p`.
+
 ## 0.11.0 (2026-09-23)
 
 The first live test on GitHub Copilot felt like the default agent: no view of its own, no pushback, no grill, no tickets, nothing explained. Two causes. On Copilot it mostly did not run: the README's `copilot --agent python-dev` fails (the id is `python-dev:python-dev`), the hooks ran in the plugin's folder instead of the repo, and the session-start line never reached the model. And where it ran, the persona was written to say one sentence per step, defer after two objections, and hand the flow to Matt Pocock's skills, which only a person can start and which leave file paths and code out of specs and tickets by design. Decisions 47 to 52, ADR 0007.

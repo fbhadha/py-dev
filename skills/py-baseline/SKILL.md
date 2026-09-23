@@ -85,7 +85,7 @@ uv run repowise doc-drift
 uv run repowise decision health
 ```
 
-Report, in this order: the worst files with one plain sentence each on the marker that makes them bad; files safe to delete; docs that name things that no longer exist; hotspots no ADR governs. Write no report file; `repowise health --trend` is the history. Mutation testing (`uv run mutmut run`) only on the module the user names. Then refresh the map: `uv run repowise generate-claude-md --stdout | sed -n '/REPOWISE:START/,/REPOWISE:END/p' > docs/agents/repowise-map.md`; Repowise is the only writer of that file, and it lands with the next merge. When the user wants the refactor, File `improve-codebase-architecture` on the worst file.
+Report, in this order: the worst files with one plain sentence each on the marker that makes them bad; files safe to delete; docs that name things that no longer exist; hotspots no ADR governs. Write no report file; `repowise health --trend` is the history. Mutation testing (`uv run mutmut run`) only on the module the user names. Then refresh the map: `uv run repowise generate-claude-md --stdout | sed -n '/REPOWISE:START/,/REPOWISE:END/p' > docs/agents/repowise-map.md`; Repowise is the only writer of that file, and it lands with the next merge. When the user wants the refactor, they start it (persona section 5): User types `improve-codebase-architecture` with the worst file. It writes a report of deepening candidates to the temp folder and asks which to explore; the one the user picks is a new idea (Skill `py-shape`).
 
 ## Applying it (rules for `py-intake`)
 
