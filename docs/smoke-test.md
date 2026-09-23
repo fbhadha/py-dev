@@ -26,8 +26,10 @@ Install on the harness under test:
 
 Prompt: `start`
 
-- [ ] The first reply opens with `python-dev 0.11.0 · branch main · guards <state> · tracker <...> · next: <step>`. Guards read `on` on Copilot CLI and Claude Code, `unknown` in VS Code.
+- [ ] The first reply opens with `python-dev 0.11.1 · branch main · guards <state> · tracker <...> · next: <step>`. Guards read `on` on Copilot CLI and Claude Code, `unknown` in VS Code.
 - [ ] With no `docs/agents/mode.md` it says intake comes next, why, and starts it (a facts table, then "anything wrong here?").
+
+- [ ] At the tracker step it gives the line `/mattpocock-skills:setup-matt-pocock-skills` alone in a code block, says what the skill will ask and that it will answer from what intake found, and waits. Typed, it runs and asks nothing intake already knows.
 
 Finish intake before section 2; it ends with the report and "Merge to main?".
 
@@ -74,6 +76,21 @@ Prompt: the handoff path from section 2, in a new session.
 - [ ] One slice at a time, test first; after each green, one or two lines on what the slice added and what is next.
 - [ ] Before merging it shows the merge summary (files outside `src/` and `tests/` first) and asks "Merge to main?".
 
+## 6. Skills only you can start
+
+Prompt, after any long answer: `I don't follow.`
+
+- [ ] It says it again, shorter and in plain words, and says once that `/mattpocock-skills:wait-what` does this any time.
+- [ ] Type `/mattpocock-skills:wait-what`: the harness starts the skill (Copilot CLI shows no "Unknown command") and it re-pitches its last message.
+
+Prompt: `Where is this repo ugly?`
+
+- [ ] After the health report it gives `/mattpocock-skills:improve-codebase-architecture <the worst file>` alone in a code block, says what the report will show and that it will ask which candidate to explore, and waits.
+
+Prompt: `/mattpocock-skills:to-spec`
+
+- [ ] Before anything else it says `py-shape` writes the spec and tickets here, what his leaves out (each ticket's plan), recommends its own, and waits for your choice.
+
 ## Recording a run
 
-In the release's `CHANGELOG.md` entry: `Smoke test: <harness> <version>, <model>: sections 1-5 pass` or the section and line that failed.
+In the release's `CHANGELOG.md` entry: `Smoke test: <harness> <version>, <model>: sections 1-6 pass` or the section and line that failed.

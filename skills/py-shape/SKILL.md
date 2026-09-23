@@ -7,7 +7,7 @@ description: "Turn an idea into tickets before any code: read the code, give you
 
 Everything that changes the repo starts here and leaves as tickets on the tracker, each with a plan exact enough to build from. Shaping decides; it never builds. What it leaves behind: your view, terms in `CONTEXT.md`, ADRs, research notes in `docs/research/`, prototype branches, the how-to for a new shape, the spec and the tickets. Product code is a ticket's work (Skill `py-build`).
 
-Voice is the persona's section 2, pushback its section 3. The user never types a skill name.
+Voice is the persona's section 2, pushback its section 3. The user types a skill name only for `wayfinder` (section 4), which only a person can start.
 
 ## 0. Pick the route
 
@@ -57,9 +57,9 @@ Stop when every branch is settled. Say what you understood in at most five lines
 
 ## 4. Fog
 
-When the grill turns up more open questions than one session can settle (a new project, a feature across many sessions): stop grilling and File `wayfinder` to chart the map on the tracker in `docs/agents/issue-tracker.md` (its "Wayfinding operations" section has the commands). Write the shaping branch into the map's Notes. Charting is that session's whole work; hand off.
+When the grill turns up more open questions than one session can settle (a new project, a feature across many sessions): stop grilling. Matt's `wayfinder` charts the map, and only the user can start it (persona section 5): User types `wayfinder` with the idea in one line. It charts the map on the tracker in `docs/agents/issue-tracker.md` (its "Wayfinding operations" section has the commands); while it runs, answer its questions from what this session settled, and leave the destination and every open decision to the user. Write the shaping branch into the map's Notes. Charting is that session's whole work; hand off, and give the next session's first message: the `wayfinder` line with the map and the handoff's path.
 
-Every session after works one ticket from the map's frontier, by its type: grilling (section 3 on that one question), a prototype or research as above, a task. Research tickets run in parallel as subagents. A ticket that reads "build the X" is mis-typed: retype it as the question behind it, or rule it out of scope. Resolve it, close it, append the decision to the map, hand off. When the map clears, section 5 runs on the map.
+Every map session starts with that line; one that did not: give them the line first. It works one ticket from the map's frontier, by its type: grilling (section 3 on that one question), a prototype or research as above, a task. Research tickets run in parallel as subagents. A ticket that reads "build the X" is mis-typed: retype it as the question behind it, or rule it out of scope. Resolve it, close it, append the decision to the map, hand off the same way. When the map clears, section 5 runs on the map.
 
 ## 5. Spec and tickets, in this session
 

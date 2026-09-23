@@ -3,11 +3,13 @@
 
 Reads upstream.json at the plugin root: for each upstream repository, the pinned commit,
 the directory its skills live under, and the skill names we depend on with the
-invocation we assume (`model` = we call it through the Skill tool, `user` = the
-harness refuses it and we open the file). Clones each repository at the pinned
-commit into a temp dir, finds each SKILL.md by directory name or frontmatter
-name, and fails when a skill is missing or its `disable-model-invocation`
-flag no longer matches the assumption. A `reference` entry (kind "reference",
+invocation we assume (`model` = we call it through the Skill tool, `user` = only
+a person can start it, so the persona gives the user `/<plugin>:<skill>`). Clones
+each repository at the pinned commit into a temp dir, finds each SKILL.md by
+directory name or frontmatter name, and fails when a skill is missing or its
+`disable-model-invocation` flag no longer matches the assumption, or when the
+repository's `.claude-plugin/plugin.json` name is not the entry's `plugin` (the
+prefix of every line the persona gives the user). A `reference` entry (kind "reference",
 with `dir` and `terms`) is a repository of files the persona links to instead
 of skills it calls; each `<dir>/<term>.md` must exist at the pin.
 
@@ -97,6 +99,16 @@ def check_upstream(upstream: dict, latest: bool, workdir: Path) -> list[str]:
         return check_reference(upstream, dest)
     skills = index_skills(dest / upstream["skills_dir"])
     problems: list[str] = []
+    if upstream.get("plugin"):
+        # The persona gives the user `/<plugin>:<skill>` for a user-invoked skill; a renamed plugin breaks every line.
+        try:
+            actual_plugin = json.loads((dest / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8")).get("name")
+        except (OSError, ValueError):
+            actual_plugin = None
+        if actual_plugin != upstream["plugin"]:
+            problems.append(f"{repo}: its plugin is named {actual_plugin!r}; the persona gives users /{upstream['plugin']}:<skill>")
+        else:
+            print(f"  ok  plugin name {actual_plugin}")
     for name, expected in upstream["skills"].items():
         skill_md = skills.get(name)
         if skill_md is None:

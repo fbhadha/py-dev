@@ -1,5 +1,5 @@
 {
-  "description": "Everything upstream this plugin depends on by name and never copies. Skills: `model` means we call it through the Skill tool; `user` means the harness refuses it and the persona opens the file via scripts/find_skill.py. A `reference` entry lists the term files the persona links to. scripts/check_upstream_skills.py verifies every entry against the pinned commit; --latest reports drift on the default branch. Repowise is not here: the agent uses its CLI, not its skills. Since 0.11.0 the flow from idea to tickets (the view, the grill, the spec, the tickets with plans) and the build loop are python-dev's own (py-shape, py-build); his flow skills (grill-with-docs, to-spec, to-tickets, implement, handoff) are no longer called.",
+  "description": "Everything upstream this plugin depends on by name and never copies. Skills: `model` means we call it through the Skill tool; `user` means only a person can start it (no harness lets the model: Claude Code's Skill tool refuses it, Copilot CLI's answers \"Skill not found\"), so the persona gives the user the line to type, `/<plugin>:<skill>` from scripts/find_skill.py --typed, and opens the file itself only when the user asks. `plugin` is the name his plugin installs under, which prefixes those lines. A `reference` entry lists the term files the persona links to. scripts/check_upstream_skills.py verifies every entry against the pinned commit; --latest reports drift on the default branch. Repowise is not here: the agent uses its CLI, not its skills. Since 0.11.0 the flow from idea to tickets (the view, the grill, the spec, the tickets with plans) and the build loop are python-dev's own (py-shape, py-build); his flow skills (grill-with-docs, to-spec, to-tickets, implement, handoff) are no longer called, and a user who types one is told what python-dev does instead.",
   "verified": "2026-09-23",
   "upstreams": [
     {
@@ -8,7 +8,8 @@
       "version": "1.2.3 + 54 commits (unreleased changesets; the v1.2.3 tag is 6acc160)",
       "default_branch": "main",
       "skills_dir": "skills",
-      "install": "Claude Code: /plugin marketplace add mattpocock/skills, /plugin install mattpocock-skills@mattpocock. Elsewhere: npx skills@latest add mattpocock/skills --all",
+      "install": "Copilot CLI: copilot plugin marketplace add mattpocock/skills, copilot plugin install mattpocock-skills@mattpocock. Claude Code: /plugin marketplace add mattpocock/skills, /plugin install mattpocock-skills@mattpocock. VS Code: add mattpocock/skills to chat.plugins.marketplaces. Elsewhere: npx skills@latest add mattpocock/skills --all",
+      "plugin": "mattpocock-skills",
       "skills": {
         "domain-modeling": "model",
         "codebase-design": "model",

@@ -55,3 +55,7 @@ _Avoid_: task list, checklist (a plan names files and signatures), design (that 
 **Revision**:
 A change to something already decided: a `CONTEXT.md` term, an ADR, a spec, an open ticket or behaviour already merged. It is re-shaped (the agent's view, a grill on that branch only, the records updated) before any code, never parked as scope creep and never built around.
 _Avoid_: change request, scope creep (scope creep is work outside the ticket; a revision changes the ticket)
+
+**Typed skill**:
+A skill of Matt Pocock's that only a person can start (`disable-model-invocation: true`; `user` in `upstream.json`). No harness lets the agent start one, so when one is due the agent says why, gives the user the exact line to type (`/mattpocock-skills:<name>`), says what it will ask, and waits; it reads the skill's file itself only when the user asks.
+_Avoid_: invoke (the agent cannot), handoff (the document a session leaves for the next one), user-invoked (Matt's word for the flag, not for what the agent does)
