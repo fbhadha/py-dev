@@ -14,11 +14,12 @@ The skeleton every repo this agent touches ends up with, so a junior reader can 
 | `pyproject.toml` `[tool.*]` tables | ruff, ruff-format, mypy strict, import-linter layers, pytest, coverage | `templates/pyproject-tools.toml` |
 | `uv.lock`, `.python-version` | committed; CI installs with `uv sync --frozen` | created by `uv` |
 | `.pre-commit-config.yaml` | ruff, ruff-format, mypy on changed files, import-linter, pylint too-many-lines, detect-secrets | `templates/pre-commit-config.yaml` |
-| `.github/workflows/ci.yml` (or the GitLab equivalent) | pre-commit on the files the PR changed, the test-diff check, the literal check, the whole test suite with coverage on the changed lines, then the Repowise change gate | `templates/ci.yml`, `templates/gitlab-ci.yml` |
+| `.github/workflows/ci.yml` (or the GitLab equivalent) | pre-commit on the files the PR changed, the test-diff check, the literal check, the eval-report check, the whole test suite with coverage on the changed lines, then the Repowise change gate | `templates/ci.yml`, `templates/gitlab-ci.yml` |
 | `scripts/repowise_gate.py` | the CI change gate over Repowise's Python API | `templates/repowise_gate.py` |
 | `scripts/run_readme_blocks.py` | executes every ```bash ci``` block in `README.md` in CI | `templates/run_readme_blocks.py` |
 | `scripts/check_test_diff.py` | fails when the `tests/` diff deletes a test, adds a skip or loses assertions, unless a commit message carries `test-override:` | `templates/check_test_diff.py` |
 | `scripts/check_literals.py` | fails when a change types a literal from memory: a path that names nothing in the tree, an environment key missing from `.env.example`; `literal-override:` in a commit message passes it | `templates/check_literals.py` |
+| `scripts/check_eval_report.py` | fails when a change touches an agent's package (`src/<package>/entrypoints/agents/<name>/`) without a report under `tests/evals/<name>/reports/` whose `commit:` names an ancestor of HEAD after which the package did not change; `eval-override:` in a commit message passes it; a repo with no agent package has nothing to check | `templates/check_eval_report.py` |
 | `.secrets.baseline` | detect-secrets baseline, created by `uv run detect-secrets scan > .secrets.baseline` | created by `detect-secrets` |
 | `.env.example` | every key the code reads, with a comment, no values | `templates/env.example` |
 | `AGENTS.md` | the rules of work every agent follows (no ticket, no code; shape first; plans in tickets; one branch per ticket) and pointers, under 60 lines; the map is a link | `templates/AGENTS.md` |
@@ -60,6 +61,7 @@ Two layers. Line-level tools run at commit on the changed files. Repowise (`docs
 | Fake tests (pass on any mutation) | `mutmut`, on the module named in the health step and on each module a ticket changed, before review (`py-build`); survivors are read at review, never a gate, never stored | health; before review |
 | Weakened test (test deleted, skip added, assertions lost) | `scripts/check_test_diff.py` in CI and before review; an assertion loosened in place is the review's Craft axis on the `tests/` diff | CI; review |
 | A literal typed from memory (a path that names nothing in the tree, a key not in `.env.example`) | `scripts/check_literals.py` in CI and before review; the reviewer reads the diff's other literals against the sources the ticket's plan names | CI; review |
+| An agent changed without the outside user's report, or with a report from older code | `scripts/check_eval_report.py` in CI and at review; the eval itself runs before review in `py-build`, never in CI | CI; review |
 
 ## Where Repowise reads and writes (ADR 0005 in this repo)
 

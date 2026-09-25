@@ -38,6 +38,9 @@ jobs:
       - name: no literal typed from memory (a path that names nothing, a key not in .env.example)
         if: github.event_name == 'pull_request'
         run: uv run python scripts/check_literals.py "origin/${{ github.base_ref }}...HEAD"
+      - name: an agent changed with a fresh eval report (the run stays off CI)
+        if: github.event_name == 'pull_request'
+        run: uv run python scripts/check_eval_report.py "origin/${{ github.base_ref }}...HEAD"
 
   tests:
     name: tests

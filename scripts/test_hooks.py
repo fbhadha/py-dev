@@ -31,6 +31,7 @@ EVAL_GUARD = HOOKS / "guard_eval.py"
 PERSONAS = ROOT / "skills" / "pack-adk" / "references" / "personas.json"
 TEST_DIFF = ROOT / "skills" / "py-baseline" / "templates" / "check_test_diff.py"
 LITERALS = ROOT / "skills" / "py-baseline" / "templates" / "check_literals.py"
+EVAL_REPORT = ROOT / "skills" / "py-baseline" / "templates" / "check_eval_report.py"
 ADR_SYNC = ROOT / "skills" / "py-baseline" / "templates" / "adr_sync.py"
 ADR_TEMPLATE = ROOT / "skills" / "py-baseline" / "templates" / "adr-template.md"
 FAILURES: list[str] = []
@@ -601,6 +602,105 @@ def check_literals(repo: Path) -> None:
     back("ticket/l10")
 
 
+def eval_report(repo: Path) -> tuple[str, str]:
+    result = run(EVAL_REPORT, None, repo, ["main...HEAD"])
+    return ("passed" if result.returncode == 0 else "refused"), result.stdout
+
+
+def check_eval_report(repo: Path) -> None:
+    """An agent package changed without a fresh eval report is refused; nothing else is."""
+    package = "src/pkg/entrypoints/agents/orders"
+    agent = repo / package / "agent.py"
+    reports = repo / "tests" / "evals" / "orders" / "reports"
+
+    def head() -> str:
+        return subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=repo, capture_output=True, text=True, check=True
+        ).stdout.strip()
+
+    def report(name: str, commit: str) -> None:
+        reports.mkdir(parents=True, exist_ok=True)
+        (reports / f"{name}.md").write_text(
+            f"# Eval report: {name}\n\nagent: {package}\ncommit: {commit}\n"
+            "command: uv run pytest -m eval tests/evals/orders\n\n| target-1 | VAGUE | pass | 1.0 |\n",
+            encoding="utf-8",
+        )
+        git(repo, "add", "tests/evals")
+        git(repo, "commit", "-q", "-m", f"report {name}")
+
+    def back(name: str) -> None:
+        git(repo, "switch", "-q", "main")
+        git(repo, "branch", "-q", "-D", name)
+
+    git(repo, "switch", "-q", "-c", "ticket/e0")
+    (repo / "src" / "x.py").write_text("X = 5\n", encoding="utf-8")
+    git(repo, "commit", "-q", "-am", "no agent here")
+    expect("eval report: no agents passes", eval_report(repo)[0], "passed")
+    back("ticket/e0")
+    agent.parent.mkdir(parents=True)
+    agent.write_text("ROOT = 1\n", encoding="utf-8")
+    git(repo, "add", "src/pkg")
+    git(repo, "commit", "-q", "-m", "the orders agent")
+
+    git(repo, "switch", "-q", "-c", "ticket/e1")
+    agent.write_text("ROOT = 2\n", encoding="utf-8")
+    git(repo, "commit", "-q", "-am", "change the agent")
+    verdict, said = eval_report(repo)
+    expect("eval report: changed agent, no report refused", verdict, "refused")
+    expect("eval report: the missing report is named", "named" if "no report" in said else said[:80], "named")
+    report("e1", head())
+    expect("eval report: fresh report passes", eval_report(repo)[0], "passed")
+    agent.write_text("ROOT = 3\n", encoding="utf-8")
+    git(repo, "commit", "-q", "-am", "change the agent again")
+    verdict, said = eval_report(repo)
+    expect("eval report: stale report refused", verdict, "refused")
+    expect("eval report: staleness is named", "named" if "changed after" in said else said[:80], "named")
+    back("ticket/e1")
+
+    git(repo, "switch", "-q", "-c", "ticket/e2")
+    agent.write_text("ROOT = 4\n", encoding="utf-8")
+    git(repo, "commit", "-q", "-am", "change the agent")
+    report("e2", "nope")
+    verdict, said = eval_report(repo)
+    expect("eval report: bad commit line refused", verdict, "refused")
+    expect("eval report: the missing line is named", "named" if "commit: <hash>" in said else said[:80], "named")
+    back("ticket/e2")
+
+    git(repo, "switch", "-q", "-c", "other/branch")
+    (repo / "src" / "x.py").write_text("X = 9\n", encoding="utf-8")
+    git(repo, "commit", "-q", "-am", "elsewhere")
+    foreign = head()
+    git(repo, "switch", "-q", "main")
+    git(repo, "switch", "-q", "-c", "ticket/e3")
+    agent.write_text("ROOT = 5\n", encoding="utf-8")
+    git(repo, "commit", "-q", "-am", "change the agent")
+    report("e3", foreign)
+    verdict, said = eval_report(repo)
+    expect("eval report: foreign commit refused", verdict, "refused")
+    expect("eval report: the ancestry is named", "named" if "not an ancestor" in said else said[:80], "named")
+    back("ticket/e3")
+    git(repo, "branch", "-q", "-D", "other/branch")
+
+    git(repo, "switch", "-q", "-c", "ticket/e4")
+    billing = repo / "src" / "pkg" / "entrypoints" / "agents" / "billing" / "agent.py"
+    billing.parent.mkdir(parents=True)
+    billing.write_text("ROOT = 1\n", encoding="utf-8")
+    agent.write_text("ROOT = 6\n", encoding="utf-8")
+    git(repo, "add", "src/pkg")
+    git(repo, "commit", "-q", "-m", "two agents")
+    report("e4", head())
+    verdict, said = eval_report(repo)
+    expect("eval report: two agents, one report refused", verdict, "refused")
+    expect("eval report: the second agent is named", "named" if "agents/billing" in said else said[:80], "named")
+    back("ticket/e4")
+
+    git(repo, "switch", "-q", "-c", "ticket/e5")
+    agent.write_text("ROOT = 7\n", encoding="utf-8")
+    git(repo, "commit", "-q", "-am", "task-5\n\neval-override: the user says the wording change cannot reach a user")
+    expect("eval report: override passes", eval_report(repo)[0], "passed")
+    back("ticket/e5")
+
+
 def check_adr_format(tmp: Path) -> None:
     """adr_sync's shape check: the template copy is skipped, the short form is reported."""
     import importlib.util
@@ -675,6 +775,7 @@ def main() -> int:
         check_stop_and_start(repo)
         check_test_diff(repo)
         check_literals(repo)
+        check_eval_report(repo)
         check_adr_format(Path(tmp))
         check_typed_lines(Path(tmp))
     if FAILURES:
