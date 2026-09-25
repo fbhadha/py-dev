@@ -28,6 +28,7 @@ ROOT = Path(__file__).resolve().parent.parent
 HOOKS = ROOT / "scripts" / "hooks"
 GUARD = HOOKS / "guard_command.py"
 TEST_DIFF = ROOT / "skills" / "py-baseline" / "templates" / "check_test_diff.py"
+LITERALS = ROOT / "skills" / "py-baseline" / "templates" / "check_literals.py"
 ADR_SYNC = ROOT / "skills" / "py-baseline" / "templates" / "adr_sync.py"
 ADR_TEMPLATE = ROOT / "skills" / "py-baseline" / "templates" / "adr-template.md"
 FAILURES: list[str] = []
@@ -462,6 +463,71 @@ def check_test_diff(repo: Path) -> None:
     git(repo, "switch", "-q", "main")
 
 
+def literals(repo: Path) -> str:
+    result = run(LITERALS, None, repo, ["main...HEAD"])
+    return "passed" if result.returncode == 0 else "refused"
+
+
+def check_literals(repo: Path) -> None:
+    """A path that names nothing in the tree and a key missing from .env.example are refused."""
+    src = repo / "src" / "x.py"
+    (repo / ".env.example").write_text("# the one key\nA_KEY=\n", encoding="utf-8")
+    git(repo, "add", ".env.example")
+    git(repo, "commit", "-q", "-m", "env example")
+
+    def on_branch(name: str, code: str, message: str = "change") -> None:
+        git(repo, "switch", "-q", "-c", name)
+        src.write_text("X = 1\n" + code, encoding="utf-8")
+        git(repo, "commit", "-q", "-am", message)
+
+    def back(name: str) -> None:
+        git(repo, "switch", "-q", "main")
+        git(repo, "branch", "-q", "-D", name)
+
+    on_branch("ticket/l1", 'P = "src/missing.py"\n')
+    expect("literals: a path that names nothing refused", literals(repo), "refused")
+    back("ticket/l1")
+    on_branch("ticket/l2", 'Q = "out/report.json"\n')
+    expect("literals: runtime path passes", literals(repo), "passed")
+    back("ticket/l2")
+    git(repo, "switch", "-q", "-c", "ticket/l3")
+    (repo / "src" / "new.py").write_text("Y = 2\n", encoding="utf-8")
+    src.write_text('X = 1\nN = "src/new.py"\n', encoding="utf-8")
+    git(repo, "add", "src/new.py")
+    git(repo, "commit", "-q", "-am", "adds and names src/new.py")
+    expect("literals: created path passes", literals(repo), "passed")
+    back("ticket/l3")
+    on_branch("ticket/l4", 'U = "https://example.com/a.json"\nG = "src/*.py"\nF = "src/{name}.py"\n')
+    expect("literals: url and glob pass", literals(repo), "passed")
+    back("ticket/l4")
+    on_branch("ticket/l5", 'import os\nK = os.environ["B_KEY"]\n')
+    expect("literals: a key not in .env.example refused", literals(repo), "refused")
+    back("ticket/l5")
+    on_branch("ticket/l6", 'import os\nK = os.getenv("C_KEY", "x")\n')
+    expect("literals: getenv key refused", literals(repo), "refused")
+    back("ticket/l6")
+    on_branch("ticket/l7", 'import os\nK = os.environ.get("A_KEY")\n')
+    expect("literals: a key in .env.example passes", literals(repo), "passed")
+    back("ticket/l7")
+    on_branch("ticket/l8", 'P = "src/missing.py"  # literal-ok: written by the first run\n')
+    expect("literals: literal-ok comment passes", literals(repo), "passed")
+    back("ticket/l8")
+    on_branch("ticket/l9", 'P = "src/missing.py"\n', "task-9\n\nliteral-override: the user keeps the old path until the loader moves")
+    expect("literals: override passes", literals(repo), "passed")
+    back("ticket/l9")
+    git(repo, "switch", "-q", "-c", "ticket/l10")
+    git(repo, "rm", "-q", ".env.example")
+    src.write_text('X = 1\nimport os\nK = os.environ["B_KEY"]\n', encoding="utf-8")
+    git(repo, "commit", "-q", "-am", "no env example")
+    result = run(LITERALS, None, repo, ["main...HEAD"])
+    expect(
+        "literals: no env example, keys not checked",
+        f"{'passed' if result.returncode == 0 else 'refused'}:{'said' if 'not checked' in result.stdout else 'silent'}",
+        "passed:said",
+    )
+    back("ticket/l10")
+
+
 def check_adr_format(tmp: Path) -> None:
     """adr_sync's shape check: the template copy is skipped, the short form is reported."""
     import importlib.util
@@ -533,6 +599,7 @@ def main() -> int:
         check_manifests_fail_open(repo)
         check_stop_and_start(repo)
         check_test_diff(repo)
+        check_literals(repo)
         check_adr_format(Path(tmp))
         check_typed_lines(Path(tmp))
     if FAILURES:
