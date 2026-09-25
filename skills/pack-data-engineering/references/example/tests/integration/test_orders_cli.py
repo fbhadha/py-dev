@@ -53,7 +53,10 @@ def test_a_missing_export_exits_2(tmp_path: Path) -> None:
     assert main(args(tmp_path)) == 2
 
 
-def test_a_missing_argument_exits_2() -> None:
+@pytest.mark.parametrize("missing", ["--csv", "--db", "--state"])
+def test_each_path_argument_is_required(tmp_path: Path, missing: str) -> None:
+    given = args(tmp_path)
+    at = given.index(missing)
     with pytest.raises(SystemExit) as raised:
-        main([])
+        main(given[:at] + given[at + 2 :])
     assert raised.value.code == 2
