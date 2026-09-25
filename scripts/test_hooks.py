@@ -27,6 +27,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 HOOKS = ROOT / "scripts" / "hooks"
 GUARD = HOOKS / "guard_command.py"
+EVAL_GUARD = HOOKS / "guard_eval.py"
+PERSONAS = ROOT / "skills" / "pack-adk" / "references" / "personas.json"
 TEST_DIFF = ROOT / "skills" / "py-baseline" / "templates" / "check_test_diff.py"
 LITERALS = ROOT / "skills" / "py-baseline" / "templates" / "check_literals.py"
 ADR_SYNC = ROOT / "skills" / "py-baseline" / "templates" / "adr_sync.py"
@@ -375,6 +377,77 @@ def check_edit_guard(repo: Path) -> None:
     shutil.rmtree(repo / "docs")
 
 
+def check_eval_guard(repo: Path) -> None:
+    """The eval author reads and writes under tests/evals/ only; nobody else is touched."""
+
+    def eval_tool(tool: str, args: dict, agent: str = "python-dev:py-eval") -> str:
+        payload = {"tool_name": tool, "tool_input": args, "agent_type": agent}
+        return decision_of(run(EVAL_GUARD, payload, repo))
+
+    src = str(repo / "src" / "x.py")
+    targets = str(repo / "tests" / "evals" / "orders" / "targets-12.md")
+    expect("eval guard: src denied", eval_tool("Read", {"file_path": src}), "deny")
+    expect("eval guard: evals allowed", eval_tool("Read", {"file_path": targets}), "allow")
+    expect(
+        "eval guard: a write under tests/evals passes",
+        eval_tool("Write", {"file_path": str(repo / "tests" / "evals" / "orders" / "12.test.json")}),
+        "allow",
+    )
+    expect(
+        "eval guard: a write elsewhere denied",
+        eval_tool("Write", {"file_path": str(repo / "tests" / "test_x.py")}),
+        "deny",
+    )
+    expect(
+        "eval guard: a relative evals path passes",
+        eval_tool("Read", {"file_path": "tests/evals/orders/targets-12.md"}),
+        "allow",
+    )
+    expect("eval guard: search denied", eval_tool("Grep", {"pattern": "x", "path": str(repo)}), "deny")
+    expect("eval guard: shell denied", eval_tool("Bash", {"command": "cat src/x.py"}), "deny")
+    expect(
+        "eval guard: outside the repo denied",
+        eval_tool("Read", {"file_path": str(repo.parent / "elsewhere.md")}),
+        "deny",
+    )
+    expect(
+        "eval guard: main session passes",
+        decision_of(run(EVAL_GUARD, {"tool_name": "Read", "tool_input": {"file_path": src}}, repo)),
+        "allow",
+    )
+    expect(
+        "eval guard: another agent passes",
+        eval_tool("Read", {"file_path": src}, agent="python-dev:py-reviewer"),
+        "allow",
+    )
+    expect(
+        "eval guard: garbage payload fails open",
+        decision_of(run(EVAL_GUARD, {"agent_type": "py-eval", "tool_input": 5}, repo)),
+        "allow",
+    )
+
+
+def check_personas() -> None:
+    """The pack's fixed personas are ADK UserPersona objects, and every one ends the conversation."""
+    personas = json.loads(PERSONAS.read_text(encoding="utf-8"))["personas"]
+    expect("personas: six", str(len(personas)), "6")
+    expect(
+        "personas: the fixed list",
+        ",".join(p["id"] for p in personas),
+        "PLAIN,VAGUE,HURRIED,SCEPTICAL,WANDERER,CHANGER",
+    )
+    keys = {"name", "description", "behavior_instructions", "violation_rubrics"}
+    for persona in personas:
+        ends = any(
+            "{{ stop_signal }}" in line
+            for behaviour in persona["behaviors"]
+            for line in behaviour["behavior_instructions"]
+        )
+        expect(f"personas: {persona['id']} ends", "ends" if ends else "never ends", "ends")
+        shaped = all(keys <= set(b) for b in persona["behaviors"]) and {"id", "description", "behaviors"} <= set(persona)
+        expect(f"personas: {persona['id']} in ADK's shape", "shaped" if shaped else "missing keys", "shaped")
+
+
 def check_manifests_fail_open(repo: Path) -> None:
     """A hook whose plugin root was not expanded exits 0 with no decision, never an error.
 
@@ -596,6 +669,8 @@ def main() -> int:
         check_guard(repo)
         check_shaping(repo)
         check_edit_guard(repo)
+        check_eval_guard(repo)
+        check_personas()
         check_manifests_fail_open(repo)
         check_stop_and_start(repo)
         check_test_diff(repo)
