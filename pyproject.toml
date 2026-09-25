@@ -1,0 +1,121 @@
+[project]
+name = "py-dev"
+version = "0"   # not released from here; the plugin's version is plugin.json
+description = "The python-dev plugin: persona, skills, hooks and the scripts that check them."
+requires-python = ">=3.11"
+dependencies = [
+  "pyyaml>=6",   # scripts/check_plugin.py and check_upstream_skills.py read skill front matter
+]
+
+[tool.uv]
+package = false   # nothing is built or installed; uv sync only provisions the environment
+
+[dependency-groups]
+dev = [
+  "ruff>=0.16",
+  "mypy>=1.10",
+  "pytest>=9",
+  "pytest-cov>=7",
+  "diff-cover>=9",   # coverage on the lines a change added, enforced in CI
+  "pylint>=4",
+  "pre-commit>=4.6",
+  "detect-secrets>=1.5",
+  "bandit>=1.9",
+  "mutmut>=3.8",
+  "hypothesis>=6.154",   # property tests; the pack example's tests use it
+  "repowise>=0.52",   # AGPL-3.0; development only, never a runtime dependency
+  "types-pyyaml",
+]
+
+# ---------------------------------------------------------------- ruff
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["scripts", "scripts/hooks", "tests"]
+# skills/ and packs/ are shipped templates and examples, checked in a scratch copy by
+# scripts/check_pack_examples.py and scripts/check_template_deps.py, not here.
+extend-exclude = ["prototypes", "skills", "packs"]
+force-exclude = true              # so the commit hook and the stop gate, which name files, skip them too
+
+[tool.ruff.lint]
+select = [
+  "F", "E", "W", "I", "UP", "N",        # correctness, style, imports, modernise, naming
+  "B", "BLE", "S", "T20", "ERA",        # bugbear, blind except, security, print, commented-out code
+  "C90", "PLR", "PLW", "PLC", "PLE",    # complexity, pylint refactor/warn/convention/error
+  "FBT", "ARG", "RET", "SIM", "PT",     # boolean flags, unused args, returns, simplify, pytest style
+  "D", "TD", "FIX", "TID", "TRY", "RUF",
+]
+ignore = [
+  "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107",  # docstrings are not required
+  "D203", "D213",                                                  # incompatible pydocstyle pairs
+  "TRY003",                                                        # long messages in raise are fine
+  "PLR2004",                                                       # magic values: too noisy in src too
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "PLR2004", "D", "ARG", "FBT", "PLR0913", "S105", "S106"]
+"**/conftest.py" = ["D", "ARG"]
+"scripts/**" = ["T201", "S603", "S607", "PLC0415"]   # scripts print, run subprocesses, and import lazily by design
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.pylint]
+max-args = 5
+max-branches = 10
+max-statements = 40
+
+# TD002 needs an author and TD003 an issue link: "# TODO(fb): ... see #123"
+
+[tool.ruff.format]
+docstring-code-format = true
+
+# ---------------------------------------------------------------- mypy
+[tool.mypy]
+python_version = "3.11"
+files = ["scripts"]
+mypy_path = ["scripts/hooks"]   # the hooks import _common by bare name, as the harness runs them
+strict = true
+warn_unreachable = true
+follow_imports = "silent"   # errors only in the files given, so the commit hook is per file
+pretty = true
+
+# ---------------------------------------------------------------- pylint (size only)
+[tool.pylint.main]
+disable = "all"
+enable = ["too-many-lines"]
+max-module-lines = 400
+
+# ---------------------------------------------------------------- pytest
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers --strict-config"
+filterwarnings = ["error"]
+markers = [
+  "eval: calls a live model; run on demand with `pytest -m eval`",
+]
+xfail_strict = true
+
+[tool.coverage.run]
+source = ["scripts"]
+branch = true
+
+[tool.coverage.report]
+skip_covered = true
+show_missing = true
+
+# ---------------------------------------------------------------- bandit
+[tool.bandit]
+exclude_dirs = ["tests", "prototypes", "skills", "packs"]
+
+# ---------------------------------------------------------------- mutmut
+[tool.mutmut]
+source_paths = ["scripts/"]
+pytest_add_cli_args_test_selection = ["tests/"]   # mutmut 3 keys; the 2.x names only warn
+
+[[tool.mypy.overrides]]
+module = "repowise.*"   # ships no type information; scripts/repowise_gate.py is the one importer
+ignore_missing_imports = true

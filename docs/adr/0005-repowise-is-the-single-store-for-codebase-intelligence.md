@@ -37,6 +37,14 @@ Consequences of the table:
 - `AGENTS.md` carries the plugin's pointers and links to `docs/agents/repowise-map.md`, which only `repowise generate-claude-md --stdout` writes (amended 0.8.8: `--output` overwrites its target whole, and a map inside `AGENTS.md` would load through `CLAUDE.md` on every turn). `CLAUDE.md` is `@AGENTS.md`.
 - The Repowise plugin is a prerequisite beside Matt Pocock's, checked at the door with its six skill names. The plugin's own skills are not re-described here; ours call them.
 
+## Scope
+
+- scripts/repowise_gate.py
+- scripts/adr_sync.py
+- skills/py-baseline/templates/repowise_gate.py
+- skills/py-baseline/templates/adr_sync.py
+- skills/py-baseline/SKILL.md
+
 ## Consequences
 
 One place to look, one place to write, for every kind of knowledge. A junior reader learns one map. The cost: Repowise (AGPL-3.0, Python 3.11 or newer) becomes a hard dependency of the agent's orientation and review flows, and when it is missing those flows degrade to reading files by hand and say so.

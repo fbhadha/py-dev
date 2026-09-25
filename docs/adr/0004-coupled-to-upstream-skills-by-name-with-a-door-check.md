@@ -1,5 +1,7 @@
 # Stay coupled to Matt Pocock's and Google's skills by name, verified at the door
 
+## Decision
+
 Rewritten for 0.6.1 to match the code (decisions 21, 23, 26). The original text said Google's skills were vendored and `implement` was restated in `py-implement`; neither has been true since 0.2.0.
 
 Our skills and the persona call upstream skills by exact name (`grilling`, `tdd`, `code-review`, `codebase-design`, `domain-modeling`, Google's `adk-*`) and never copy their text, so upstream updates flow through. The risk is renames: five of Matt Pocock's skills were renamed and four deleted in the last year. So the persona's session start runs `scripts/find_skill.py --door-check`, which reads `upstream.json` and reports any name that is not installed with its install line, and CI runs `scripts/check_upstream_skills.py` against a pinned upstream commit and reports drift on the default branch. We rejected vendoring a frozen copy because it would make this repo the maintainer of thirty skills it did not write, which is the reason for choosing him in the first place. Google's ADK skills are installed from `google/adk-python` with the skills.sh installer, in ADK repos only. His user-invoked skills (`implement`, `to-spec`, `to-tickets`, `grill-with-docs`, `handoff` and the rest) are refused by the harness's skill tool, so the persona locates their file with `find_skill.py` and follows it; nothing of theirs is restated here.
@@ -7,3 +9,13 @@ Our skills and the persona call upstream skills by exact name (`grilling`, `tdd`
 Partly superseded by ADR 0007 (2026-09-23): the spec, the tickets, the build loop and the handoff are now python-dev's own (`py-shape`, `py-build`), because his flow skills can be started only by a person and leave out the file-level plans the user asked for. This ADR still governs every upstream skill python-dev calls: by name, never copied, checked at the door.
 
 Amended by decision 53 (0.11.1): no harness lets the model start a user-invoked skill (Claude Code's Skill tool refuses it; Copilot CLI's answers "Skill not found"), so the persona gives the user the line to type, `/mattpocock-skills:<name>` from `find_skill.py --typed`, and opens the file itself only when the user asks. `check_upstream_skills.py` also checks his plugin's name at the pin, because it prefixes every such line.
+
+## Status
+
+Accepted
+
+## Scope
+
+- upstream.json
+- scripts/find_skill.py
+- scripts/check_upstream_skills.py

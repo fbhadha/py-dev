@@ -1,5 +1,7 @@
 # Design proposal: the Python developer agent
 
+Historical: the proposal as written, kept as a dated record. The current design is the skills under `skills/` and the decisions in `docs/adr/`; paths named below may no longer exist.
+
 Status: sections 1 to 7 are the original draft; sections 8 to 15 record decisions taken with Firdaush on 2026-09-20 and supersede the draft where they conflict.
 
 Built from [matt-pocock-skills.md](../research/matt-pocock-skills.md) and [python-craft-and-llm-faults.md](../research/python-craft-and-llm-faults.md), and your answers on 2026-09-20.
