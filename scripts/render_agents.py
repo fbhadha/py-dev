@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
-"""Render the Copilot agent files from the two Claude Code agent files.
+"""Render the Copilot agent files from the three Claude Code agent files.
 
-`agents/python-dev.md` and `agents/py-reviewer.md` are the only hand-written
-copies. Copilot CLI reads a plugin's agents from `com.github.copilot/agents/`
-as `NAME.agent.md` with its own frontmatter, so those are generated here and
-checked by CI, never edited by hand.
+`agents/python-dev.md`, `agents/py-reviewer.md` and `agents/py-eval.md` are the
+only hand-written copies. Copilot CLI reads a plugin's agents from
+`com.github.copilot/agents/` as `NAME.agent.md` with its own frontmatter, so
+those are generated here and checked by CI, never edited by hand.
 
 What rendering changes:
   - frontmatter keeps `name` and `description`, drops the Claude Code keys
-    (model, effort, color, tools, initialPrompt) and adds Copilot's selection
-    keys: python-dev is user-selected only (`disable-model-invocation: true`),
-    py-reviewer is model-dispatched only (`user-invocable: false`)
+    (model, effort, color, tools, initialPrompt, hooks) and adds the Copilot
+    keys in RENDERED: python-dev is user-selected only
+    (`disable-model-invocation: true`), py-reviewer and py-eval are
+    model-dispatched only (`user-invocable: false`); py-eval also keeps its
+    tool list as Copilot's aliases for Read and Write (`read`, `edit`)
   - `${CLAUDE_PLUGIN_ROOT}` becomes `${PLUGIN_ROOT}`, the name Copilot documents
-  - `agents/py-reviewer.md` becomes `com.github.copilot/agents/py-reviewer.agent.md`
+  - `agents/<name>.md` becomes `com.github.copilot/agents/<name>.agent.md`
   - the persona's `initialPrompt` becomes the first line of the body, because
     Copilot agents have no initial prompt
 
@@ -33,16 +35,19 @@ OUT = ROOT / "com.github.copilot" / "agents"
 SOURCES = {
     ROOT / "agents" / "python-dev.md": OUT / "python-dev.agent.md",
     ROOT / "agents" / "py-reviewer.md": OUT / "py-reviewer.agent.md",
+    ROOT / "agents" / "py-eval.md": OUT / "py-eval.agent.md",
 }
-SELECTION = {
-    "python-dev.md": ("disable-model-invocation", "true"),
-    "py-reviewer.md": ("user-invocable", "false"),
+RENDERED = {  # the Copilot frontmatter each agent gets: who may start it, the tools it keeps
+    "python-dev.md": {"disable-model-invocation": "true"},
+    "py-reviewer.md": {"user-invocable": "false"},
+    "py-eval.md": {"user-invocable": "false", "tools": '["read", "edit"]'},
 }
 FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
 KEEP_KEYS = ("name", "description")
 PATH_SUBS = (
     ("${CLAUDE_PLUGIN_ROOT}", "${PLUGIN_ROOT}"),
     ("`agents/py-reviewer.md`", "`com.github.copilot/agents/py-reviewer.agent.md`"),
+    ("`agents/py-eval.md`", "`com.github.copilot/agents/py-eval.agent.md`"),
 )
 
 
@@ -64,8 +69,8 @@ def render(source: Path) -> str:
     for key in KEEP_KEYS:
         if key in fields:
             out.append(f"{key}: {fields[key]}")
-    key, value = SELECTION[source.name]
-    out.append(f"{key}: {value}")
+    for key, value in RENDERED[source.name].items():
+        out.append(f"{key}: {value}")
     out.append("---")
     out.append("")
     out.append(

@@ -24,7 +24,7 @@ Listed by `py-design`'s `references/edge-cases.md`. Categories: <the ones gone t
 
 | Edge case | Category | Decision | Expected value from | Test |
 |---|---|---|---|---|
-| <the input, state or sequence> | <category> | type · test · question · out of scope | <spec line, worked example, user's answer> | `tests/<tier>/test_<module>.py::test_<behaviour>` (a type row names its one test at the parse) |
+| <the input, state or sequence> | <category> | type · test · eval · question · out of scope | <spec line, worked example, user's answer> | `tests/<tier>/test_<module>.py::test_<behaviour>` (a type row names its one test at the parse; an eval row names its row in `tests/evals/<agent>/targets-<id>.md`) |
 
 ## Plan, in order
 
@@ -32,8 +32,8 @@ Why this order: <the planning rule: walking skeleton, riskiest first, prefactor 
 
 1. **Prefactor** (only if needed): what moves and why the change is easier after it. No behaviour change; the suite is green before and after.
 2. **<Slice name>**
-   - Test first: `tests/<tier>/test_<module>.py::test_<behaviour>` (and the edge-case tests this slice owns, from the table); seam: <the public function or port>; expected value from: <spec line, worked example, fixture>.
-   - Code: `src/<package>/<layer>/<module>.py` (new | changed): `<signature>`.
+   - Test first: `tests/<tier>/test_<module>.py::test_<behaviour>` (and the edge-case tests this slice owns, from the table); seam: <the public function or port>; expected value from: <spec line, worked example, fixture>; paths and keys it uses from: <file, the line's text>.
+   - Code: `src/<package>/<layer>/<module>.py` (new | changed): `<signature>`; paths and keys from: <file, the line's text>.
    - Done when: that test is green; `uv run ruff check <files>` and `uv run mypy` are clean.
 3. **<Next slice>** ...
 4. **Wire it**: the composition root `src/<package>/entrypoints/<module>.py`; the one integration test.
