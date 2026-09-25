@@ -19,6 +19,7 @@ dev = [
   "detect-secrets>=1.5",
   "bandit>=1.9",
   "mutmut>=3.8",
+  "hypothesis>=6.154",   # property tests; from 6.154 its built-in ci profile makes CI runs repeatable
   "repowise>=0.52",   # AGPL-3.0; development only, never a runtime dependency
 ]
 

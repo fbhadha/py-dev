@@ -56,7 +56,7 @@ Two layers. Line-level tools run at commit on the changed files. Repowise (`docs
 | Test with no assertion, mock-saturated test | `repowise health --format json`, advisory dimension (`assertion_free_test`, `mock_saturated_test`) | health; review |
 | Docs that name paths, links or commands the tree no longer has | `repowise doc-drift` | health |
 | Security | `bandit` (Repowise's 16-pattern scan is a floor, not a scanner) | health |
-| Fake tests (pass on any mutation) | `mutmut`, on the module named; the score is reported in the health step and read at review, not stored | health |
+| Fake tests (pass on any mutation) | `mutmut`, on the module named in the health step and on each module a ticket changed, before review (`py-build`); survivors are read at review, never a gate, never stored | health; before review |
 | Weakened test (test deleted, skip added, assertions lost) | `scripts/check_test_diff.py` in CI and before review; an assertion loosened in place is the review's Craft axis on the `tests/` diff | CI; review |
 
 ## Where Repowise reads and writes (ADR 0005 in this repo)
@@ -73,6 +73,7 @@ Repowise rules: every scripted call is `DO_NOT_TRACK=1 repowise <cmd> --no-edito
 - **`filterwarnings = ["error"]`** in pytest. A deprecation is a failing test, so it gets fixed while it is one line.
 - **mypy strict on `src/`, not on `tests/`.** With the Pydantic plugin when Pydantic is a dependency.
 - **`uv run` for everything.** No activated virtualenvs in docs or scripts.
+- **Hypothesis is in the dev group.** A transform or a serialiser with a rule that holds for every valid input gets a property test beside its example tests (`py-design`'s `references/edge-cases.md`). Its built-in `ci` profile (6.154 and later) is active whenever `CI` is set: derandomised, no deadline, no example database, so a CI failure reproduces without a conftest. `.hypothesis/` ignores itself.
 - **Repowise is a dev dependency, never a runtime one.** It is AGPL-3.0; the gate script imports it in CI and nowhere else. `DO_NOT_TRACK=1` is set in CI and listed in `.env.example`.
 
 ## Health, on request
@@ -85,7 +86,7 @@ uv run repowise doc-drift
 uv run repowise decision health
 ```
 
-Report, in this order: the worst files with one plain sentence each on the marker that makes them bad; files safe to delete; docs that name things that no longer exist; hotspots no ADR governs. Write no report file; `repowise health --trend` is the history. Mutation testing (`uv run mutmut run`) only on the module the user names. Then refresh the map: `uv run repowise generate-claude-md --stdout | sed -n '/REPOWISE:START/,/REPOWISE:END/p' > docs/agents/repowise-map.md`; Repowise is the only writer of that file, and it lands with the next merge. When the user wants the refactor, they start it (persona section 5): User types `improve-codebase-architecture` with the worst file. It writes a report of deepening candidates to the temp folder and asks which to explore; the one the user picks is a new idea (Skill `py-shape`).
+Report, in this order: the worst files with one plain sentence each on the marker that makes them bad; files safe to delete; docs that name things that no longer exist; hotspots no ADR governs. Write no report file; `repowise health --trend` is the history. Mutation testing (`uv run mutmut run "<package>.<module>*"`) only on the module the user names; a ticket's changed modules are mutated before review by `py-build`. Then refresh the map: `uv run repowise generate-claude-md --stdout | sed -n '/REPOWISE:START/,/REPOWISE:END/p' > docs/agents/repowise-map.md`; Repowise is the only writer of that file, and it lands with the next merge. When the user wants the refactor, they start it (persona section 5): User types `improve-codebase-architecture` with the worst file. It writes a report of deepening candidates to the temp folder and asks which to explore; the one the user picks is a new idea (Skill `py-shape`).
 
 ## Applying it (rules for `py-intake`)
 

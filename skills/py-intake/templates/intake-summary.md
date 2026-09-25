@@ -15,6 +15,8 @@ Everything runs through `uv run`; nothing needs an activated environment.
 | pylint, one rule | refuses a module over 400 lines, a test file over 150 |
 | detect-secrets | refuses a key or a password in the code |
 | pytest, coverage, diff-cover | runs the tests; new lines need a test |
+| hypothesis | generates the inputs for property tests, so a rule is checked on many values, not one |
+| mutmut | changes the code on purpose to prove the tests notice; run on what a ticket changed, before review |
 | pre-commit | runs the rows above on every commit, on the files you changed |
 | repowise | the map of the code: what calls what, what is worst, what nothing uses |
 {{PACK_TOOLS}}
