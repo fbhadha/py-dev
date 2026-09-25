@@ -24,7 +24,7 @@ Listed by `py-design`'s `references/edge-cases.md`. Categories: <the ones gone t
 
 | Edge case | Category | Decision | Expected value from | Test |
 |---|---|---|---|---|
-| <the input, state or sequence> | <category> | type · test · question · out of scope | <spec line, worked example, user's answer> | `tests/<tier>/test_<module>.py::test_<behaviour>` (a type row names its one test at the parse) |
+| <the input, state or sequence> | <category> | type · test · eval · question · out of scope | <spec line, worked example, user's answer> | `tests/<tier>/test_<module>.py::test_<behaviour>` (a type row names its one test at the parse; an eval row names its row in `tests/evals/<agent>/targets-<id>.md`) |
 
 ## Plan, in order
 
