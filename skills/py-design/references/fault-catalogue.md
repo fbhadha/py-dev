@@ -33,13 +33,19 @@ The faults LLM-written Python commits by default, each with its tell, the mechan
 
 | Fault | Tell | Caught by | Fix |
 |---|---|---|---|
-| The tautological test | The expected value is computed the way the code computes it. | Reviewer; `mutmut` on request. | A literal from the spec or a worked example. |
+| The tautological test | The expected value is computed the way the code computes it. | Reviewer; `mutmut` on the changed modules before review. | A literal from the spec or a worked example. |
 | The instruction-shaped test | `def test_x(): pass  # TODO`, a body that is a comment, `assert True`. | Repowise `assertion_free_test` (advisory marker in `repowise health --format json`). | Write the behaviour or delete the test. |
 | The mock-only test | Every collaborator mocked; the test proves the mocks were called. | Reviewer; Repowise `mock_saturated_test`. | Test through the public interface with a real or in-memory adapter. |
-| The weakened test | A loosened assertion, a deleted test, a new `skip`, a hard-coded return for the known input. | Mutation-score ratchet; reviewer in a fresh context; `CODEOWNERS` on `tests/`. | Tests are read-only from red to green. An intended deletion needs the explicit override and a reason in the commit. |
+| The weakened test | A loosened assertion, a deleted test, a new `skip`, a hard-coded return for the known input. | `scripts/check_test_diff.py` in CI and before review; reviewer in a fresh context; `CODEOWNERS` on `tests/`. | Tests are read-only from red to green. An intended deletion needs the explicit override and a reason in the commit. |
 | The trivial test | A test of a one-line mapping that mirrors the code. | Reviewer. | Delete. Test at the seam. |
 | Horizontal slicing | All tests written, then all code. | Reviewer, from the commit history. | One test, one implementation, repeat. |
 | The live-model unit test | A unit test that calls the real model. | Reviewer; `tests/evals/` convention. | Fake the model in unit tests; live runs are evals, run on demand. |
+| The happy-path-only test | Every test uses a typical valid input; none sits on a boundary, a tie or an error path. | `mutmut` survivors at comparisons and handlers, before review; reviewer against the ticket's `## Edge cases` table. | List the edge cases by `references/edge-cases.md`; one test per decided edge case. |
+| The incorrect assertion | An edge-case test whose expected value no spec line, worked example or user answer supports. | Reviewer: every `test` row in the ticket names a source. | Ask; the answer is the expected value. |
+| Assume misuse | `assume()` that drops duplicates, empties, equal values or boundaries from a property test. | Reviewer. | Build valid inputs with a strategy; keep the unusual ones. |
+| The wrong strategy range | `st.integers()` or `st.text()` where the spec names a range or an alphabet. | Reviewer. | Bound by the spec; `@example` the boundaries. |
+| The flaky oracle | A property whose expected value comes from the code under test, or a round trip with no literal example beside it. | Reviewer; `mutmut` survivors. | A reference model in the test, and one literal example. |
+| The untested handler | An `except` branch or error return that no test runs. | `diff-cover` on the lines a change added; `mutmut` survivors inside the handler for lines that were already there; reviewer. | A test where the in-memory adapter raises the port's error. |
 
 ## Process
 

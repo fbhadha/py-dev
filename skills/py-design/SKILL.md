@@ -1,6 +1,6 @@
 ---
 name: py-design
-description: "Python craft reference: the design rules, the order to build things in, the edges (timeouts, retries, parsing, errors, config, logs, contract tests), the fault catalogue, three canonical repos to cite. Use when designing a module, class, function or layout, placing a seam or Protocol, ordering tickets or a ticket's plan, or reviewing Python."
+description: "Python craft reference: the design rules, the order to build things in, the boundaries (timeouts, retries, parsing, errors, config, logs, contract tests), the edge-case list and property tests, the fault catalogue, three canonical repos to cite. Use when designing a module, class, function or layout, placing a seam or Protocol, ordering tickets or a ticket's plan, listing a behaviour's edge cases, or reviewing Python."
 ---
 
 # Python design
@@ -44,14 +44,19 @@ Names come from `CONTEXT.md`. The layering is enforced by import-linter, not req
 11. **No grab bags.** No directory or module named `utils`, `helpers`, `common`, `misc`. A function belongs to the domain concept it serves; if it serves none, it does not belong.
 12. **Comments say why.** A comment states something the code cannot: the constraint, the reason, the gotcha. A docstring states the contract when it is subtle (invariants, ordering, errors); it never restates the signature. A comment that reads like an instruction to a model is a defect.
 13. **The deletion test.** Before adding a layer, imagine deleting it. If the callers would simply call the next thing down with the same arguments, it was a pass-through.
+14. **An edge case a type can rule out is ruled out by the type.** A constrained field where outside data is parsed, an enum instead of a string, a `NewType` id, a constructor that rejects the bad state, keyword-only parameters against a swapped pair. One test at the parse replaces a check in every caller. What no type can rule out gets a decided outcome and a test (`references/edge-cases.md`).
 
 ## Planning the work
 
 What to build first and in what order, between tickets and inside one; what every step of a plan names; one-way and two-way doors; sizing: [references/planning.md](references/planning.md). `py-shape` cuts tickets by it and `py-build` checks each plan against it.
 
-## The edges
+## Boundaries
 
 Timeouts, retries and idempotency on calls out; parsing at the edge into named types; money, time and identifiers; error hierarchies; configuration; logs and the run summary; async; one contract suite per port that every adapter runs: [references/boundaries.md](references/boundaries.md). Open it whenever a plan touches an adapter, an entrypoint or a port.
+
+## Edge cases
+
+Every behaviour's edge cases are listed and decided before its tests are planned: the categories to go through, the Python traps, how a ticket records them, the rules for Hypothesis property tests, and how to triage mutation survivors: [references/edge-cases.md](references/edge-cases.md). `py-shape` lists them when it cuts a ticket, `py-build` re-checks them against the code before the first line, `py-review` checks the ticket's table against the tests.
 
 ## The worked shape: adapter, model, writer
 
@@ -59,7 +64,7 @@ Most data projects are this shape: several external systems in, one common recor
 
 ## Tests
 
-Call the Skill tool with "tdd" for the loop. On top of it: expected values are literals from a spec or a worked example, never computed the way the code computes them; a test with no assertion is a defect; mock only at the system boundary (the API client, the clock), never your own modules; a test of a trivial mapping mirrors the code and is deleted; agent tests fake the model, and live-model runs are evals in `tests/evals/`.
+Call the Skill tool with "tdd" for the loop. On top of it: expected values are literals from a spec or a worked example, never computed the way the code computes them; a test with no assertion is a defect; mock only at the system boundary (the API client, the clock), never your own modules; a test of a trivial mapping mirrors the code and is deleted; agent tests fake the model, and live-model runs are evals in `tests/evals/`. A transform or a serialiser with a rule that holds for every valid input gets a Hypothesis property test beside its example tests; the rules, and the edge cases every test list starts from, are in `references/edge-cases.md`.
 
 ## When reviewing or explaining
 

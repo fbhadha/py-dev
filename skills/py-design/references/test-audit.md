@@ -6,7 +6,7 @@ The answer to "my tests are not real tests". Every test gets a class, the class 
 
 1. `DO_NOT_TRACK=1 uv run repowise init --no-prose --no-editor-setup --no-save-key -y`, then `uv run repowise health --format json` filtered to the target directory. The advisory markers: `assertion_free_test` (runs code, checks nothing), `mock_saturated_test` (mostly mock setup), `large_assertion_block`, `duplicated_assertion_block`.
 2. Coverage, if present: `uv run repowise coverage status`. Missing: `uv run pytest --cov --cov-report=lcov:coverage.lcov`, then `uv run repowise coverage add coverage.lcov`.
-3. Mutation, on request or when the directory finishes in minutes: `uv run mutmut run "<package>.<module>*"` for each module the tests cover (mutmut 3 selects by mutant name, not by path), then `uv run mutmut results` for the survivors and `uv run mutmut show <mutant name>` for what each one changed. Survivors name the code no test constrains.
+3. Mutation, on request or when the directory finishes in minutes: `uv run mutmut run "<package>.<module>*"` for each module the tests cover (mutmut 3 selects by mutant name, not by path), then `uv run mutmut results` for the survivors and `uv run mutmut show <mutant name>` for what each one changed. Survivors name the code no test constrains; triage each by `references/edge-cases.md`: a missing test, an equivalent mutant, or noise.
 4. Read every test file in the directory in full, and the module each one imports.
 
 ## 2. Classify
