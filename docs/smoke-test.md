@@ -26,7 +26,7 @@ Install on the harness under test:
 
 Prompt: `start`
 
-- [ ] The first reply opens with `python-dev 0.12.0 · branch main · guards <state> · tracker <...> · next: <step>`. Guards read `on` on Copilot CLI and Claude Code, `unknown` in VS Code.
+- [ ] The first reply opens with `python-dev 0.13.0 · branch main · guards <state> · tracker <...> · next: <step>`. Guards read `on` on Copilot CLI and Claude Code, `unknown` in VS Code.
 - [ ] With no `docs/agents/mode.md` it says intake comes next, why, and starts it (a facts table, then "anything wrong here?").
 
 - [ ] At the tracker step it gives the line `/mattpocock-skills:setup-matt-pocock-skills` alone in a code block, says what the skill will ask and that it will answer from what intake found, and waits. Typed, it runs and asks nothing intake already knows.
