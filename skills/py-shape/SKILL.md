@@ -40,7 +40,7 @@ Then the first round of questions.
 
 Walk the decision tree one branch at a time, in rounds: at most five numbered questions per round, each with your recommended answer, the reason, and what the other answer costs. Wait for the answers. Settle a branch before opening the next; a question that depends on an unsettled one waits.
 
-Everything the grill settles lands where it belongs as it settles: a term in `CONTEXT.md` (Skill `domain-modeling` for the wording, and for whether a decision is worth an ADR); a hard-to-reverse choice as an ADR from `docs/agents/adr-template.md`; a rejected idea in the spec's Out of scope. Challenge vague words. When the user contradicts the code, an ADR or an earlier answer, say so and quote it.
+Everything the grill settles lands where it belongs as it settles: a term in `CONTEXT.md` (Skill `domain-modeling` for the wording, and for whether a decision is worth an ADR); a hard-to-reverse choice as an ADR from `docs/agents/adr-template.md`; a rejected idea in the spec's Out of scope. Challenge vague words. As each behaviour settles, list its edge cases by `py-design`'s `references/edge-cases.md`: one whose outcome the spec, the code or the user has not decided is a question in the next round, with your recommended answer; one the code or a standard already settles is a fact, not a question. When the user contradicts the code, an ADR or an earlier answer, say so and quote it.
 
 Two detours; each ends back at the question that sent you out.
 
@@ -68,13 +68,13 @@ The spec and the tickets are written in the session that grilled, because they a
 1. **One ticket** (the whole change fits one session): no spec; the ticket's Why and Plan carry it. Go to 3.
 2. **The spec**: write it from `references/spec.md`. Show it whole, change what the user changes, then publish it to the tracker by the workflow in `docs/agents/issue-tracker.md`, titled `Spec: <name>`.
 3. **The breakdown**: cut the work by `py-design`'s `references/planning.md` (walking skeleton first, riskiest next, prefactor before the feature, vertical slices, one session each). Show it as a table (order, title, what it proves, blocked by, size) and change it until the user approves.
-4. **The tickets**: write each from `references/ticket.md`. Every file named is checked to exist or marked new; every new or changed signature is written out; the tests are listed in the order they get written, each with its seam and where its expected value comes from. Publish them blockers first, each linking the spec, labelled `ready-for-agent`, with the blocking edges the tracker file describes.
+4. **The tickets**: write each from `references/ticket.md`. Every file named is checked to exist or marked new; every new or changed signature is written out; the tests are listed in the order they get written, each with its seam and where its expected value comes from. Each ticket's `## Edge cases` table comes from the grill's list; a ticket with an open question row is not published. Publish them blockers first, each linking the spec, labelled `ready-for-agent`, with the blocking edges the tracker file describes.
 5. **Land the decisions.** One ticket: `git branch -m ticket/<id>-<two-word-slug>`, then Skill `py-build` in this session. More than one: push the shaping branch and land it by `py-build`'s landing steps (the merge summary, "Merge to main?"), so every ticket session reads the decisions from `main`; then write the handoff naming the first ticket on the frontier (persona section 6).
 
 ## 6. Quick ticket
 
 1. Your view in two to four sentences: what you would change, why, why it is this small, and the one thing that could go wrong.
-2. Write the ticket from `references/ticket.md` (a short plan, never an absent one), show it, and publish it.
+2. Write the ticket from `references/ticket.md` (a short plan and a short edge-case list, never absent ones), show it, and publish it.
 3. `git switch -c ticket/<id>-<two-word-slug> origin/main` (or rename the shaping branch), then Skill `py-build` in this session.
 
 Anything that fails one of the four tests in section 0 is a new idea: section 1.
