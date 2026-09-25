@@ -7,3 +7,13 @@ Our skills and the persona call upstream skills by exact name (`grilling`, `tdd`
 Partly superseded by ADR 0007 (2026-09-23): the spec, the tickets, the build loop and the handoff are now python-dev's own (`py-shape`, `py-build`), because his flow skills can be started only by a person and leave out the file-level plans the user asked for. This ADR still governs every upstream skill python-dev calls: by name, never copied, checked at the door.
 
 Amended by decision 53 (0.11.1): no harness lets the model start a user-invoked skill (Claude Code's Skill tool refuses it; Copilot CLI's answers "Skill not found"), so the persona gives the user the line to type, `/mattpocock-skills:<name>` from `find_skill.py --typed`, and opens the file itself only when the user asks. `check_upstream_skills.py` also checks his plugin's name at the pin, because it prefixes every such line.
+
+## Status
+
+Accepted
+
+## Scope
+
+- upstream.json
+- scripts/find_skill.py
+- scripts/check_upstream_skills.py

@@ -5,3 +5,13 @@ Every rule that can be checked mechanically (ruff rule set, strict types, import
 Amended by decision 54 (0.12.0): the mutation score named above was never a gate in the templates and is not one now. `mutmut` runs on the modules a ticket changed before review (`py-build`), and its survivors are read at review, never scored.
 
 Amended by decision 55 (0.13.0): two more process scripts join the target repo's CI and the pre-review checks, `check_literals.py` (a path that names nothing in the tree, a key not in `.env.example`) and `check_eval_report.py` (an agent changed without a fresh eval report). The eval itself, a live-model run, stays off CI; only its report is checked there.
+
+## Status
+
+Accepted
+
+## Scope
+
+- skills/py-baseline/
+- scripts/hooks/
+- hooks/
