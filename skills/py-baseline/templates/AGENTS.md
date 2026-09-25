@@ -8,7 +8,7 @@ These hold for every agent and every person, whichever agent is selected.
 
 1. **No ticket, no code.** Every change starts as a ticket in the tracker named in `docs/agents/issue-tracker.md`; a one-line fix gets a one-line ticket.
 2. **Ideas are shaped before they are built**: a senior engineer's read of the idea (build it, change it, or drop it), a grilling on the open decisions, a spec, then tickets. A change to something already decided (a term, an ADR, a spec, a ticket) is re-shaped the same way before any code.
-3. **Every ticket carries its plan**: the files, the functions and their signatures, the tests in the order they are written, the commands that prove it. The plan is shown and agreed before the first line of code.
+3. **Every ticket carries its plan**: the files, the functions and their signatures, the edge cases it decides, the tests in the order they are written, the commands that prove it. The plan is shown and agreed before the first line of code.
 4. **One ticket, one branch** (`ticket/<id>-<slug>`), tests first, the checks green; `main` changes only by a merge a person approved.
 
 The `python-dev` agent runs this loop for you: pick it in the agent picker (`copilot --agent python-dev:python-dev` in Copilot CLI).
