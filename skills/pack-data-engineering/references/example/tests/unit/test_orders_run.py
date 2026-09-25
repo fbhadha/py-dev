@@ -84,3 +84,16 @@ def test_the_cursor_does_not_move_when_the_write_fails() -> None:
             cursors=cursors,
         )
     assert cursors.load("orders") is None
+
+
+def test_a_run_with_nothing_new_writes_nothing_and_keeps_the_cursor() -> None:
+    sink, cursors = InMemoryOrderSink(), InMemoryCursorStore()
+    cursors.save("orders", TEN_UTC)
+    report = run(
+        name="orders",
+        source=InMemoryOrderSource([order("A1", "10.00", 9)]),
+        sink=sink,
+        cursors=cursors,
+    )
+    assert report == RunReport(read=0, written=0, rejected=0, cursor=TEN_UTC)
+    assert cursors.load("orders") == TEN_UTC

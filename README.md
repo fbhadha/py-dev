@@ -66,7 +66,7 @@ His retired flow skills (`grill-with-docs`, `to-spec`, `to-tickets`, `implement`
 | `skills/py-baseline` | What every repo gets: tool tables, pre-commit, CI, the Repowise change gate, the standard docs, and the health step. With the templates intake copies. |
 | `skills/adk-migrate` | Google ADK 1.x to 2.x: detect mechanically, force only what silently breaks, evals first, expand then migrate then contract. |
 | `skills/pack-adk` | Reference for ADK 2.x repos: which Google skill to open for which job, the six rules this baseline adds. |
-| `skills/pack-data-engineering` | Reference for pipeline repos: four shapes with their how-tos, a tested example package (CSV to SQLite, incremental, re-runnable, 44 tests with a contract suite per port) that intake copies into the repo, design rules for time, money, re-runs, backfills, schemas and data quality, extra checks, sixteen faults, tests. Orchestrators, dbt and Spark are named as not yet covered. `packs/TEMPLATE.md` is the shape for new packs. |
+| `skills/pack-data-engineering` | Reference for pipeline repos: four shapes with their how-tos, a tested example package (CSV to SQLite, incremental, re-runnable, 52 tests with a contract suite per port) that intake copies into the repo, design rules for time, money, re-runs, backfills, schemas and data quality, extra checks, sixteen faults, tests. Orchestrators, dbt and Spark are named as not yet covered. `packs/TEMPLATE.md` is the shape for new packs. |
 | `hooks/`, `com.github.copilot/hooks/`, `scripts/hooks/` | The guards, the same scripts on every harness (below). |
 | `upstream.json`, `scripts/find_skill.py` | Every upstream skill called by name and the dictionary terms the persona links to, pinned; and the locator that finds an installed skill's `SKILL.md` wherever a harness put it, and prints the line a person types to start one (`--typed`). |
 | `scripts/` | `check_plugin.py`, `check_upstream_skills.py`, `render_agents.py`, `test_hooks.py`, `check_pack_examples.py`: the checks CI runs. |
@@ -134,7 +134,7 @@ pip install pyyaml
 python scripts/render_agents.py           # after editing agents/*.md: regenerate the per-harness copies
 python scripts/check_plugin.py            # frontmatter, manifests in step, the skills list, rendered copies current
 python scripts/test_hooks.py              # every hook decision against a scratch git repo
-pip install pytest ruff mypy && python scripts/check_pack_examples.py   # the pack example, under the baseline's checks
+pip install pytest hypothesis ruff mypy && python scripts/check_pack_examples.py   # the pack example, under the baseline's checks
 python scripts/check_upstream_skills.py   # every upstream skill exists at its pin with the invocation we assume
 claude plugin validate --strict .
 ```

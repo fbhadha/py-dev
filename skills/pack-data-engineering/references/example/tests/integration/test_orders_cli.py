@@ -51,3 +51,9 @@ def test_a_rejected_row_makes_the_run_exit_1(tmp_path: Path) -> None:
 
 def test_a_missing_export_exits_2(tmp_path: Path) -> None:
     assert main(args(tmp_path)) == 2
+
+
+def test_a_missing_argument_exits_2() -> None:
+    with pytest.raises(SystemExit) as raised:
+        main([])
+    assert raised.value.code == 2
