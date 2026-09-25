@@ -36,7 +36,8 @@ Every path the pack and `canonical-examples.md` cite exists: `dlt/extract/{sourc
 | Claim | How it was checked |
 |---|---|
 | SQLite's `INSERT ... ON CONFLICT DO UPDATE ... WHERE excluded.updated_at > t.updated_at` counts only rows it inserted or changed in `executemany(...).rowcount`: the same batch again gives 0, and an older update changes nothing | Run against SQLite 3.45.1 from Python 3.11: 2, then 0, then 1 for one newer and one older row |
-| The example package passes the baseline's own checks | `scripts/check_pack_examples.py` on Python 3.12.3 with pytest 9.1.1, ruff 0.16.8 (the baseline's rule set and formatter) and mypy 1.19.1 `--strict`: 44 tests pass, lint and types clean |
+| The example package passes the baseline's own checks | `scripts/check_pack_examples.py` on Python 3.12.3 with pytest 9.1.1, ruff 0.16.8 (the baseline's rule set and formatter) and mypy 1.19.1 `--strict`: 44 tests pass at 0.11.0, 54 at 0.12.0; lint and types clean |
 | Its tests are not tautological | Three deliberate bugs (the upsert without its newer-wins guard, the cursor saved before the write, the in-memory sink overwriting older updates) each fail the suite |
+| Its tests reach its edge cases (2026-09-25) | mutmut 3.8.0 on every module: 391 mutants in 7.4 s; before 0.12.0's tests, 92 survivors of which about twenty were untested edge cases; after them, 75, none a missing test (`docs/research/edge-cases.md`). 54 tests |
 | pandas `DataFrame.merge(validate="many_to_one")` raises on duplicate right-hand keys; `read_csv(chunksize=)`, `to_sql(if_exists=)` and `to_numeric(errors=)` exist; pyarrow `ParquetFile.iter_batches` exists | Introspected and run on pandas 3.0.6 and pyarrow 25.0.1 (`MergeError` raised) |
 | `datetime.UTC` and `datetime.fromisoformat` with an offset | Python 3.11 and later; the example needs 3.11, as the baseline's Repowise gate already does |

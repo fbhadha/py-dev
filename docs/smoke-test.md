@@ -26,7 +26,7 @@ Install on the harness under test:
 
 Prompt: `start`
 
-- [ ] The first reply opens with `python-dev 0.11.1 · branch main · guards <state> · tracker <...> · next: <step>`. Guards read `on` on Copilot CLI and Claude Code, `unknown` in VS Code.
+- [ ] The first reply opens with `python-dev 0.12.0 · branch main · guards <state> · tracker <...> · next: <step>`. Guards read `on` on Copilot CLI and Claude Code, `unknown` in VS Code.
 - [ ] With no `docs/agents/mode.md` it says intake comes next, why, and starts it (a facts table, then "anything wrong here?").
 
 - [ ] At the tracker step it gives the line `/mattpocock-skills:setup-matt-pocock-skills` alone in a code block, says what the skill will ask and that it will answer from what intake found, and waits. Typed, it runs and asks nothing intake already knows.
@@ -49,6 +49,8 @@ Answer `go with yours` until it stops asking.
 - [ ] More than one ticket: the spec is shown whole before it is published, with Design, Order of work and Out of scope filled.
 - [ ] A breakdown table (order, title, what it proves, blocked by, size) comes before any ticket is published, and waits for a yes.
 - [ ] Every published ticket has a Plan in order naming files, signatures, tests (with seam and expected-value source) and commands.
+- [ ] Every published ticket has an `## Edge cases` section: one line naming the categories gone through and why any were skipped, and rows each marked type, test, question or out of scope, with no open question.
+- [ ] At least one grill question came from an edge case nobody had decided (for the morning summary: what to send on a morning with no new orders), with a recommended answer.
 - [ ] It ends with a handoff path and "Open a new session in this repo and paste that path as your first message."
 
 ## 3. No ticket, no code
@@ -73,7 +75,10 @@ Prompt: the handoff path from section 2, in a new session.
 
 - [ ] It reads the handoff, switches to the ticket's branch, and does not re-ask anything the handoff answers.
 - [ ] It checks the plan against the code, says what changed if anything did, shows the plan, and asks "Go?". No code before the go.
+- [ ] Before "Go?", it re-checks the edge-case list against the code and says whether anything new turned up.
 - [ ] One slice at a time, test first; after each green, one or two lines on what the slice added and what is next.
+- [ ] A transform or serialiser with a stated rule gets a Hypothesis property test beside its example tests, with strategies bounded by the spec and no `assume()` on unusual inputs.
+- [ ] Before review, it runs mutmut on the changed modules and gives each survivor one line: the test that killed it, or why it is equivalent or noise.
 - [ ] Before merging it shows the merge summary (files outside `src/` and `tests/` first) and asks "Merge to main?".
 
 ## 6. Skills only you can start

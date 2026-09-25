@@ -21,6 +21,8 @@ Numbered; each one testable and visible to a user or a test.
 
 1. When <situation>, <who> gets <outcome>.
 
+Under each behaviour, its edge cases with the decided outcome for each (`py-design`'s `references/edge-cases.md`). An outcome nobody decided is a grill question, not a spec line.
+
 ## Design
 
 - **Where it fits**: the shape and its how-to; the layers it touches (domain, application, ports, adapters, entrypoints); the modules it adds or changes, by module name (`<package>.adapters.jira`).
@@ -33,7 +35,7 @@ Numbered; each one testable and visible to a user or a test.
 
 ## Tests
 
-For each behaviour: the seam it is tested at, the tier (unit, integration, eval), the in-memory adapter it uses, and where its expected value comes from (this spec, a worked example, a fixture). Nothing is tested through a mock of our own code.
+For each behaviour: the seam it is tested at, the tier (unit, integration, eval), the in-memory adapter it uses, and where its expected value comes from (this spec, a worked example, a fixture); which behaviours get a property test, and the property. Nothing is tested through a mock of our own code.
 
 ## Order of work
 

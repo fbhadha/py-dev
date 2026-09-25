@@ -51,3 +51,10 @@ def test_a_missing_column_stops_the_run(tmp_path: Path) -> None:
 def test_a_missing_file_stops_the_run(tmp_path: Path) -> None:
     with pytest.raises(SourceError, match="does not exist"):
         list(CsvOrderSource(path=tmp_path / "nowhere.csv").read(since=None))
+
+
+def test_a_row_with_fewer_fields_than_the_header_is_rejected(tmp_path: Path) -> None:
+    path = tmp_path / "orders.csv"
+    path.write_text("id,customer,amount,currency,updated_at\nA1,Ada,10.00\n", encoding="utf-8")
+    items = list(CsvOrderSource(path=path).read(since=None))
+    assert items == [Rejected("orders.csv", 2, "currency is empty")]

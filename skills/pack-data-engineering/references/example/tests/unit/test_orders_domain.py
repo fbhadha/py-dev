@@ -47,3 +47,18 @@ def test_a_time_in_another_offset_is_refused_until_converted() -> None:
     toronto = timezone(timedelta(hours=-4))
     with pytest.raises(InvalidOrderError, match="not in UTC"):
         make(updated_at=datetime(2026, 9, 1, 5, tzinfo=toronto))
+
+
+def test_a_zero_amount_is_allowed() -> None:
+    assert make(amount="0.00").amount == Decimal("0.00")
+
+
+def test_an_empty_order_id_is_refused() -> None:
+    with pytest.raises(InvalidOrderError, match="order_id is empty"):
+        Order(
+            order_id=OrderId(""),
+            customer="Ada",
+            amount=Decimal("10.00"),
+            currency="CAD",
+            updated_at=NINE_UTC,
+        )

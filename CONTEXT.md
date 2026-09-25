@@ -56,6 +56,10 @@ _Avoid_: task list, checklist (a plan names files and signatures), design (that 
 A change to something already decided: a `CONTEXT.md` term, an ADR, a spec, an open ticket or behaviour already merged. It is re-shaped (the agent's view, a grill on that branch only, the records updated) before any code, never parked as scope creep and never built around.
 _Avoid_: change request, scope creep (scope creep is work outside the ticket; a revision changes the ticket)
 
+**Edge case**:
+An input, a state or a sequence of events at the limit of what a behaviour accepts, or just past it: the empty list, the value 18 under "18 or older", the second run of the same load. Listed per behaviour when a ticket is cut, decided as type, test, question or out of scope, tested through the ticket's seams, and checked at review (`skills/py-design/references/edge-cases.md`). Not a system boundary: that is "the edge" in `boundaries.md`.
+_Avoid_: edge (a system boundary here), corner case, boundary case (the boundary is where the code meets the outside)
+
 **Typed skill**:
 A skill of Matt Pocock's that only a person can start (`disable-model-invocation: true`; `user` in `upstream.json`). No harness lets the agent start one, so when one is due the agent says why, gives the user the exact line to type (`/mattpocock-skills:<name>`), says what it will ask, and waits; it reads the skill's file itself only when the user asks.
 _Avoid_: invoke (the agent cannot), handoff (the document a session leaves for the next one), user-invoked (Matt's word for the flag, not for what the agent does)
