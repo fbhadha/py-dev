@@ -130,15 +130,25 @@ Line-level at commit: ruff (bugbear, blind except, security, print, commented-ou
 
 ## Working on this repo
 
+Blocks fenced as ```bash ci``` are executed in CI by `scripts/run_readme_blocks.py`, so these commands cannot rot.
+
+```bash ci
+uv sync
+uv run python scripts/render_agents.py    # after editing agents/*.md: regenerate the per-harness copies
+uv run python scripts/check_plugin.py     # frontmatter, manifests in step, the skills list, rendered copies current
+uv run python scripts/test_hooks.py       # every hook decision against a scratch git repo
 ```
-pip install pyyaml
-python scripts/render_agents.py           # after editing agents/*.md: regenerate the per-harness copies
-python scripts/check_plugin.py            # frontmatter, manifests in step, the skills list, rendered copies current
-python scripts/test_hooks.py              # every hook decision against a scratch git repo
-pip install pytest hypothesis ruff mypy && python scripts/check_pack_examples.py   # the pack example, under the baseline's checks
-python scripts/check_upstream_skills.py   # every upstream skill exists at its pin with the invocation we assume
+
+The rest of what `validate.yml` runs on every pull request needs the network or a tool CI does not have, so it is listed here and run there:
+
+```
+uv run python scripts/check_pack_examples.py    # the pack example, under the baseline's checks
+uv run python scripts/check_upstream_skills.py  # every upstream skill exists at its pin with the invocation we assume
+uv run python scripts/check_template_deps.py    # the baseline's dev group resolves with Repowise in it
 claude plugin validate --strict .
 ```
+
+This repo carries the same baseline it installs (`uv run pre-commit install` once; `uv run repowise health` for the whole-repo picture), and a new check follows [docs/howto/add-a-plugin-check.md](docs/howto/add-a-plugin-check.md).
 
 Rules: `agents/python-dev.md` is the only hand-written persona: the loop, the voice, the pushback, the routing table and the rules that hold on every turn, under 14,000 characters, which CI enforces along with every skill being reachable from it; every step list is a skill the table names; every other copy is generated and CI fails when it is stale. Call upstream skills by name, never copy them; add the name to `upstream.json` and bump a pin in its own commit after reading the upstream changelog. One read path and one write path per kind of knowledge (ADR 0005): anything derived from the code comes from Repowise, by CLI. No custom code-quality gates; a check is an established tool's rule in `skills/py-baseline/templates/pyproject-tools.toml`. The six scripts the baseline copies into a repo (change gate, ADR binder, README runner, test-diff check, literal check, eval-report check) are process, not lint. Verify before you write; `docs/research/` records what was checked and when. A knowledge pack is `skills/pack-<domain>/` in the shape of `packs/TEMPLATE.md`, reference only. Before a release: the commands above, [the smoke test](docs/smoke-test.md) with a real model on each harness someone uses, then the version in every manifest and in the persona's status line, and a `CHANGELOG.md` entry that records the smoke test.
 
