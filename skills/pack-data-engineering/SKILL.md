@@ -80,6 +80,7 @@ Added to the baseline `pyproject.toml` by `py-intake` when the pack is selected:
 - **Unit**: transforms and the run, on five or six literal records with in-memory adapters; the expected output written by hand from the spec, never computed with the code's own function.
 - **Contract**: one suite per port (source, sink, cursor store); every adapter runs it, the in-memory ones included (`py-design/references/boundaries.md`; the example's `test_orders_sinks.py` and `test_orders_cursors.py`).
 - **Integration**: sources against a recorded, scrubbed sample under `tests/fixtures/`; sinks against DuckDB or SQLite in `tmp_path`, asserting the rows and running twice to prove the second run writes nothing; the entrypoint end to end, twice.
+- **Edge cases**: the ten design rules above are categories in the edge-case list (`py-design`'s `references/edge-cases.md`): a load run twice, a backfill from an earlier cursor, a time with no offset, a tie on the update time, a schema change, an empty extract, a row with fewer fields than the header. A transform gets a property test (one record per key, the stated output order, a second pass changes nothing); the example's `test_orders_transforms.py` shows one.
 - Never a unit test that reaches a warehouse, an API or a cloud bucket. Those are integration tests against a local substitute, and they are marked.
 
 ## Not covered in depth yet
