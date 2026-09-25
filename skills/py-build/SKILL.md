@@ -23,7 +23,7 @@ One slice at a time, in the plan's order. Skill `tdd` for the red-to-green disci
 
 - Write one test, run it, and watch it fail for the reason you expect; then write the least code that passes it. Never all the tests first.
 - Tests are read-only from red to green. Never loosen an assertion, delete a test or add a skip to get green.
-- Expected values come from outside the code (the spec, a worked example, a fixture), never computed the way the code computes them.
+- Every path, key, field name, signature and expected value you type is copied from a file you opened in this slice, and opened again after you changed it; never from the plan's text, the conversation or an earlier read. Expected values come from outside the code (the spec, a worked example, a fixture), never computed the way the code computes them. The plan names the file, and the line's text, for each.
 - Mock only at system boundaries. Prefer the in-memory adapter the how-to names.
 - Edge-case tests go in the slice that owns the behaviour, through its seam, each red before its code. An edge case the seam cannot reach is impossible or the seam is wrong: remove the dead branch, or stop and re-plan.
 - Property tests follow `py-design`'s `references/edge-cases.md`: strategies bounded by the spec, `@example` for every named edge case, no `assume()` on an input because it looks unusual, an oracle that never calls the code under test.
@@ -37,7 +37,7 @@ Commit after each green slice, with the ticket id and the decision in the messag
 
 ## Before review
 
-`uv run repowise distill uv run pytest -m "not eval"`, `uv run repowise distill uv run pre-commit run --all-files`, `uv run lint-imports`, `uv run python scripts/check_test_diff.py`, then `DO_NOT_TRACK=1 uv run repowise init --no-prose --no-editor-setup --no-save-key -y` and `uv run python scripts/repowise_gate.py`. A finding the gate or the test-diff check reports is fixed now. Then `uv run mutmut run "<package>.<module>*"` for each `src/` module the ticket changed and `uv run mutmut results`: kill each survivor with a test, or record it in one line as equivalent or noise (`py-design`'s `references/edge-cases.md`). Then Skill `py-review`, and fix the 🔴.
+`uv run repowise distill uv run pytest -m "not eval"`, `uv run repowise distill uv run pre-commit run --all-files`, `uv run lint-imports`, `uv run python scripts/check_test_diff.py`, `uv run python scripts/check_literals.py`, then `DO_NOT_TRACK=1 uv run repowise init --no-prose --no-editor-setup --no-save-key -y` and `uv run python scripts/repowise_gate.py`. A finding the gate, the test-diff check or the literal check reports is fixed now. Then `uv run mutmut run "<package>.<module>*"` for each `src/` module the ticket changed and `uv run mutmut results`: kill each survivor with a test, or record it in one line as equivalent or noise (`py-design`'s `references/edge-cases.md`). Then Skill `py-review`, and fix the 🔴.
 
 ## Landing
 
