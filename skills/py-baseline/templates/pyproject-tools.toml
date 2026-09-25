@@ -141,5 +141,5 @@ exclude_dirs = ["tests", "prototypes"]
 
 # ---------------------------------------------------------------- mutmut
 [tool.mutmut]
-paths_to_mutate = ["src/"]
-tests_dir = ["tests/"]
+source_paths = ["src/"]
+pytest_add_cli_args_test_selection = ["tests/"]   # mutmut 3 keys; the 2.x names only warn
