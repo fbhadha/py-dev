@@ -16,7 +16,7 @@ An edge case is an input, a state or a sequence of events at the limit of what a
 
 ## The categories
 
-For each behaviour (each acceptance criterion), go through these against the spec and the code it touches. Decide each edge case as **type** (ruled out by a type, with one test at the parse), **test** (with the source of its expected value), **question** (for the user) or **out of scope** (with the ticket that holds it).
+For each behaviour (each acceptance criterion), go through these against the spec and the code it touches. Decide each edge case as **type** (ruled out by a type, with one test at the parse), **test** (with the source of its expected value), **eval** (an agent's behaviour, played by a simulated user from scenarios written outside the build session; the row's decided outcome becomes the rubric), **question** (for the user) or **out of scope** (with the ticket that holds it).
 
 | Category | Ask |
 |---|---|
@@ -29,6 +29,7 @@ For each behaviour (each acceptance criterion), go through these against the spe
 | Scale | The volume the spec names, and ten times it. A page boundary. A batch of exactly the batch size, and one more. |
 | Trust | Untrusted input reaching a path, a query, a shell command or a log line. A secret or personal data reaching a log or an error message. |
 | Configuration | A setting missing, empty or of the wrong type; a default that is wrong for this deployment. |
+| Use | How a person actually calls it: the README's example verbatim; the arguments in another order; a value pasted with a trailing newline or quotes; an agent asked in everyday words, with a detail missing, by someone who has not read its description (`pack-adk`'s outside user). |
 
 ## Python traps
 
@@ -57,9 +58,10 @@ Categories: values, types and formats, calls out, state and sequence. Skipped: c
 |---|---|---|---|---|
 | Negative quantity | Values | type: `Field(gt=0)` on `OrderLine.quantity` | spec behaviour 2 | `tests/unit/test_orders_domain.py::test_negative_quantity_fails_parse` |
 | Second run over the same export | State and sequence | test | spec behaviour 4: writes nothing | `tests/integration/test_orders_cli.py::test_second_run_writes_nothing` |
+| Asked for a refund in everyday words, with no order number | Use | eval | spec behaviour 5: asks for the id before it refunds | `tests/evals/orders_agent/targets-12.md` row 1 |
 ```
 
-A **test** row is a test in the Plan, in the slice that owns the behaviour. A **type** row names the one test at the parse. A **question** row goes into the grill before the ticket is published, and the answer turns it into a test or type row; a ticket with an open question row is not `ready-for-agent`.
+A **test** row is a test in the Plan, in the slice that owns the behaviour. A **type** row names the one test at the parse. An **eval** row is a target in `tests/evals/<agent>/targets-<ticket>.md` (`py-build`'s eval step), never a unit test with the author's phrasing. A **question** row goes into the grill before the ticket is published, and the answer turns it into a test or type row; a ticket with an open question row is not `ready-for-agent`.
 
 ## Property tests (Hypothesis)
 

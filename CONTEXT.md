@@ -63,3 +63,7 @@ _Avoid_: edge (a system boundary here), corner case, boundary case (the boundary
 **Typed skill**:
 A skill of Matt Pocock's that only a person can start (`disable-model-invocation: true`; `user` in `upstream.json`). No harness lets the agent start one, so when one is due the agent says why, gives the user the exact line to type (`/mattpocock-skills:<name>`), says what it will ask, and waits; it reads the skill's file itself only when the user asks.
 _Avoid_: invoke (the agent cannot), handoff (the document a session leaves for the next one), user-invoked (Matt's word for the flag, not for what the agent does)
+
+**Outside user**:
+The person an agent's inputs are judged against: has read the agent's public description and nothing else, wants something in their own words, leaves details out until asked, and gets some of them wrong. Played by Google ADK's simulated user from scenarios the `py-eval` agent writes outside the session that built the agent, with a persona from the plugin's fixed list (`skills/pack-adk/SKILL.md`, the outside user). The counterpart of the junior reader, for an agent's users.
+_Avoid_: end user (too broad), persona (the behaviour bundle the simulated user adopts, not the person), test user

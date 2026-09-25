@@ -27,7 +27,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 HOOKS = ROOT / "scripts" / "hooks"
 GUARD = HOOKS / "guard_command.py"
+EVAL_GUARD = HOOKS / "guard_eval.py"
+PERSONAS = ROOT / "skills" / "pack-adk" / "references" / "personas.json"
 TEST_DIFF = ROOT / "skills" / "py-baseline" / "templates" / "check_test_diff.py"
+LITERALS = ROOT / "skills" / "py-baseline" / "templates" / "check_literals.py"
+EVAL_REPORT = ROOT / "skills" / "py-baseline" / "templates" / "check_eval_report.py"
 ADR_SYNC = ROOT / "skills" / "py-baseline" / "templates" / "adr_sync.py"
 ADR_TEMPLATE = ROOT / "skills" / "py-baseline" / "templates" / "adr-template.md"
 FAILURES: list[str] = []
@@ -374,6 +378,77 @@ def check_edit_guard(repo: Path) -> None:
     shutil.rmtree(repo / "docs")
 
 
+def check_eval_guard(repo: Path) -> None:
+    """The eval author reads and writes under tests/evals/ only; nobody else is touched."""
+
+    def eval_tool(tool: str, args: dict, agent: str = "python-dev:py-eval") -> str:
+        payload = {"tool_name": tool, "tool_input": args, "agent_type": agent}
+        return decision_of(run(EVAL_GUARD, payload, repo))
+
+    src = str(repo / "src" / "x.py")
+    targets = str(repo / "tests" / "evals" / "orders" / "targets-12.md")
+    expect("eval guard: src denied", eval_tool("Read", {"file_path": src}), "deny")
+    expect("eval guard: evals allowed", eval_tool("Read", {"file_path": targets}), "allow")
+    expect(
+        "eval guard: a write under tests/evals passes",
+        eval_tool("Write", {"file_path": str(repo / "tests" / "evals" / "orders" / "12.test.json")}),
+        "allow",
+    )
+    expect(
+        "eval guard: a write elsewhere denied",
+        eval_tool("Write", {"file_path": str(repo / "tests" / "test_x.py")}),
+        "deny",
+    )
+    expect(
+        "eval guard: a relative evals path passes",
+        eval_tool("Read", {"file_path": "tests/evals/orders/targets-12.md"}),
+        "allow",
+    )
+    expect("eval guard: search denied", eval_tool("Grep", {"pattern": "x", "path": str(repo)}), "deny")
+    expect("eval guard: shell denied", eval_tool("Bash", {"command": "cat src/x.py"}), "deny")
+    expect(
+        "eval guard: outside the repo denied",
+        eval_tool("Read", {"file_path": str(repo.parent / "elsewhere.md")}),
+        "deny",
+    )
+    expect(
+        "eval guard: main session passes",
+        decision_of(run(EVAL_GUARD, {"tool_name": "Read", "tool_input": {"file_path": src}}, repo)),
+        "allow",
+    )
+    expect(
+        "eval guard: another agent passes",
+        eval_tool("Read", {"file_path": src}, agent="python-dev:py-reviewer"),
+        "allow",
+    )
+    expect(
+        "eval guard: garbage payload fails open",
+        decision_of(run(EVAL_GUARD, {"agent_type": "py-eval", "tool_input": 5}, repo)),
+        "allow",
+    )
+
+
+def check_personas() -> None:
+    """The pack's fixed personas are ADK UserPersona objects, and every one ends the conversation."""
+    personas = json.loads(PERSONAS.read_text(encoding="utf-8"))["personas"]
+    expect("personas: six", str(len(personas)), "6")
+    expect(
+        "personas: the fixed list",
+        ",".join(p["id"] for p in personas),
+        "PLAIN,VAGUE,HURRIED,SCEPTICAL,WANDERER,CHANGER",
+    )
+    keys = {"name", "description", "behavior_instructions", "violation_rubrics"}
+    for persona in personas:
+        ends = any(
+            "{{ stop_signal }}" in line
+            for behaviour in persona["behaviors"]
+            for line in behaviour["behavior_instructions"]
+        )
+        expect(f"personas: {persona['id']} ends", "ends" if ends else "never ends", "ends")
+        shaped = all(keys <= set(b) for b in persona["behaviors"]) and {"id", "description", "behaviors"} <= set(persona)
+        expect(f"personas: {persona['id']} in ADK's shape", "shaped" if shaped else "missing keys", "shaped")
+
+
 def check_manifests_fail_open(repo: Path) -> None:
     """A hook whose plugin root was not expanded exits 0 with no decision, never an error.
 
@@ -462,6 +537,170 @@ def check_test_diff(repo: Path) -> None:
     git(repo, "switch", "-q", "main")
 
 
+def literals(repo: Path) -> str:
+    result = run(LITERALS, None, repo, ["main...HEAD"])
+    return "passed" if result.returncode == 0 else "refused"
+
+
+def check_literals(repo: Path) -> None:
+    """A path that names nothing in the tree and a key missing from .env.example are refused."""
+    src = repo / "src" / "x.py"
+    (repo / ".env.example").write_text("# the one key\nA_KEY=\n", encoding="utf-8")
+    git(repo, "add", ".env.example")
+    git(repo, "commit", "-q", "-m", "env example")
+
+    def on_branch(name: str, code: str, message: str = "change") -> None:
+        git(repo, "switch", "-q", "-c", name)
+        src.write_text("X = 1\n" + code, encoding="utf-8")
+        git(repo, "commit", "-q", "-am", message)
+
+    def back(name: str) -> None:
+        git(repo, "switch", "-q", "main")
+        git(repo, "branch", "-q", "-D", name)
+
+    on_branch("ticket/l1", 'P = "src/missing.py"\n')
+    expect("literals: a path that names nothing refused", literals(repo), "refused")
+    back("ticket/l1")
+    on_branch("ticket/l2", 'Q = "out/report.json"\n')
+    expect("literals: runtime path passes", literals(repo), "passed")
+    back("ticket/l2")
+    git(repo, "switch", "-q", "-c", "ticket/l3")
+    (repo / "src" / "new.py").write_text("Y = 2\n", encoding="utf-8")
+    src.write_text('X = 1\nN = "src/new.py"\n', encoding="utf-8")
+    git(repo, "add", "src/new.py")
+    git(repo, "commit", "-q", "-am", "adds and names src/new.py")
+    expect("literals: created path passes", literals(repo), "passed")
+    back("ticket/l3")
+    on_branch("ticket/l4", 'U = "https://example.com/a.json"\nG = "src/*.py"\nF = "src/{name}.py"\n')
+    expect("literals: url and glob pass", literals(repo), "passed")
+    back("ticket/l4")
+    on_branch("ticket/l5", 'import os\nK = os.environ["B_KEY"]\n')
+    expect("literals: a key not in .env.example refused", literals(repo), "refused")
+    back("ticket/l5")
+    on_branch("ticket/l6", 'import os\nK = os.getenv("C_KEY", "x")\n')
+    expect("literals: getenv key refused", literals(repo), "refused")
+    back("ticket/l6")
+    on_branch("ticket/l7", 'import os\nK = os.environ.get("A_KEY")\n')
+    expect("literals: a key in .env.example passes", literals(repo), "passed")
+    back("ticket/l7")
+    on_branch("ticket/l8", 'P = "src/missing.py"  # literal-ok: written by the first run\n')
+    expect("literals: literal-ok comment passes", literals(repo), "passed")
+    back("ticket/l8")
+    on_branch("ticket/l9", 'P = "src/missing.py"\n', "task-9\n\nliteral-override: the user keeps the old path until the loader moves")
+    expect("literals: override passes", literals(repo), "passed")
+    back("ticket/l9")
+    git(repo, "switch", "-q", "-c", "ticket/l10")
+    git(repo, "rm", "-q", ".env.example")
+    src.write_text('X = 1\nimport os\nK = os.environ["B_KEY"]\n', encoding="utf-8")
+    git(repo, "commit", "-q", "-am", "no env example")
+    result = run(LITERALS, None, repo, ["main...HEAD"])
+    expect(
+        "literals: no env example, keys not checked",
+        f"{'passed' if result.returncode == 0 else 'refused'}:{'said' if 'not checked' in result.stdout else 'silent'}",
+        "passed:said",
+    )
+    back("ticket/l10")
+
+
+def eval_report(repo: Path) -> tuple[str, str]:
+    result = run(EVAL_REPORT, None, repo, ["main...HEAD"])
+    return ("passed" if result.returncode == 0 else "refused"), result.stdout
+
+
+def check_eval_report(repo: Path) -> None:
+    """An agent package changed without a fresh eval report is refused; nothing else is."""
+    package = "src/pkg/entrypoints/agents/orders"
+    agent = repo / package / "agent.py"
+    reports = repo / "tests" / "evals" / "orders" / "reports"
+
+    def head() -> str:
+        return subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=repo, capture_output=True, text=True, check=True
+        ).stdout.strip()
+
+    def report(name: str, commit: str) -> None:
+        reports.mkdir(parents=True, exist_ok=True)
+        (reports / f"{name}.md").write_text(
+            f"# Eval report: {name}\n\nagent: {package}\ncommit: {commit}\n"
+            "command: uv run pytest -m eval tests/evals/orders\n\n| target-1 | VAGUE | pass | 1.0 |\n",
+            encoding="utf-8",
+        )
+        git(repo, "add", "tests/evals")
+        git(repo, "commit", "-q", "-m", f"report {name}")
+
+    def back(name: str) -> None:
+        git(repo, "switch", "-q", "main")
+        git(repo, "branch", "-q", "-D", name)
+
+    git(repo, "switch", "-q", "-c", "ticket/e0")
+    (repo / "src" / "x.py").write_text("X = 5\n", encoding="utf-8")
+    git(repo, "commit", "-q", "-am", "no agent here")
+    expect("eval report: no agents passes", eval_report(repo)[0], "passed")
+    back("ticket/e0")
+    agent.parent.mkdir(parents=True)
+    agent.write_text("ROOT = 1\n", encoding="utf-8")
+    git(repo, "add", "src/pkg")
+    git(repo, "commit", "-q", "-m", "the orders agent")
+
+    git(repo, "switch", "-q", "-c", "ticket/e1")
+    agent.write_text("ROOT = 2\n", encoding="utf-8")
+    git(repo, "commit", "-q", "-am", "change the agent")
+    verdict, said = eval_report(repo)
+    expect("eval report: changed agent, no report refused", verdict, "refused")
+    expect("eval report: the missing report is named", "named" if "no report" in said else said[:80], "named")
+    report("e1", head())
+    expect("eval report: fresh report passes", eval_report(repo)[0], "passed")
+    agent.write_text("ROOT = 3\n", encoding="utf-8")
+    git(repo, "commit", "-q", "-am", "change the agent again")
+    verdict, said = eval_report(repo)
+    expect("eval report: stale report refused", verdict, "refused")
+    expect("eval report: staleness is named", "named" if "changed after" in said else said[:80], "named")
+    back("ticket/e1")
+
+    git(repo, "switch", "-q", "-c", "ticket/e2")
+    agent.write_text("ROOT = 4\n", encoding="utf-8")
+    git(repo, "commit", "-q", "-am", "change the agent")
+    report("e2", "nope")
+    verdict, said = eval_report(repo)
+    expect("eval report: bad commit line refused", verdict, "refused")
+    expect("eval report: the missing line is named", "named" if "commit: <hash>" in said else said[:80], "named")
+    back("ticket/e2")
+
+    git(repo, "switch", "-q", "-c", "other/branch")
+    (repo / "src" / "x.py").write_text("X = 9\n", encoding="utf-8")
+    git(repo, "commit", "-q", "-am", "elsewhere")
+    foreign = head()
+    git(repo, "switch", "-q", "main")
+    git(repo, "switch", "-q", "-c", "ticket/e3")
+    agent.write_text("ROOT = 5\n", encoding="utf-8")
+    git(repo, "commit", "-q", "-am", "change the agent")
+    report("e3", foreign)
+    verdict, said = eval_report(repo)
+    expect("eval report: foreign commit refused", verdict, "refused")
+    expect("eval report: the ancestry is named", "named" if "not an ancestor" in said else said[:80], "named")
+    back("ticket/e3")
+    git(repo, "branch", "-q", "-D", "other/branch")
+
+    git(repo, "switch", "-q", "-c", "ticket/e4")
+    billing = repo / "src" / "pkg" / "entrypoints" / "agents" / "billing" / "agent.py"
+    billing.parent.mkdir(parents=True)
+    billing.write_text("ROOT = 1\n", encoding="utf-8")
+    agent.write_text("ROOT = 6\n", encoding="utf-8")
+    git(repo, "add", "src/pkg")
+    git(repo, "commit", "-q", "-m", "two agents")
+    report("e4", head())
+    verdict, said = eval_report(repo)
+    expect("eval report: two agents, one report refused", verdict, "refused")
+    expect("eval report: the second agent is named", "named" if "agents/billing" in said else said[:80], "named")
+    back("ticket/e4")
+
+    git(repo, "switch", "-q", "-c", "ticket/e5")
+    agent.write_text("ROOT = 7\n", encoding="utf-8")
+    git(repo, "commit", "-q", "-am", "task-5\n\neval-override: the user says the wording change cannot reach a user")
+    expect("eval report: override passes", eval_report(repo)[0], "passed")
+    back("ticket/e5")
+
+
 def check_adr_format(tmp: Path) -> None:
     """adr_sync's shape check: the template copy is skipped, the short form is reported."""
     import importlib.util
@@ -530,9 +769,13 @@ def main() -> int:
         check_guard(repo)
         check_shaping(repo)
         check_edit_guard(repo)
+        check_eval_guard(repo)
+        check_personas()
         check_manifests_fail_open(repo)
         check_stop_and_start(repo)
         check_test_diff(repo)
+        check_literals(repo)
+        check_eval_report(repo)
         check_adr_format(Path(tmp))
         check_typed_lines(Path(tmp))
     if FAILURES:

@@ -26,7 +26,7 @@ Install on the harness under test:
 
 Prompt: `start`
 
-- [ ] The first reply opens with `python-dev 0.12.0 · branch main · guards <state> · tracker <...> · next: <step>`. Guards read `on` on Copilot CLI and Claude Code, `unknown` in VS Code.
+- [ ] The first reply opens with `python-dev 0.13.0 · branch main · guards <state> · tracker <...> · next: <step>`. Guards read `on` on Copilot CLI and Claude Code, `unknown` in VS Code.
 - [ ] With no `docs/agents/mode.md` it says intake comes next, why, and starts it (a facts table, then "anything wrong here?").
 
 - [ ] At the tracker step it gives the line `/mattpocock-skills:setup-matt-pocock-skills` alone in a code block, says what the skill will ask and that it will answer from what intake found, and waits. Typed, it runs and asks nothing intake already knows.
@@ -96,6 +96,21 @@ Prompt: `/mattpocock-skills:to-spec`
 
 - [ ] Before anything else it says `py-shape` writes the spec and tickets here, what his leaves out (each ticket's plan), recommends its own, and waits for your choice.
 
+## 7. An agent is tested by an outside user
+
+Needs an ADK repo with `GOOGLE_API_KEY` in `.env` and a ticket that changes an agent's instructions. Prompt: that ticket's handoff path, in a new session.
+
+- [ ] The ticket's `## Edge cases` table has at least one `eval` row (category Use), with the decided outcome as a rubric sentence.
+- [ ] After the build and mutation, before the review, it writes `tests/evals/<name>/targets-<id>.md`: the agent's description verbatim, the `app_name`, the personas path, one row per target, and no quoted user sentence.
+- [ ] It dispatches `py-eval` with the path and nothing else (Claude Code: the Agent tool; Copilot CLI: the task tool). In VS Code, or when you ask for it, it writes a handoff and tells you to open a new session with the path instead; it never writes the scenarios itself.
+- [ ] `py-eval` reads only the targets file and `personas.json`, writes `<id>.test.json` with one scenario per target (a starting prompt in the user's words, a plan, a persona copied from the list) and `test_config.json`, and reports in under ten lines. Claude Code: a read of `src/` by it is denied with the reason `python-dev: py-eval reads and writes under tests/evals/ only`.
+- [ ] It runs `pytest -m eval tests/evals/<name>`, writes `reports/<id>.md` with `agent:`, `commit:`, `command:` and one line per case, and fixes a failed rubric before rerunning.
+- [ ] With the report missing it says the ticket is not ready and does not ask "Merge to main?".
+
+Prompt, on the same ticket: `Add a default input path to the loader.`
+
+- [ ] It opens the file the path names before typing it, and names the file in the plan; a path whose file does not exist is refused by `scripts/check_literals.py` before review.
+
 ## Recording a run
 
-In the release's `CHANGELOG.md` entry: `Smoke test: <harness> <version>, <model>: sections 1-6 pass` or the section and line that failed.
+In the release's `CHANGELOG.md` entry: `Smoke test: <harness> <version>, <model>: sections 1-7 pass` (section 7 only where an ADK repo exists) or the section and line that failed.
