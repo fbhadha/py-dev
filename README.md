@@ -70,7 +70,7 @@ His retired flow skills (`grill-with-docs`, `to-spec`, `to-tickets`, `implement`
 | `skills/pack-data-engineering` | Reference for pipeline repos: four shapes with their how-tos, a tested example package (CSV to SQLite, incremental, re-runnable, 54 tests with a contract suite per port) that intake copies into the repo, design rules for time, money, re-runs, backfills, schemas and data quality, extra checks, sixteen faults, tests. Orchestrators, dbt and Spark are named as not yet covered. `packs/TEMPLATE.md` is the shape for new packs. |
 | `hooks/`, `com.github.copilot/hooks/`, `scripts/hooks/` | The guards, the same scripts on every harness (below). |
 | `upstream.json`, `scripts/find_skill.py` | Every upstream skill called by name and the dictionary terms the persona links to, pinned; and the locator that finds an installed skill's `SKILL.md` wherever a harness put it, and prints the line a person types to start one (`--typed`). |
-| `scripts/` | `check_plugin.py`, `check_upstream_skills.py`, `render_agents.py`, `test_hooks.py`, `check_pack_examples.py`: the checks CI runs. |
+| `scripts/` | `check_plugin.py`, `check_upstream_skills.py`, `render_agents.py`, `test_hooks.py`, `check_pack_examples.py`, `check_template_scripts.py`: the checks CI runs. |
 
 ### How one plugin serves more than one harness
 
@@ -137,6 +137,7 @@ uv sync
 uv run python scripts/render_agents.py    # after editing agents/*.md: regenerate the per-harness copies
 uv run python scripts/check_plugin.py     # frontmatter, manifests in step, the skills list, rendered copies current
 uv run python scripts/test_hooks.py       # every hook decision against a scratch git repo
+uv run python scripts/check_template_scripts.py   # every baseline template passes the baseline's own ruff
 ```
 
 The rest of what `validate.yml` runs on every pull request needs the network or a tool CI does not have, so it is listed here and run there:

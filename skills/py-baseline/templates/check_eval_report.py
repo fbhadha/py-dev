@@ -79,12 +79,16 @@ def is_fresh(commit: str, package: str) -> str | None:
 def findings_for(agent: str, package: str, reports: dict[str, list[str]]) -> list[str]:
     paths = reports.get(agent)
     if not paths:
-        return [f"{package}: changed, and no report under tests/evals/{agent}/reports/ changed with it"]
+        return [
+            f"{package}: changed, and no report under tests/evals/{agent}/reports/ changed with it"
+        ]
     found: list[str] = []
     for path in sorted(paths):
         commit = report_commit(path)
         if commit is None:
-            found.append(f"{path}: no `commit: <hash>` line, so nothing says which code the eval ran on")
+            found.append(
+                f"{path}: no `commit: <hash>` line, so nothing says which code the eval ran on"
+            )
             continue
         why = is_fresh(commit, package)
         if why:
@@ -104,7 +108,11 @@ def main(argv: list[str]) -> int:
         print(f"eval-report: no agent package changed over {rng}; nothing to check")
         return 0
     reports = changed_reports(files)
-    findings = [f for agent, package in sorted(agents.items()) for f in findings_for(agent, package, reports)]
+    findings = [
+        f
+        for agent, package in sorted(agents.items())
+        for f in findings_for(agent, package, reports)
+    ]
     if not findings:
         print(f"eval-report: every changed agent has a fresh report over {rng}")
         return 0
