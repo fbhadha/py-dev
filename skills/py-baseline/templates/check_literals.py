@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Fail when a change types a literal from memory: a path that names nothing in the tree, or an
-environment key that is not in `.env.example`.
+"""Fail when a change types a literal from memory.
 
-Both are the tells of a literal remembered from an earlier read or from the conversation
+A path that names nothing in the tree, or an environment key that is not in `.env.example`:
+both are the tells of a literal remembered from an earlier read or from the conversation
 instead of copied from the file (python-dev's rule: every literal comes from a file open in
 this slice). Signatures are mypy's; expected values have their source in the ticket's plan;
 the rest is the reviewer's. Runs in CI on the pull request range and locally before review,
@@ -108,6 +108,24 @@ def path_finding(literal: str, added: set[str]) -> str | None:
     return f"names no file in the tree (the folder `{first}/` exists)"
 
 
+def line_findings(
+    path: str, number: int, text: str, added: set[str], keys: set[str] | None
+) -> list[str]:
+    """Every finding on one added line; none when it carries `# literal-ok:`."""
+    if LITERAL_OK in text:
+        return []
+    found: list[str] = []
+    for literal in path_literals(text):
+        why = path_finding(literal, added)
+        if why:
+            found.append(f"{path}:{number}: `{literal}` {why}")
+    if keys is not None:
+        for key in env_keys(text):
+            if key not in keys:
+                found.append(f"{path}:{number}: `{key}` is not in .env.example")
+    return found
+
+
 def main(argv: list[str]) -> int:
     rng = argv[1] if len(argv) > 1 else DEFAULT_RANGE
     reason = override(rng)
@@ -116,18 +134,11 @@ def main(argv: list[str]) -> int:
         return 0
     added = set(git("diff", "--name-only", "--diff-filter=A", rng).split())
     keys = example_keys()
-    findings: list[str] = []
-    for path, number, text in added_lines(rng):
-        if LITERAL_OK in text:
-            continue
-        for literal in path_literals(text):
-            why = path_finding(literal, added)
-            if why:
-                findings.append(f"{path}:{number}: `{literal}` {why}")
-        if keys is not None:
-            for key in env_keys(text):
-                if key not in keys:
-                    findings.append(f"{path}:{number}: `{key}` is not in .env.example")
+    findings = [
+        f
+        for path, number, text in added_lines(rng)
+        for f in line_findings(path, number, text, added, keys)
+    ]
     note = "" if keys is not None else " (no .env.example, so keys were not checked)"
     if not findings:
         print(f"literals: nothing typed from memory over {rng}{note}")
