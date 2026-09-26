@@ -12,7 +12,7 @@ A plugin, not a library: Markdown that a harness loads (the persona, the skills,
 |---|---|---|
 | `scripts/hooks/` | the five hooks a harness starts through `hooks/*.json`; they share `_common.py` and nothing else | `scripts/test_hooks.py` in `validate.yml`; ruff, mypy strict and the size gate at commit |
 | `scripts/check_*.py`, `find_skill.py`, `render_agents.py` | plugin checks and the two helpers; each stands alone with its own `main()` | `validate.yml`, one step per check; the commit gate |
-| `skills/**/templates/`, `skills/**/references/example/` | shipped artifacts copied into a target repo by intake | `check_pack_examples.py` and `check_template_deps.py`, in a scratch copy; this repo's ruff and mypy skip them |
+| `skills/**/templates/`, `skills/**/references/example/` | shipped artifacts copied into a target repo by intake | `check_pack_examples.py`, `check_template_deps.py` and `check_template_scripts.py`, in a scratch copy; this repo's ruff and mypy skip them |
 
 ## The rules
 

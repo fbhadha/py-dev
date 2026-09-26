@@ -20,6 +20,8 @@ jobs:
         run: python scripts/test_hooks.py
       - name: The data-engineering pack's example is green under the baseline's checks
         run: python scripts/check_pack_examples.py
+      - name: Every baseline script template passes the baseline's own ruff
+        run: python scripts/check_template_scripts.py
       - uses: astral-sh/setup-uv@v6
       - name: The baseline's dev dependency group resolves with Repowise
         run: python scripts/check_template_deps.py
