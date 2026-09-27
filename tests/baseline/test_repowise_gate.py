@@ -56,6 +56,10 @@ def committed(repo: Path, git) -> Callable[[dict[str, str | None]], None]:
         ({"src/x.py": None, **NOTES}, 0),
         ({"src/x.py": SWALLOWS}, 1),
         ({"src/x.py": SWALLOWS, **NOTES}, 1),
+        ({"tests/test_x.py": WIDE}, 0),
+        ({"src/x.py": WIDE}, 1),
+        ({"tests/test_x.py": SWALLOWS}, 1),
+        ({"tests/test_x.py": WIDE, "src/x.py": SWALLOWS}, 1),
     ],
     ids=[
         "python only passes",
@@ -64,11 +68,25 @@ def committed(repo: Path, git) -> Callable[[dict[str, str | None]], None]:
         "deleted python beside notes passes",
         "introduced finding refused",
         "introduced finding beside notes refused",
+        "both types in a test file pass",
+        "both types in a source file refused",
+        "another type in a test file refused",
+        "held finding beside test findings refused",
     ],
 )
 def test_change(check, committed, files: dict[str, str | None], exit_code: int) -> None:
     committed(files)
     assert check(SCRIPT, "main..HEAD").returncode == exit_code
+
+
+def test_not_held_counted(check, committed) -> None:
+    committed({"tests/test_x.py": WIDE})
+    assert NOT_HELD in check(SCRIPT, "main..HEAD").stdout
+
+
+def test_nothing_dropped_prints_no_count(check, committed) -> None:
+    committed({"src/x.py": WIDE})
+    assert "not held" not in check(SCRIPT, "main..HEAD").stdout
 
 
 @pytest.mark.parametrize(
