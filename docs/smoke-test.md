@@ -2,7 +2,7 @@
 
 Every release runs this on each harness someone uses (Copilot CLI, VS Code, Claude Code) before it is called done. Each section has a fixed prompt and the behaviour to expect. A miss is a release blocker, fixed in the plugin, and recorded in the release's `CHANGELOG.md` entry with the harness, its version and the model.
 
-The checks in CI (`check_plugin.py`, `test_hooks.py`, `check_pack_examples.py`, `check_upstream_skills.py`) prove the files are right. Only this proves a model behaves the way the persona says, on the harness the user has.
+The checks in CI (`check_plugin.py`, `check_pack_examples.py`, `check_upstream_skills.py`) and the pytest suite under `tests/` prove the files are right. Only this proves a model behaves the way the persona says, on the harness the user has.
 
 ## 0. Setup
 

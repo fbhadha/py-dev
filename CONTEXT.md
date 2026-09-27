@@ -66,7 +66,7 @@ _Avoid_: invoke (the agent cannot), handoff (the document a session leaves for t
 
 **Plugin check**:
 A script in `scripts/check_*.py` that CI runs on every pull request to prove one fact about the plugin's own files still holds (every skill in the manifest exists, the rendered agents are current, the templates resolve). It reads files and exits 0 or 1; it never edits. The shape `docs/howto/add-a-plugin-check.md` describes.
-_Avoid_: test (`test_hooks.py` exercises the hooks' behaviour; a check reads the tree), lint (a check is about this plugin's facts, not code style), gate (the target repo's word, ADR 0002)
+_Avoid_: test (`tests/hooks/` exercises the hooks' behaviour; a check reads the tree), lint (a check is about this plugin's facts, not code style), gate (the target repo's word, ADR 0002)
 
 **Outside user**:
 The person an agent's inputs are judged against: has read the agent's public description and nothing else, wants something in their own words, leaves details out until asked, and gets some of them wrong. Played by Google ADK's simulated user from scenarios the `py-eval` agent writes outside the session that built the agent, with a persona from the plugin's fixed list (`skills/pack-adk/SKILL.md`, the outside user). The counterpart of the junior reader, for an agent's users.
