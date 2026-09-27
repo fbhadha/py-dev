@@ -20,7 +20,7 @@ Each one testable; each names the test that proves it.
 
 ## Edge cases
 
-Listed by `py-design`'s `references/edge-cases.md`. Categories: <the ones gone through>. Skipped: <each skipped category, with one line of why>.
+Listed by `py-design`'s `references/edge-cases.md`, heading `## The categories`: take the category names from its table. Categories: <the ones gone through>. Skipped: <each skipped category, with one line of why>.
 
 | Edge case | Category | Decision | Expected value from | Test |
 |---|---|---|---|---|
