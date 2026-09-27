@@ -5,72 +5,53 @@ Expected values: the script's exit codes (its docstring) and issue #19's edge-ca
 """
 
 import importlib.util
-from collections.abc import Callable
 from pathlib import Path
 
 import pytest
 
 SCRIPT = "scripts/repowise_gate.py"
 TEMPLATE = "skills/py-baseline/templates/repowise_gate.py"
-RANGE = "main..HEAD"
 CLEAN = "X = 2\n"
 SWALLOWS = "def load(path):\n    try:\n        return open(path).read()\n    except Exception:\n        pass\n"  # noqa: E501
 NOTES = {"NOTES.md": "# notes\n"}
 
 
-@pytest.fixture
-def change(repo: Path, git) -> Callable[[dict[str, str | None]], None]:
-    """Commit these files on a new branch; a file whose content is None is deleted."""
-
-    def call(files: dict[str, str | None]) -> None:
-        git("switch", "-q", "-c", "ticket/19")
-        for name, content in files.items():
-            if content is None:
-                (repo / name).unlink()
-            else:
-                (repo / name).write_text(content, encoding="utf-8")
-        git("add", "-A")
-        git("commit", "-q", "-m", "change")
-
-    return call
-
-
-def test_python_only_change_passes(check, change) -> None:
-    change({"src/x.py": CLEAN})
-    assert check(SCRIPT, RANGE).returncode == 0
-
-
-def test_python_beside_a_file_repowise_cannot_analyse_passes(check, change) -> None:
-    change({"src/x.py": CLEAN, **NOTES})
-    assert check(SCRIPT, RANGE).returncode == 0
-
-
-def test_introduced_finding_beside_notes_refused(check, change) -> None:
-    change({"src/x.py": SWALLOWS, **NOTES})
-    assert check(SCRIPT, RANGE).returncode == 1
-
-
-def test_docs_only_change_passes(check, change) -> None:
-    change(NOTES)
-    assert check(SCRIPT, RANGE).returncode == 0
+@pytest.mark.parametrize(
+    ("files", "exit_code"),
+    [
+        ({"src/x.py": CLEAN}, 0),
+        ({"src/x.py": CLEAN, **NOTES}, 0),
+        (NOTES, 0),
+        ({"src/x.py": None, **NOTES}, 0),
+        ({"src/x.py": SWALLOWS}, 1),
+        ({"src/x.py": SWALLOWS, **NOTES}, 1),
+    ],
+    ids=[
+        "python only passes",
+        "python beside notes passes",
+        "docs only passes",
+        "deleted python beside notes passes",
+        "introduced finding refused",
+        "introduced finding beside notes refused",
+    ],
+)
+def test_change(check, repo: Path, git, files: dict[str, str | None], exit_code: int) -> None:
+    git("switch", "-q", "-c", "ticket/19")
+    for name, content in files.items():
+        if content is None:  # a deleted file
+            (repo / name).unlink()
+        else:
+            (repo / name).write_text(content, encoding="utf-8")
+    git("add", "-A")
+    git("commit", "-q", "-m", "change")
+    assert check(SCRIPT, "main..HEAD").returncode == exit_code
 
 
-def test_deleted_python_beside_notes_passes(check, change) -> None:
-    change({"src/x.py": None, **NOTES})
-    assert check(SCRIPT, RANGE).returncode == 0
-
-
-def test_introduced_finding_refused(check, change) -> None:
-    change({"src/x.py": SWALLOWS})
-    assert check(SCRIPT, RANGE).returncode == 1
-
-
-def test_empty_range_fails_closed(check) -> None:
-    assert check(SCRIPT, "main..main").returncode == 3
-
-
-def test_unknown_revision_fails_closed(check) -> None:
-    assert check(SCRIPT, "nosuchref..HEAD").returncode == 3
+@pytest.mark.parametrize(
+    "revisions", ["main..main", "nosuchref..HEAD"], ids=["empty range", "unknown revision"]
+)
+def test_nothing_compared_fails_closed(check, revisions: str) -> None:
+    assert check(SCRIPT, revisions).returncode == 3
 
 
 @pytest.mark.parametrize(
@@ -81,7 +62,7 @@ def test_unknown_revision_fails_closed(check) -> None:
     ],
     ids=["a reason outside the allowlist", "a file Repowise failed on"],
 )
-def test_unknown_skip_reason_fails_closed(root: Path, payload: dict) -> None:
+def test_missed_file_fails_closed(root: Path, payload: dict) -> None:
     spec = importlib.util.spec_from_file_location("repowise_gate", root / SCRIPT)
     assert spec is not None
     assert spec.loader is not None
