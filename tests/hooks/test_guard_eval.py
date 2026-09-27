@@ -33,7 +33,8 @@ def test_write_elsewhere_denied(hook, repo: Path) -> None:
 
 
 def test_relative_evals_path_passes(hook) -> None:
-    assert eval_tool(hook, "Read", {"file_path": "tests/evals/orders/targets-12.md"}) == "allow"
+    path = "tests/evals/orders/targets-12.md"  # literal-ok: a path in the scratch repo
+    assert eval_tool(hook, "Read", {"file_path": path}) == "allow"
 
 
 @pytest.mark.parametrize(

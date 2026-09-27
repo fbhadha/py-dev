@@ -38,13 +38,13 @@ def on_branch(repo: Path, git) -> Callable[[str, str], None]:
         ('U = "https://example.com/a.json"\nG = "src/*.py"\nF = "src/{name}.py"\n', "passed"),
         ('import os\nK = os.environ["B_KEY"]\n', "refused"),  # literal-ok: the scratch repo's key
         (
-            'import os\nK = os.getenv("C_KEY", "x")\n',
+            'import os\nK = os.getenv("C_KEY", "x")\n',  # literal-ok: the scratch repo's key
             "refused",
-        ),  # literal-ok: the scratch repo's key
+        ),
         (
-            'import os\nK = os.environ.get("A_KEY")\n',
+            'import os\nK = os.environ.get("A_KEY")\n',  # literal-ok: the scratch repo's key
             "passed",
-        ),  # literal-ok: the scratch repo's key
+        ),
         ('P = "src/missing.py"  # literal-ok: written by the first run\n', "passed"),
     ],
     ids=[
