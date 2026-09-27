@@ -89,5 +89,23 @@ def test_missed_file_fails_closed(gate: ModuleType, payload: dict) -> None:
     assert gate.degraded("partial", payload) is True
 
 
+@pytest.mark.parametrize(
+    ("finding", "kept"),
+    [
+        ({"path": "tests/test_x.py", "biomarker_type": "dry_violation"}, False),
+        ({"path": "src/x.py", "biomarker_type": "primitive_obsession"}, True),
+        ({"path": "tests/test_x.py", "biomarker_type": "error_handling"}, True),
+    ],
+    ids=[
+        "worsened in a test file",
+        "either type in a source file",
+        "another type in a test file",
+    ],
+)
+def test_held(gate: ModuleType, finding: dict[str, str], kept: bool) -> None:
+    worsened = {**finding, "change_kind": "worsened"}
+    assert gate.held([worsened], is_test_related_path) == ([worsened] if kept else [])
+
+
 def test_copy_matches_template(root: Path) -> None:
     assert (root / SCRIPT).read_bytes() == (root / TEMPLATE).read_bytes()
