@@ -14,7 +14,9 @@ Exit codes:
     0  nothing introduced
     1  at least one finding introduced
     2  Repowise is not installed or the repo is not indexed
-    3  the health lane was unavailable or degraded (fail closed; see --allow-unavailable)
+    3  Repowise missed a file it should have analysed, or compared nothing it can
+       account for (fail closed; see --allow-unavailable). A file with nothing to
+       analyse (docs, config, a deleted file) is not a miss.
 
 Repowise is AGPL-3.0. This script imports it in CI and in a developer's shell,
 and is never shipped inside a product.
