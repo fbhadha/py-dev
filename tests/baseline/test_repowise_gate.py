@@ -15,6 +15,7 @@ from repowise.core.test_paths import is_test_related_path
 
 SCRIPT = "scripts/repowise_gate.py"
 TEMPLATE = "skills/py-baseline/templates/repowise_gate.py"
+TEST_FILE = "tests/test_x.py"  # literal-ok: in the scratch repo (conftest's `repo`), not this tree
 CLEAN = "X = 2\n"
 SWALLOWS = "def load(path):\n    try:\n        return open(path).read()\n    except Exception:\n        pass\n"  # noqa: E501
 NOTES = {"NOTES.md": "# notes\n"}
@@ -60,10 +61,10 @@ def committed(repo: Path, git) -> Callable[[dict[str, str | None]], None]:
         ({"src/x.py": None, **NOTES}, 0),
         ({"src/x.py": SWALLOWS}, 1),
         ({"src/x.py": SWALLOWS, **NOTES}, 1),
-        ({"tests/test_x.py": WIDE}, 0),
+        ({TEST_FILE: WIDE}, 0),
         ({"src/x.py": WIDE}, 1),
-        ({"tests/test_x.py": SWALLOWS}, 1),
-        ({"tests/test_x.py": WIDE, "src/x.py": SWALLOWS}, 1),
+        ({TEST_FILE: SWALLOWS}, 1),
+        ({TEST_FILE: WIDE, "src/x.py": SWALLOWS}, 1),
     ],
     ids=[
         "python only passes",
@@ -84,7 +85,7 @@ def test_change(check, committed, files: dict[str, str | None], exit_code: int) 
 
 
 def test_not_held_counted(check, committed) -> None:
-    committed({"tests/test_x.py": WIDE})
+    committed({TEST_FILE: WIDE})
     assert NOT_HELD in check(SCRIPT, "main..HEAD").stdout
 
 
@@ -115,9 +116,9 @@ def test_missed_file_fails_closed(gate: ModuleType, payload: dict) -> None:
 @pytest.mark.parametrize(
     ("finding", "kept"),
     [
-        ({"path": "tests/test_x.py", "biomarker_type": "dry_violation"}, False),
+        ({"path": TEST_FILE, "biomarker_type": "dry_violation"}, False),
         ({"path": "src/x.py", "biomarker_type": "primitive_obsession"}, True),
-        ({"path": "tests/test_x.py", "biomarker_type": "error_handling"}, True),
+        ({"path": TEST_FILE, "biomarker_type": "error_handling"}, True),
     ],
     ids=[
         "worsened in a test file",
