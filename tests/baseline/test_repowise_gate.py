@@ -5,6 +5,7 @@ Expected values: the script's exit codes (its docstring) and issue #19's edge-ca
 """
 
 import importlib.util
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
