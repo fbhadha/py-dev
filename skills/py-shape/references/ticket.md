@@ -1,6 +1,6 @@
 # Ticket template
 
-A ticket is one session of work with a plan exact enough that the person or session building it decides nothing new. Every file is checked to exist when the ticket is written (or marked new), and `py-build` checks the plan against the code again before the first line. Fill every section; a quick ticket has a short plan and a short edge-case list, never absent ones.
+A ticket is one session of work with a plan exact enough that the person or session building it decides nothing new. It is written for the floor reader: follow the six rules under `## The six rules` in `references/floor-reader.md`. Every file is checked to exist when the ticket is written (or marked new), and `py-build` checks the plan against the code again before the first line. Fill every section; a quick ticket has a short plan and a short edge-case list, never absent ones.
 
 ````markdown
 # <id>: <what the ticket makes true, as an imperative: "Load orders from the CSV export">
