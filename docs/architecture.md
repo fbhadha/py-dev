@@ -6,12 +6,13 @@ The rules only. The live map (modules, callers, entry points, hotspots) is Repow
 
 A plugin, not a library: Markdown that a harness loads (the persona, the skills, the packs) and a small amount of Python that the harness or CI runs (`scripts/`). There is no `src/`, no package and no layering contract; the product code is twelve scripts.
 
-## The three kinds of Python, and who checks each
+## The four kinds of Python, and who checks each
 
 | Where | What it is | Checked by |
 |---|---|---|
-| `scripts/hooks/` | the five hooks a harness starts through `hooks/*.json`; they share `_common.py` and nothing else | `scripts/test_hooks.py` in `validate.yml`; ruff, mypy strict and the size gate at commit |
+| `scripts/hooks/` | the five hooks a harness starts through `hooks/*.json`; they share `_common.py` and nothing else | `tests/hooks/` under pytest (the `tests` job of `python-dev-checks.yml`); ruff, mypy strict and the size gate at commit |
 | `scripts/check_*.py`, `find_skill.py`, `render_agents.py` | plugin checks and the two helpers; each stands alone with its own `main()` | `validate.yml`, one step per check; the commit gate |
+| `tests/` | pytest modules that drive the hooks and the baseline's scripts against a scratch git repo, through the fixtures in `tests/conftest.py`; the shape is `docs/howto/add-a-hook-test.md` | the `tests` job with coverage on the lines a change added; ruff and the 150-line gate at commit |
 | `skills/**/templates/`, `skills/**/references/example/` | shipped artifacts copied into a target repo by intake | `check_pack_examples.py`, `check_template_deps.py` and `check_template_scripts.py`, in a scratch copy; this repo's ruff and mypy skip them |
 
 ## The rules

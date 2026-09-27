@@ -16,8 +16,6 @@ jobs:
       - run: pip install pyyaml pytest hypothesis ruff mypy
       - name: Skills, agents and manifests are well-formed
         run: python scripts/check_plugin.py
-      - name: Every hook decision, against a scratch git repo
-        run: python scripts/test_hooks.py
       - name: The data-engineering pack's example is green under the baseline's checks
         run: python scripts/check_pack_examples.py
       - name: Every baseline script template passes the baseline's own ruff

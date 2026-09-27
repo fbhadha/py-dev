@@ -70,7 +70,7 @@ His retired flow skills (`grill-with-docs`, `to-spec`, `to-tickets`, `implement`
 | `skills/pack-data-engineering` | Reference for pipeline repos: four shapes with their how-tos, a tested example package (CSV to SQLite, incremental, re-runnable, 54 tests with a contract suite per port) that intake copies into the repo, design rules for time, money, re-runs, backfills, schemas and data quality, extra checks, sixteen faults, tests. Orchestrators, dbt and Spark are named as not yet covered. `packs/TEMPLATE.md` is the shape for new packs. |
 | `hooks/`, `com.github.copilot/hooks/`, `scripts/hooks/` | The guards, the same scripts on every harness (below). |
 | `upstream.json`, `scripts/find_skill.py` | Every upstream skill called by name and the dictionary terms the persona links to, pinned; and the locator that finds an installed skill's `SKILL.md` wherever a harness put it, and prints the line a person types to start one (`--typed`). |
-| `scripts/` | `check_plugin.py`, `check_upstream_skills.py`, `render_agents.py`, `test_hooks.py`, `check_pack_examples.py`, `check_template_scripts.py`: the checks CI runs. |
+| `scripts/` | `check_plugin.py`, `check_upstream_skills.py`, `render_agents.py`, `check_pack_examples.py`, `check_template_scripts.py`: the checks CI runs; `check_test_diff.py`, `check_literals.py`, `adr_sync.py`, `repowise_gate.py`, `run_readme_blocks.py`: the baseline's own scripts, copied from its templates, that this repo runs on itself. |
 
 ### How one plugin serves more than one harness
 
@@ -98,7 +98,7 @@ The skills are shared; they are plain `SKILL.md` folders every harness reads. Wh
 
 Plus the never list: force-push, hard reset, rebase, `--amend`, `--no-verify` and force-deleting a branch are denied outright, on any branch.
 
-The guards are on as soon as the plugin is installed, on Copilot CLI and Claude Code; a session-start hook tells the model `python-dev guards active` with the plugin version, the branch and where the plugin's scripts are, and the persona puts the state on its status line. The hooks run in your project whichever folder the harness starts them in. VS Code does not run this plugin's hooks (it expands no plugin root for them), so each hook command exits quietly there instead of denying every tool call; in VS Code the guards are your repo's pre-commit, CI and branch protection, and the status line says `guards unknown`. `PYTHON_DEV_GUARD=off` silences the ask for one session; the denies stay. The hooks fail open on any error of their own, and `scripts/test_hooks.py` drives every decision in CI, in both harnesses' payload shapes, started from outside the repo the way Copilot CLI starts them.
+The guards are on as soon as the plugin is installed, on Copilot CLI and Claude Code; a session-start hook tells the model `python-dev guards active` with the plugin version, the branch and where the plugin's scripts are, and the persona puts the state on its status line. The hooks run in your project whichever folder the harness starts them in. VS Code does not run this plugin's hooks (it expands no plugin root for them), so each hook command exits quietly there instead of denying every tool call; in VS Code the guards are your repo's pre-commit, CI and branch protection, and the status line says `guards unknown`. `PYTHON_DEV_GUARD=off` silences the ask for one session; the denies stay. The hooks fail open on any error of their own, and the pytest modules under `tests/hooks/` drive every decision in CI, in both harnesses' payload shapes, started from outside the repo the way Copilot CLI starts them.
 
 Earlier versions (0.6.0 to 0.7.0) guarded individual files with ask, record and stop hooks and a commit-msg gate. The branch does the same job with one prompt per ticket instead of one per file, and about four hundred lines less hook code; see decision 39.
 
@@ -136,7 +136,7 @@ Blocks fenced as ```bash ci``` are executed in CI by `scripts/run_readme_blocks.
 uv sync
 uv run python scripts/render_agents.py    # after editing agents/*.md: regenerate the per-harness copies
 uv run python scripts/check_plugin.py     # frontmatter, manifests in step, the skills list, rendered copies current
-uv run python scripts/test_hooks.py       # every hook decision against a scratch git repo
+uv run pytest -m "not eval"                # every hook decision and baseline script, against a scratch git repo
 uv run python scripts/check_template_scripts.py   # every baseline template passes the baseline's own ruff
 ```
 

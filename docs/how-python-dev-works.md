@@ -72,4 +72,4 @@ Before each step the agent says what it is about to do, why it matters here and 
 | How an agent's users are simulated, and the personas | `agents/py-eval.md`, `skills/pack-adk/SKILL.md` (the outside user) and its `references/personas.json`, `skills/py-build` |
 | Why something is the way it is | `docs/design/python-dev-agent.md` and `docs/adr/` in this repository |
 
-Before a release: `python scripts/render_agents.py`, `python scripts/check_plugin.py`, `python scripts/test_hooks.py`, `python scripts/check_pack_examples.py`, `python scripts/check_upstream_skills.py`, `claude plugin validate --strict .`, and [the smoke test](smoke-test.md) with a real model on each harness.
+Before a release: `python scripts/render_agents.py`, `python scripts/check_plugin.py`, `uv run pytest -m "not eval"`, `python scripts/check_pack_examples.py`, `python scripts/check_upstream_skills.py`, `claude plugin validate --strict .`, and [the smoke test](smoke-test.md) with a real model on each harness.
