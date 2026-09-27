@@ -77,7 +77,7 @@ def test_unknown_revision_fails_closed(check) -> None:
     "payload",
     [
         {"skipped": {"src/x.py": "parse_failed"}, "scope": {"failed": 0}},
-        {"skipped": NOTES.keys() and {"NOTES.md": "deleted"}, "scope": {"failed": 1}},
+        {"skipped": {"NOTES.md": "deleted"}, "scope": {"failed": 1}},
     ],
     ids=["a reason outside the allowlist", "a file Repowise failed on"],
 )

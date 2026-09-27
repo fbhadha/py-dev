@@ -70,11 +70,12 @@ def main() -> int:
     bundle = service.review(ChangeReviewRequest(revspec=args.revspec))
     health = bundle.lane("health")
 
-    if health.state != "available":
+    payload = bundle.as_dict()["health"]
+
+    if degraded(health.state, payload):
         print(f"health lane {health.state}: {health.reason}", file=sys.stderr)
         return 0 if args.allow_unavailable else 3
 
-    payload = bundle.as_dict()["health"]
     introduced = [f for f in payload["findings"] if f["change_kind"] == "introduced"]
     worsened = [f for f in payload["findings"] if f["change_kind"] == "worsened"]
     unchanged = payload.get("unchanged_total", 0)
