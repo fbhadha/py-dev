@@ -4,6 +4,7 @@ Copilot CLI 1.0.88 starts a plugin's user-only skill from `/<plugin>:<skill>` an
 "Unknown command" to the bare name; a skill installed on its own is `/<skill>`.
 """
 
+import os
 import subprocess
 import sys
 from collections.abc import Callable
@@ -37,7 +38,7 @@ def typed(root: Path, tmp_path: Path) -> Callable[[str], tuple[str, int]]:
             capture_output=True,
             text=True,
             cwd=project,
-            env={"HOME": str(home), "PATH": ""},
+            env={**os.environ, "HOME": str(home)},
             check=False,
         )
         return result.stdout.strip(), result.returncode

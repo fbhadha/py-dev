@@ -4,5 +4,7 @@ __pycache__/
 .env
 .repowise/
 coverage.lcov
+coverage.xml
+.coverage
 mutants/
 .hypothesis/
