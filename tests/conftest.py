@@ -1,10 +1,8 @@
 """Fixtures that drive the hooks and the baseline's scripts against a scratch git repo.
 
-Every test gets its own repo on `main`. A hook is a separate process the harness would
-start, so `hook` runs it that way: payload on stdin, decision read from its JSON.
-`outside=True` starts it from above the repo with the repo only in the payload's `cwd`,
-as Copilot CLI does. `check` runs a baseline script on a git range: passed or refused.
-The walkthrough is `docs/howto/add-a-hook-test.md`.
+Every test gets its own repo on `main`. A hook runs as the harness would start it: payload
+on stdin, decision read from its JSON; `outside=True` starts it from above the repo with
+the repo only in the payload's `cwd`, as Copilot CLI does. `docs/howto/add-a-hook-test.md`.
 """
 
 from __future__ import annotations
@@ -23,10 +21,7 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 HOOKS = ROOT / "scripts" / "hooks"
 GIT_ID = ["-c", "user.name=t", "-c", "user.email=t@t"]
-ORIGINAL_TESTS = (
-    "def test_one():\n    assert 1 == 1\n    assert 2 == 2\n\n\n"
-    "def test_two():\n    assert 3 == 3\n"
-)
+ORIGINAL_TESTS = "def test_one():\n    assert 1 == 1\n    assert 2 == 2\n\n\ndef test_two():\n    assert 3 == 3\n"  # noqa: E501
 
 
 class Answer(NamedTuple):
@@ -77,6 +72,11 @@ def bash_payload(command: str, session: str, repo: Path, *, copilot: bool) -> di
 @pytest.fixture
 def root() -> Path:
     return ROOT
+
+
+@pytest.fixture
+def decision() -> Callable[[str], str]:
+    return decision_of
 
 
 @pytest.fixture

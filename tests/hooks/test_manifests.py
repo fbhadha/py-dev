@@ -9,6 +9,7 @@ asks as usual when it is set.
 import json
 import os
 import subprocess
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -26,7 +27,9 @@ def command_of(root: Path, harness: str) -> str:
     return manifest["hooks"]["PreToolUse"][0]["hooks"][0]["command"]
 
 
-def run_manifest(root: Path, repo: Path, harness: str, *, expanded: bool) -> tuple[int, str]:
+def run_manifest(
+    root: Path, repo: Path, harness: str, decision: Callable[[str], str], *, expanded: bool
+) -> tuple[int, str]:
     var = MANIFEST[harness][1]
     env = {k: v for k, v in os.environ.items() if k not in ("PLUGIN_ROOT", "CLAUDE_PLUGIN_ROOT")}
     if expanded:
@@ -47,17 +50,14 @@ def run_manifest(root: Path, repo: Path, harness: str, *, expanded: bool) -> tup
         env=env,
         check=False,
     )
-    decision = "allow"
-    if result.stdout.strip():
-        decision = json.loads(result.stdout).get("permissionDecision") or "allow"
-    return result.returncode, decision
+    return result.returncode, decision(result.stdout)
 
 
 @pytest.mark.parametrize("harness", ["copilot", "claude"])
-def test_unexpanded_plugin_root_exits_0_and_allows(root: Path, repo: Path, harness: str) -> None:
-    assert run_manifest(root, repo, harness, expanded=False) == (0, "allow")
+def test_unexpanded_plugin_root_exits_0_and_allows(root, repo, harness: str, decision) -> None:
+    assert run_manifest(root, repo, harness, decision, expanded=False) == (0, "allow")
 
 
 @pytest.mark.parametrize("harness", ["copilot", "claude"])
-def test_expanded_plugin_root_asks_on_main(root: Path, repo: Path, harness: str) -> None:
-    assert run_manifest(root, repo, harness, expanded=True) == (0, "ask")
+def test_expanded_plugin_root_asks_on_main(root, repo, harness: str, decision) -> None:
+    assert run_manifest(root, repo, harness, decision, expanded=True) == (0, "ask")
