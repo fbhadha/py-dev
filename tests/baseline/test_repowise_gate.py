@@ -17,6 +17,9 @@ TEMPLATE = "skills/py-baseline/templates/repowise_gate.py"
 CLEAN = "X = 2\n"
 SWALLOWS = "def load(path):\n    try:\n        return open(path).read()\n    except Exception:\n        pass\n"  # noqa: E501
 NOTES = {"NOTES.md": "# notes\n"}
+# One primitive_obsession and one dry_violation; the first needs a file of 60 lines.
+WIDE = "def five(a, b, c, d, e):\n    return a\n" + "V = 0\n" * 60
+NOT_HELD = "2 finding(s) in test files not held (dry_violation, primitive_obsession)"
 
 
 @pytest.fixture
