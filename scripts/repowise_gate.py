@@ -5,6 +5,8 @@ Runs Repowise's change review over a revision range and exits non-zero if the
 diff introduced any new code-health finding (deeper nesting, a new god class,
 I/O inside a loop, a swallowed exception, duplication) on the files it changed.
 Pre-existing findings in those files are reported but do not fail the run.
+A test file is not held to a long parameter list or to duplication: a test
+takes its fixtures as parameters, and one decision per test makes bodies alike.
 
 Usage:
     uv run python scripts/repowise_gate.py origin/main..HEAD
@@ -76,6 +78,7 @@ def main() -> int:
     try:
         from repowise.core.analysis.change_health import GitRevisionSource
         from repowise.core.analysis.change_review import ChangeReviewRequest, ChangeReviewService
+        from repowise.core.test_paths import is_test_related_path
     except ImportError:
         print("repowise is not installed: uv add --group dev repowise", file=sys.stderr)
         return 2
@@ -99,15 +102,20 @@ def main() -> int:
         f"repowise change gate: {scope.get('analyzed', 0)} file(s) analysed, "
         f"{len(introduced)} introduced, {len(worsened)} worsened, {unchanged} pre-existing"
     )
-    for finding in introduced + worsened:
+    changed = introduced + worsened
+    failing = held(changed, is_test_related_path)
+    for finding in failing:
         where = f"{finding['path']}:{finding['line_start']}"
         symbol = finding.get("symbol") or "-"
         print(
             f"  {finding['change_kind']:<10} {finding['biomarker_type']:<22} "
             f"{where}  {symbol}: {finding['reason']}"
         )
+    if len(changed) > len(failing):
+        types = ", ".join(sorted(NOT_HELD_IN_TESTS))
+        print(f"  {len(changed) - len(failing)} finding(s) in test files not held ({types})")
 
-    if introduced or worsened:
+    if failing:
         print(
             "\nFix the findings above, or explain in the PR why the shape is right "
             "and get a reviewer to agree."

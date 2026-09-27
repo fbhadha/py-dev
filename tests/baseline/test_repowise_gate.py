@@ -1,7 +1,8 @@
 """repowise_gate.py: a change passes unless it made a Python file it touched worse.
 
 Drives this repo's copy under scripts/; the last test proves it is the template.
-Expected values: the script's exit codes (its docstring) and issue #19's edge-case table.
+Expected values: the script's exit codes (its docstring) and the edge-case tables of
+issues #19 and #27.
 """
 
 import importlib.util

@@ -5,6 +5,8 @@ Runs Repowise's change review over a revision range and exits non-zero if the
 diff introduced any new code-health finding (deeper nesting, a new god class,
 I/O inside a loop, a swallowed exception, duplication) on the files it changed.
 Pre-existing findings in those files are reported but do not fail the run.
+A test file is not held to a long parameter list or to duplication: a test
+takes its fixtures as parameters, and one decision per test makes bodies alike.
 
 Usage:
     uv run python scripts/repowise_gate.py origin/main..HEAD
