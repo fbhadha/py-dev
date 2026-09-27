@@ -73,12 +73,7 @@ def test_nothing_compared_fails_closed(check, revisions: str) -> None:
     ],
     ids=["a reason outside the allowlist", "a file Repowise failed on"],
 )
-def test_missed_file_fails_closed(root: Path, payload: dict) -> None:
-    spec = importlib.util.spec_from_file_location("repowise_gate", root / SCRIPT)
-    assert spec is not None
-    assert spec.loader is not None
-    gate = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(gate)
+def test_missed_file_fails_closed(gate: ModuleType, payload: dict) -> None:
     assert gate.degraded("partial", payload) is True
 
 
