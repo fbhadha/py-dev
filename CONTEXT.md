@@ -71,3 +71,7 @@ _Avoid_: test (`tests/hooks/` exercises the hooks' behaviour; a check reads the 
 **Outside user**:
 The person an agent's inputs are judged against: has read the agent's public description and nothing else, wants something in their own words, leaves details out until asked, and gets some of them wrong. Played by Google ADK's simulated user from scenarios the `py-eval` agent writes outside the session that built the agent, with a persona from the plugin's fixed list (`skills/pack-adk/SKILL.md`, the outside user). The counterpart of the junior reader, for an agent's users.
 _Avoid_: end user (too broad), persona (the behaviour bundle the simulated user adopts, not the person), test user
+
+**Floor reader**:
+The reader everything the agent writes for another session to execute is judged against (a ticket, a handoff, the prompt a dispatched agent gets): a small model in a fresh session that can drive its tools, follows one instruction at a time, and infers nothing that is not written down. Always written for, whichever model is writing and whichever will read. The counterpart of the junior reader, for what an agent executes rather than what a person reads.
+_Avoid_: small model, target model (the reader is fixed, never detected), junior reader (a person reading the repo's docs)
