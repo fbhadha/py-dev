@@ -99,15 +99,20 @@ def main() -> int:
         f"repowise change gate: {scope.get('analyzed', 0)} file(s) analysed, "
         f"{len(introduced)} introduced, {len(worsened)} worsened, {unchanged} pre-existing"
     )
-    for finding in introduced + worsened:
+    changed = introduced + worsened
+    failing = held(changed, is_test_related_path)
+    for finding in failing:
         where = f"{finding['path']}:{finding['line_start']}"
         symbol = finding.get("symbol") or "-"
         print(
             f"  {finding['change_kind']:<10} {finding['biomarker_type']:<22} "
             f"{where}  {symbol}: {finding['reason']}"
         )
+    if len(changed) > len(failing):
+        types = ", ".join(sorted(NOT_HELD_IN_TESTS))
+        print(f"  {len(changed) - len(failing)} finding(s) in test files not held ({types})")
 
-    if introduced or worsened:
+    if failing:
         print(
             "\nFix the findings above, or explain in the PR why the shape is right "
             "and get a reviewer to agree."
