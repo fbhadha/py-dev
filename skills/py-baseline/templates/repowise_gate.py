@@ -45,6 +45,15 @@ def degraded(state: str, payload: dict[str, Any] | None) -> bool:
     return any(reason not in NOTHING_TO_ANALYSE for reason in skipped.values())
 
 
+def held(findings: list[dict[str, Any]], is_test: Callable[[str], bool]) -> list[dict[str, Any]]:
+    """The findings that fail the run: all but NOT_HELD_IN_TESTS types in test files."""
+    return [
+        finding
+        for finding in findings
+        if finding["biomarker_type"] not in NOT_HELD_IN_TESTS or not is_test(finding["path"])
+    ]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
