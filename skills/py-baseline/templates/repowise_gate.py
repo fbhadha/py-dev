@@ -32,6 +32,10 @@ from typing import Any
 # Any other reason (parse_failed, too_large, one a later version adds) fails closed.
 NOTHING_TO_ANALYSE = frozenset({"not_health_analyzable", "unsupported_language", "deleted"})
 
+# Findings of these types are reported but never fail a test file: a test takes
+# its fixtures as parameters, and one decision per test makes bodies alike.
+NOT_HELD_IN_TESTS = frozenset({"primitive_obsession", "dry_violation"})
+
 
 def degraded(state: str, payload: dict[str, Any] | None) -> bool:
     """True when Repowise missed a file it should have analysed."""
