@@ -17,7 +17,9 @@ def test_src_denied(hook, repo: Path) -> None:
 
 
 def test_evals_allowed(hook, repo: Path) -> None:
-    targets = str(repo / "tests" / "evals" / "orders" / "targets-12.md")
+    targets = str(
+        repo / "tests" / "evals" / "orders" / "targets-12.md"
+    )  # literal-ok: a path in the scratch repo
     assert eval_tool(hook, "Read", {"file_path": targets}) == "allow"
 
 

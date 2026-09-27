@@ -49,8 +49,8 @@ def test_src_on_main_asks(edit, src: str) -> None:
 @pytest.mark.parametrize(
     ("tool", "path", "decision"),
     [
-        ("Write", "tests/test_new.py", "ask"),
-        ("Edit", "docs/agents/x.md", "allow"),
+        ("Write", "tests/test_new.py", "ask"),  # literal-ok: a path in the scratch repo
+        ("Edit", "docs/agents/x.md", "allow"),  # literal-ok: a path in the scratch repo
         ("Write", "prototypes/try.py", "allow"),
     ],
     ids=["relative tests path asks", "docs pass", "prototypes pass"],

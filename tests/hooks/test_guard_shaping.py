@@ -13,7 +13,7 @@ def shaping(repo: Path, git) -> Path:
     git("switch", "-q", "-c", "shaping/idea")
     (repo / "docs").mkdir()
     (repo / "docs" / "note.md").write_text("# note\n", encoding="utf-8")
-    git("add", "docs/note.md")
+    git("add", "docs/note.md")  # literal-ok: a path in the scratch repo
     return repo
 
 
