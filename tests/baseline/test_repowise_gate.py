@@ -35,15 +35,8 @@ NOTES = {"NOTES.md": "# notes\n"}
         "introduced finding beside notes refused",
     ],
 )
-def test_change(check, repo: Path, git, files: dict[str, str | None], exit_code: int) -> None:
-    git("switch", "-q", "-c", "ticket/19")
-    for name, content in files.items():
-        if content is None:  # a deleted file
-            (repo / name).unlink()
-        else:
-            (repo / name).write_text(content, encoding="utf-8")
-    git("add", "-A")
-    git("commit", "-q", "-m", "change")
+def test_change(check, committed, files: dict[str, str | None], exit_code: int) -> None:
+    committed(files)
     assert check(SCRIPT, "main..HEAD").returncode == exit_code
 
 
