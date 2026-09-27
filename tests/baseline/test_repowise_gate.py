@@ -10,6 +10,7 @@ from pathlib import Path
 from types import ModuleType
 
 import pytest
+from repowise.core.test_paths import is_test_related_path
 
 SCRIPT = "scripts/repowise_gate.py"
 TEMPLATE = "skills/py-baseline/templates/repowise_gate.py"

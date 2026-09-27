@@ -26,11 +26,16 @@ from __future__ import annotations
 
 import argparse
 import sys
+from collections.abc import Callable
 from typing import Any
 
 # Repowise's reasons for skipping a file that has no code health to compare.
 # Any other reason (parse_failed, too_large, one a later version adds) fails closed.
 NOTHING_TO_ANALYSE = frozenset({"not_health_analyzable", "unsupported_language", "deleted"})
+
+# Findings of these types are reported but never fail a test file: a test takes
+# its fixtures as parameters, and one decision per test makes bodies alike.
+NOT_HELD_IN_TESTS = frozenset({"primitive_obsession", "dry_violation"})
 
 
 def degraded(state: str, payload: dict[str, Any] | None) -> bool:
@@ -43,6 +48,15 @@ def degraded(state: str, payload: dict[str, Any] | None) -> bool:
     if not skipped or payload.get("scope", {}).get("failed", 0):
         return True
     return any(reason not in NOTHING_TO_ANALYSE for reason in skipped.values())
+
+
+def held(findings: list[dict[str, Any]], is_test: Callable[[str], bool]) -> list[dict[str, Any]]:
+    """The findings that fail the run: all but NOT_HELD_IN_TESTS types in test files."""
+    return [
+        finding
+        for finding in findings
+        if finding["biomarker_type"] not in NOT_HELD_IN_TESTS or not is_test(finding["path"])
+    ]
 
 
 def main() -> int:
