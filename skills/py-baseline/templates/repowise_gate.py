@@ -26,6 +26,23 @@ from __future__ import annotations
 
 import argparse
 import sys
+from typing import Any
+
+# Repowise's reasons for skipping a file that has no code health to compare.
+# Any other reason (parse_failed, too_large, one a later version adds) fails closed.
+NOTHING_TO_ANALYSE = frozenset({"not_health_analyzable", "unsupported_language", "deleted"})
+
+
+def degraded(state: str, payload: dict[str, Any] | None) -> bool:
+    """True when Repowise missed a file it should have analysed."""
+    if state == "available":
+        return False
+    if payload is None:
+        return True
+    skipped = payload.get("skipped") or {}
+    if not skipped or payload.get("scope", {}).get("failed", 0):
+        return True
+    return any(reason not in NOTHING_TO_ANALYSE for reason in skipped.values())
 
 
 def main() -> int:
