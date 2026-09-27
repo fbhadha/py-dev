@@ -18,6 +18,17 @@ NOTES = {"NOTES.md": "# notes\n"}
 
 
 @pytest.fixture
+def gate(root: Path) -> ModuleType:
+    """The script as a module, for the functions a subprocess cannot reach."""
+    spec = importlib.util.spec_from_file_location("repowise_gate", root / SCRIPT)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+@pytest.fixture
 def committed(repo: Path, git) -> Callable[[dict[str, str | None]], None]:
     """Commit these files on a new branch; a file whose content is None is deleted."""
 
