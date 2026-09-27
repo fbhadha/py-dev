@@ -76,6 +76,7 @@ def main() -> int:
     try:
         from repowise.core.analysis.change_health import GitRevisionSource
         from repowise.core.analysis.change_review import ChangeReviewRequest, ChangeReviewService
+        from repowise.core.test_paths import is_test_related_path
     except ImportError:
         print("repowise is not installed: uv add --group dev repowise", file=sys.stderr)
         return 2
