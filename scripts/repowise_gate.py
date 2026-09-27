@@ -14,7 +14,9 @@ Exit codes:
     0  nothing introduced
     1  at least one finding introduced
     2  Repowise is not installed or the repo is not indexed
-    3  the health lane was unavailable or degraded (fail closed; see --allow-unavailable)
+    3  Repowise missed a file it should have analysed, or compared nothing it can
+       account for (fail closed; see --allow-unavailable). A file with nothing to
+       analyse (docs, config, a deleted file) is not a miss.
 
 Repowise is AGPL-3.0. This script imports it in CI and in a developer's shell,
 and is never shipped inside a product.
@@ -24,6 +26,23 @@ from __future__ import annotations
 
 import argparse
 import sys
+from typing import Any
+
+# Repowise's reasons for skipping a file that has no code health to compare.
+# Any other reason (parse_failed, too_large, one a later version adds) fails closed.
+NOTHING_TO_ANALYSE = frozenset({"not_health_analyzable", "unsupported_language", "deleted"})
+
+
+def degraded(state: str, payload: dict[str, Any] | None) -> bool:
+    """True when Repowise missed a file it should have analysed."""
+    if state == "available":
+        return False
+    if payload is None:
+        return True
+    skipped = payload.get("skipped") or {}
+    if not skipped or payload.get("scope", {}).get("failed", 0):
+        return True
+    return any(reason not in NOTHING_TO_ANALYSE for reason in skipped.values())
 
 
 def main() -> int:
@@ -51,11 +70,12 @@ def main() -> int:
     bundle = service.review(ChangeReviewRequest(revspec=args.revspec))
     health = bundle.lane("health")
 
-    if health.state != "available":
+    payload = bundle.as_dict()["health"]
+
+    if degraded(health.state, payload):
         print(f"health lane {health.state}: {health.reason}", file=sys.stderr)
         return 0 if args.allow_unavailable else 3
 
-    payload = bundle.as_dict()["health"]
     introduced = [f for f in payload["findings"] if f["change_kind"] == "introduced"]
     worsened = [f for f in payload["findings"] if f["change_kind"] == "worsened"]
     unchanged = payload.get("unchanged_total", 0)
