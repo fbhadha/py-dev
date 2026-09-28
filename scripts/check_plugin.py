@@ -54,7 +54,7 @@ JSON_FILES = (
 )
 
 
-def frontmatter(path: Path) -> dict | str:
+def frontmatter(path: Path) -> dict[str, Any] | str:
     """The parsed frontmatter, or a string saying what is wrong with it."""
     match = FRONTMATTER_RE.match(path.read_text(encoding="utf-8"))
     if not match:
