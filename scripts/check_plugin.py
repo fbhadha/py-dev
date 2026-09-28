@@ -182,6 +182,38 @@ def resolve_ref(ref: str, here: Path, line: str, upstream: set[str]) -> bool:
     return ref.startswith("references/") and any(name in line for name in upstream)
 
 
+def check_calls(rel: Path, line: str, local: set[str], invocations: dict[str, str]) -> list[str]:
+    """Every skill a line calls exists, and is started by whoever can start it."""
+    problems: list[str] = []
+    for verb, a, b in CALL_RE.findall(line):
+        name = a or b
+        if name not in local | set(invocations):
+            problems.append(f"{rel}: calls skill `{name}`, not in skills/ or upstream.json")
+        elif verb == "User types" and invocations.get(name) != "user":
+            problems.append(
+                f"{rel}: gives the user `{name}` to type, "
+                f"but the agent can start it itself: Skill `{name}`"
+            )
+        elif verb in ("Skill", "") and invocations.get(name) == "user":
+            problems.append(
+                f"{rel}: calls `{name}` as a Skill, which no harness allows: only a person can "
+                f"start it, so give the user the line (User types `{name}`)"
+            )
+    return problems
+
+
+def check_numbers(rel: Path, line: str, headings: int) -> list[str]:
+    """Every step or section number a line names is one of the document's numbered headings."""
+    problems: list[str] = []
+    pattern = STEP_RE if "py-intake" in str(rel) else SECTION_RE
+    for num in pattern.findall(line):
+        if headings and int(num) > headings:
+            problems.append(
+                f"{rel}: refers to {pattern.pattern[3:-3]} {num}; only {headings} exist"
+            )
+    return problems
+
+
 def check_references(doc: Path) -> list[str]:
     """Every file, skill, step and section a document names must exist."""
     problems: list[str] = []
@@ -195,25 +227,8 @@ def check_references(doc: Path) -> list[str]:
         for ref in REF_RE.findall(line):
             if not resolve_ref(ref, doc.parent, line, upstream):
                 problems.append(f"{rel}: names `{ref}`, which does not exist")
-        for verb, a, b in CALL_RE.findall(line):
-            name = a or b
-            if name not in local | upstream:
-                problems.append(f"{rel}: calls skill `{name}`, not in skills/ or upstream.json")
-            elif verb == "User types" and invocations.get(name) != "user":
-                problems.append(
-                    f"{rel}: gives the user `{name}` to type, but the agent can start it itself: Skill `{name}`"
-                )
-            elif verb in ("Skill", "") and invocations.get(name) == "user":
-                problems.append(
-                    f"{rel}: calls `{name}` as a Skill, which no harness allows: only a person can "
-                    f"start it, so give the user the line (User types `{name}`)"
-                )
-        pattern = STEP_RE if "py-intake" in str(rel) else SECTION_RE
-        for num in pattern.findall(line):
-            if headings and int(num) > headings:
-                problems.append(
-                    f"{rel}: refers to {pattern.pattern[3:-3]} {num}; only {headings} exist"
-                )
+        problems += check_calls(rel, line, local, invocations)
+        problems += check_numbers(rel, line, headings)
     if doc.parent.name.startswith("pack-"):
         for section in PACK_SECTIONS:
             if section not in text:
@@ -221,10 +236,10 @@ def check_references(doc: Path) -> list[str]:
     return problems
 
 
-def main() -> int:
+def load_json() -> tuple[dict[str, dict[str, Any]], list[str]]:
+    """The JSON files that parse, by their path, then a problem for each that does not."""
     problems: list[str] = []
-
-    parsed: dict[str, dict] = {}
+    parsed: dict[str, dict[str, Any]] = {}
     for rel in JSON_FILES:
         path = ROOT / rel
         try:
@@ -232,6 +247,54 @@ def main() -> int:
             print(f"ok  {rel}")
         except (OSError, json.JSONDecodeError) as exc:
             problems.append(f"{rel}: {exc}")
+    return parsed, problems
+
+
+def check_plugin_manifest(plugin: dict[str, Any], skill_files: list[Path]) -> list[str]:
+    """Claude Code's manifest lists the skill folders that exist; the persona names its version."""
+    problems: list[str] = []
+    listed = sorted(Path(p).name for p in plugin.get("skills", []))
+    present = sorted(p.parent.name for p in skill_files)
+    if listed != present:
+        problems.append(
+            f"plugin.json skills {listed} do not match the folders under skills/ {present}"
+        )
+    version = plugin.get("version")
+    persona = PERSONA.read_text(encoding="utf-8")
+    if f"python-dev {version}" not in persona:
+        problems.append(
+            f"agents/python-dev.md must name `python-dev {version}` (its status line); "
+            "bump it with the manifests"
+        )
+    return problems
+
+
+def check_manifests_agree(parsed: dict[str, dict[str, Any]]) -> list[str]:
+    """The manifests carry one name and one version; the two marketplace files are identical."""
+    problems: list[str] = []
+    plugin = parsed.get(".claude-plugin/plugin.json")
+    marketplace = parsed.get(".claude-plugin/marketplace.json")
+    copilot = parsed.get("plugin.json")
+    if plugin is not None and marketplace is not None and copilot is not None:
+        versions = {
+            ".claude-plugin/plugin.json": plugin.get("version"),
+            "plugin.json": copilot.get("version"),
+            ".claude-plugin/marketplace.json": (marketplace.get("metadata") or {}).get("version"),
+        }
+        if len(set(versions.values())) != 1:
+            problems.append(f"manifest versions differ: {versions}")
+        if plugin.get("name") != copilot.get("name"):
+            problems.append("plugin.json and .claude-plugin/plugin.json name differ")
+    copilot_market = parsed.get(".github/plugin/marketplace.json")
+    if marketplace is not None and copilot_market is not None and marketplace != copilot_market:
+        problems.append(
+            ".github/plugin/marketplace.json must be identical to .claude-plugin/marketplace.json"
+        )
+    return problems
+
+
+def main() -> int:
+    parsed, problems = load_json()
 
     skill_files = sorted(ROOT.glob("skills/*/SKILL.md"))
     for skill_md in skill_files:
