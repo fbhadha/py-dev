@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import re
 import sys
+from typing import Any
 
 import _common as c
 import guard_edit
@@ -193,7 +194,7 @@ def main_reason(command: str, branch: str) -> str | None:
     )
 
 
-def decide(payload: dict) -> tuple[str, str] | None:
+def decide(payload: dict[str, Any]) -> tuple[str, str] | None:
     """(decision, reason) for this tool call, or None to let it through."""
     name = c.tool_name(payload)
     if guard_edit.is_edit_tool(name):

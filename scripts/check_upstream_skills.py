@@ -29,6 +29,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
 FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
@@ -53,7 +54,9 @@ def clone(repo: str, ref: str, dest: Path) -> bool:
         return False
     fetch = subprocess.run(
         ["git", "-C", str(dest), "fetch", "-q", "--depth", "1", url, ref],
-        capture_output=True, text=True, check=False,
+        capture_output=True,
+        text=True,
+        check=False,
     )
     if fetch.returncode != 0:
         print(f"  fetch failed for {repo}@{ref}: {fetch.stderr.strip()[-300:]}", file=sys.stderr)
@@ -76,7 +79,7 @@ def index_skills(skills_dir: Path) -> dict[str, Path]:
     return found
 
 
-def check_reference(upstream: dict, dest: Path) -> list[str]:
+def check_reference(upstream: dict[str, Any], dest: Path) -> list[str]:
     """Every term the plugin links to is a file `<dir>/<term>.md` in the reference repo."""
     problems: list[str] = []
     for term in upstream["terms"]:
@@ -88,7 +91,7 @@ def check_reference(upstream: dict, dest: Path) -> list[str]:
     return problems
 
 
-def check_upstream(upstream: dict, latest: bool, workdir: Path) -> list[str]:
+def check_upstream(upstream: dict[str, Any], *, latest: bool, workdir: Path) -> list[str]:
     repo = upstream["repo"]
     ref = upstream["default_branch"] if latest else upstream["commit"]
     dest = workdir / repo.replace("/", "__")
@@ -100,13 +103,19 @@ def check_upstream(upstream: dict, latest: bool, workdir: Path) -> list[str]:
     skills = index_skills(dest / upstream["skills_dir"])
     problems: list[str] = []
     if upstream.get("plugin"):
-        # The persona gives the user `/<plugin>:<skill>` for a user-invoked skill; a renamed plugin breaks every line.
+        # The persona gives the user `/<plugin>:<skill>` for a user-invoked skill;
+        # a renamed plugin breaks every line.
         try:
-            actual_plugin = json.loads((dest / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8")).get("name")
+            actual_plugin = json.loads(
+                (dest / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8")
+            ).get("name")
         except (OSError, ValueError):
             actual_plugin = None
         if actual_plugin != upstream["plugin"]:
-            problems.append(f"{repo}: its plugin is named {actual_plugin!r}; the persona gives users /{upstream['plugin']}:<skill>")
+            problems.append(
+                f"{repo}: its plugin is named {actual_plugin!r}; "
+                f"the persona gives users /{upstream['plugin']}:<skill>"
+            )
         else:
             print(f"  ok  plugin name {actual_plugin}")
     for name, expected in upstream["skills"].items():
@@ -134,7 +143,7 @@ def main(argv: list[str]) -> int:
         for manifest in manifests:
             data = json.loads(manifest.read_text(encoding="utf-8"))
             for upstream in data["upstreams"]:
-                problems += check_upstream(upstream, latest, Path(tmp))
+                problems += check_upstream(upstream, latest=latest, workdir=Path(tmp))
     if problems:
         print("\nUPSTREAM CHECK " + ("DRIFT (latest)" if latest else "FAILED") + ":")
         for p in problems:

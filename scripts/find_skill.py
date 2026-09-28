@@ -15,7 +15,8 @@ finds it.
 Usage:
     python3 find_skill.py wayfinder
     python3 find_skill.py grilling tdd code-review      # one path per line
-    python3 find_skill.py --typed wayfinder             # the line to type, e.g. /mattpocock-skills:wayfinder
+    python3 find_skill.py --typed wayfinder             # the line to type, e.g.
+                                                        # /mattpocock-skills:wayfinder
     python3 find_skill.py --door-check [--no-cache]     # every skill in upstream.json; a clean
                                                         # result is cached for a day
 
@@ -167,8 +168,10 @@ def door_check(*, use_cache: bool = True) -> int:
     """
     manifest = MANIFEST
     stamp_key = f"{CWD.resolve()}|{manifest.stat().st_mtime_ns}".encode()
-    stamp = Path(tempfile.gettempdir()) / "python-dev-guard" / (
-        "door-" + hashlib.sha256(stamp_key).hexdigest()[:16]
+    stamp = (
+        Path(tempfile.gettempdir())
+        / "python-dev-guard"
+        / ("door-" + hashlib.sha256(stamp_key).hexdigest()[:16])
     )
     if use_cache and stamp.exists() and time.time() - stamp.stat().st_mtime < 86400:
         print("door check: every upstream skill is installed (cached; --no-cache to recheck)")
@@ -207,7 +210,10 @@ def main(names: list[str]) -> int:
             line, found = typed(name)
             print(line)
             if not found:
-                print(f"not installed: {name}; the door check prints its install line", file=sys.stderr)
+                print(
+                    f"not installed: {name}; the door check prints its install line",
+                    file=sys.stderr,
+                )
                 status = 1
         return status if names[1:] else 1
     missing: list[str] = []

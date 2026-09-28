@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from typing import Any
 
 import _common as c
 import guard_edit
@@ -31,14 +32,14 @@ REASON = (
 )
 
 
-def is_eval_author(payload: dict) -> bool:
+def is_eval_author(payload: dict[str, Any]) -> bool:
     kind = str(
         payload.get("agent_type") or payload.get("agentType") or payload.get("agent_name") or ""
     )
     return kind == EVAL_AGENT or kind.endswith(":" + EVAL_AGENT)
 
 
-def touched_paths(args: dict) -> list[str]:
+def touched_paths(args: dict[str, Any]) -> list[str]:
     paths = [str(args[key]) for key in PATH_KEYS if isinstance(args.get(key), str) and args[key]]
     return paths or guard_edit.edited_paths(args)
 
@@ -48,7 +49,7 @@ def allowed(path: str, root: Path) -> bool:
     return rel is not None and rel.startswith(ALLOWED)
 
 
-def check(payload: dict) -> tuple[str, str] | None:
+def check(payload: dict[str, Any]) -> tuple[str, str] | None:
     """("deny", reason) when the eval author reaches outside tests/evals/; else None."""
     if not is_eval_author(payload):
         return None
