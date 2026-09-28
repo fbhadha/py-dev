@@ -206,12 +206,10 @@ def check_calls(rel: Path, line: str, local: set[str], invocations: dict[str, st
 def check_numbers(rel: Path, line: str, headings: int) -> list[str]:
     """Every step or section number a line names is one of the document's numbered headings."""
     problems: list[str] = []
-    pattern = STEP_RE if "py-intake" in str(rel) else SECTION_RE
+    pattern, word = (STEP_RE, "step") if "py-intake" in str(rel) else (SECTION_RE, "section")
     for num in pattern.findall(line):
         if headings and int(num) > headings:
-            problems.append(
-                f"{rel}: refers to {pattern.pattern[3:-3]} {num}; only {headings} exist"
-            )
+            problems.append(f"{rel}: refers to {word} {num}; only {headings} exist")
     return problems
 
 
