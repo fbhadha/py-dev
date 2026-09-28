@@ -119,7 +119,7 @@ BROKEN_FACTS = [
     ),
     pytest.param(
         replace("skills/pack-adk/SKILL.md", "## Shapes", "## Shape list"),
-        "pack is missing the template section `## Shapes`",
+        "  - skills/pack-adk/SKILL.md: pack is missing the template section `## Shapes`\n",
         id="a-pack-without-a-template-section",
     ),
 ]
