@@ -251,7 +251,7 @@ def decide(payload: dict[str, Any]) -> tuple[str, str] | None:
     command = str(c.tool_args(payload).get("command", ""))
     if not is_shell_tool(name) or not command:
         return None
-    reason = denied(command)
+    reason = denied(without_written_text(command))
     if reason:
         return "deny", reason
     if c.guard_off() or c.repo_root() is None:
