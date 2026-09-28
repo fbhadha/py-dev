@@ -86,7 +86,9 @@ BROKEN_FACTS = [
         "must be identical to .claude-plugin/marketplace.json",
         id="the-two-marketplaces-differ",
     ),
-    pytest.param(write("upstream.json", "{"), "upstream.json:", id="a-json-file-does-not-parse"),
+    pytest.param(
+        write("hooks/hooks.json", "{"), "hooks/hooks.json:", id="a-json-file-does-not-parse"
+    ),
     pytest.param(
         append(PY_REVIEW, "Skill `no-such-skill`"),
         "calls skill `no-such-skill`, not in skills/ or upstream.json",
