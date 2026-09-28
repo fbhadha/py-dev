@@ -156,17 +156,20 @@ PACK_SECTIONS = (
 )
 
 
-def upstream_invocations() -> dict[str, str]:
-    """Every upstream skill we name, with how it starts.
+def upstream_invocations() -> dict[str, str] | None:
+    """Every upstream skill we name, with how it starts, or None when the file does not parse.
 
-    `model` (the Skill tool) or `user` (a person types it).
+    `model` (the Skill tool) or `user` (a person types it). `load_json` reports the broken file.
     """
-    data = json.loads((ROOT / "upstream.json").read_text(encoding="utf-8"))
+    try:
+        data = json.loads((ROOT / "upstream.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
     return {name: how for up in data["upstreams"] for name, how in up.get("skills", {}).items()}
 
 
 def upstream_names() -> set[str]:
-    return set(upstream_invocations())
+    return set(upstream_invocations() or {})
 
 
 def resolve_ref(ref: str, here: Path, line: str, upstream: set[str]) -> bool:
@@ -221,6 +224,8 @@ def check_references(doc: Path) -> list[str]:
     rel = doc.relative_to(ROOT)
     text = doc.read_text(encoding="utf-8")
     invocations = upstream_invocations()
+    if invocations is None:
+        return []  # no reference can be judged without upstream.json
     upstream = set(invocations)
     local = {d.name for d in (ROOT / "skills").iterdir() if d.is_dir()}
     headings = len(re.findall(r"^## \d+\.", text, re.M))
@@ -319,8 +324,7 @@ def main() -> int:
 
     problems += check_rendered_agents()
     problems += check_persona_budget()
-    # upstream.json unreadable: reported by load_json, and no reference can be judged without it
-    for doc in [*skill_files, *agent_files] if "upstream.json" in parsed else []:
+    for doc in [*skill_files, *agent_files]:
         problems += check_references(doc)
 
     plugin = parsed.get(".claude-plugin/plugin.json")
