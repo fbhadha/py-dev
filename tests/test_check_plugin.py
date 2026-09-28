@@ -1,9 +1,7 @@
 """check_plugin.py on a copy of this repo: what it prints, recorded before it was split.
 
-Two seams. A clean copy is checked through the command line of the copy's own script. Each
-broken fact is checked through `main()` of this repo's script with its ROOT set to the copy:
-coverage measures this repo's `scripts/`, never a copy's, and CI counts the lines a change adds.
-Every expected text is the script's own, as it is on `main`.
+A clean copy runs the copy's script from the command line. A broken fact runs this repo's
+`main()` with ROOT set to the copy, because coverage measures this repo's `scripts/` only.
 """
 
 import importlib.util
