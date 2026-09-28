@@ -157,7 +157,8 @@ PACK_SECTIONS = (
 
 
 def upstream_invocations() -> dict[str, str]:
-    """Every upstream skill we name, with how it starts:
+    """Every upstream skill we name, with how it starts.
+
     `model` (the Skill tool) or `user` (a person types it).
     """
     data = json.loads((ROOT / "upstream.json").read_text(encoding="utf-8"))
