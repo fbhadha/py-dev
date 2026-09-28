@@ -44,7 +44,16 @@ Everything the grill settles lands where it belongs as it settles: a term in `CO
 
 Two detours; each ends back at the question that sent you out.
 
-**A fact from outside the repo blocks a decision** (a library, an API, a spec, a version): Skill `research`, as one background subagent told to do the reading itself and spawn nothing. It writes `docs/research/<slug>.md`, dated on its first line, one citation per claim; you keep grilling. A note is a fact on a date; the decision it feeds becomes an ADR or a term.
+**A fact from outside the repo blocks a decision** (a library, an API, a spec, a version): Skill `research`, as one background subagent; you keep grilling. Its prompt has these fixed parts, one per line:
+
+- the question, as one sentence
+- "Write the answer to `docs/research/<slug>.md`."
+- "Put the date on the first line."
+- "Give one citation per claim."
+- "Do the reading yourself; spawn nothing."
+- "If a source cannot be reached: say so in the note and stop."
+
+A note is a fact on a date; the decision it feeds becomes an ADR or a term.
 
 **Talking cannot settle it** (how a state model feels, how a library or a data shape behaves when run): Skill `prototype`.
 
