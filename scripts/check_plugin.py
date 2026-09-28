@@ -326,6 +326,7 @@ def main() -> int:
     if plugin is not None:
         problems += check_plugin_manifest(plugin, skill_files)
     problems += check_manifests_agree(parsed)
+    problems += check_marketplaces_identical(parsed)
 
     if problems:
         print("\nPLUGIN CHECK FAILED:")
