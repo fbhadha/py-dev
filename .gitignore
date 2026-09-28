@@ -2,7 +2,8 @@ __pycache__/
 *.pyc
 .venv/
 .env
-.repowise/
+.repowise/*
+!.repowise/health-rules.json
 coverage.lcov
 coverage.xml
 .coverage
