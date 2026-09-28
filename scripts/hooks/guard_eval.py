@@ -39,7 +39,7 @@ def is_eval_author(payload: dict[str, Any]) -> bool:
     return kind == EVAL_AGENT or kind.endswith(":" + EVAL_AGENT)
 
 
-def touched_paths(args: dict) -> list[str]:
+def touched_paths(args: dict[str, Any]) -> list[str]:
     paths = [str(args[key]) for key in PATH_KEYS if isinstance(args.get(key), str) and args[key]]
     return paths or guard_edit.edited_paths(args)
 
