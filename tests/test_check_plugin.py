@@ -94,6 +94,7 @@ BROKEN_FACTS = {
         ".claude-plugin/marketplace.json\n",
     ),
     "a-json-file-does-not-parse": (rewrite("hooks/hooks.json", lambda _: "{"), "hooks/hooks.json:"),
+    "upstream-json-does-not-parse": (rewrite("upstream.json", lambda _: "{"), "upstream.json:"),
     "a-skill-that-does-not-exist": (
         rewrite(PY_REVIEW, lambda text: text + "Skill `no-such-skill`\n"),
         f"  - {PY_REVIEW}: calls skill `no-such-skill`, not in skills/ or upstream.json\n",
@@ -143,7 +144,6 @@ def test_a_broken_fact_is_reported(
     expected: str,
 ) -> None:
     edit(plugin_copy)
-
     output, returncode = check_copy()
 
     assert returncode == 1
