@@ -130,11 +130,19 @@ def note_session(pid: int) -> None:
 def other_sessions(pid: int) -> list[int]:
     """The live harness processes noted here, other than `pid`; a dead one's note is deleted."""
     folder = sessions_dir()
-    found: list[int] = []
+    live: list[int] = []
     with contextlib.suppress(OSError):
-        if folder is not None:
-            found = [int(note.name) for note in folder.iterdir() if note.name.isdecimal()]
-    return sorted(other for other in found if other != pid)
+        notes = [] if folder is None else [n for n in folder.iterdir() if n.name.isdecimal()]
+        for note in notes:
+            if int(note.name) == pid:
+                continue
+            try:
+                with contextlib.suppress(PermissionError):  # alive, and someone else's
+                    os.kill(int(note.name), 0)  # signal 0 sends nothing; it only checks
+                live.append(int(note.name))
+            except ProcessLookupError:
+                note.unlink(missing_ok=True)
+    return sorted(live)
 
 
 def normalize_repo(ref: str, default_host: str = "github.com") -> str:

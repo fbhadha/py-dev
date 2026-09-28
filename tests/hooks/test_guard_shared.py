@@ -30,6 +30,39 @@ def test_moving_the_branch_asks(guard, command: str) -> None:
     assert guard(command) == "ask"
 
 
+@pytest.mark.usefixtures("other_session")
+@pytest.mark.parametrize(
+    "command",
+    ["git worktree add ../w -b ticket/1 origin/main", "git status"],
+    ids=["worktree add", "status"],
+)
+def test_staying_put_passes(guard, command: str) -> None:
+    assert guard(command) == "allow"
+
+
+@pytest.mark.usefixtures("other_session")
+def test_env_off_passes(guard) -> None:
+    assert guard("git switch -c ticket/1", env={"PYTHON_DEV_GUARD": "off"}) == "allow"
+
+
+@pytest.mark.usefixtures("other_session")
+def test_copilot_payload_asks_too(guard) -> None:
+    assert guard("git switch -c ticket/1", copilot=True) == "ask"
+
+
+@pytest.mark.usefixtures("other_session")
+def test_worktree_is_its_own_checkout(hook, git, repo: Path) -> None:
+    git("worktree", "add", "-q", "../w", "-b", "ticket/1")
+    payload = {
+        "sessionId": "s",
+        "timestamp": 0,
+        "cwd": str(repo.parent / "w"),
+        "toolName": "bash",
+        "toolArgs": {"command": "git switch -c ticket/2", "description": "run"},
+    }
+    assert hook("guard_command.py", payload, outside=True).decision == "allow"
+
+
 def test_dead_session_passes_and_its_note_goes(guard, repo: Path) -> None:
     ended = subprocess.Popen([sys.executable, "-c", "pass"])
     ended.wait()

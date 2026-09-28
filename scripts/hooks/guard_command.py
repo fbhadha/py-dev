@@ -229,7 +229,10 @@ def decide(payload: dict[str, Any]) -> tuple[str, str] | None:
     c.note_session(os.getppid())
     branch = c.current_branch()
     asked = (
-        leaving_reason(command) or shaping_reason(command, branch) or main_reason(command, branch)
+        leaving_reason(command)
+        or shaping_reason(command, branch)
+        or main_reason(command, branch)
+        or shared_reason(command)
     )
     return ("ask", asked) if asked else None
 
