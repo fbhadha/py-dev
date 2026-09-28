@@ -141,10 +141,10 @@ def other_sessions(pid: int) -> list[int]:
                 os.kill(other, 0)  # signal 0 sends nothing; it only checks
             except ProcessLookupError:  # dead
                 note.unlink(missing_ok=True)
-                continue
             except PermissionError:  # alive, and another user's
-                pass
-            live.append(other)
+                live.append(other)
+            else:
+                live.append(other)
     return sorted(live)
 
 
