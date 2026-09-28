@@ -3,7 +3,9 @@
 
 Denied outright (no asking): force-push, hard reset, history rewrite, --no-verify,
 force-deleting a branch, setting PYTHON_DEV_GUARD inside a command, and
-`pre-commit uninstall`. These are on the persona's never list.
+`pre-commit uninstall`. These are on the persona's never list. The body of a heredoc
+that is only written down (to a file, or as a message) is not read for them; a body fed
+to a shell, piped on, or holding a substitution is.
 
 Asked (the harness prompts the human): anything that lands on main. A commit while
 main is checked out, a merge into main (checked out, or switched to in the same
