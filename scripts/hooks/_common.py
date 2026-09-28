@@ -96,7 +96,7 @@ def checkout() -> tuple[Path, Path] | None:
         check=False,
     )
     lines = result.stdout.splitlines()
-    if result.returncode != 0 or len(lines) != 2:  # noqa: PLR2004 - the two paths asked for
+    if result.returncode != 0 or len(lines) != 2:  # the two paths asked for
         return None
     return Path(lines[0]), Path(lines[1])
 
