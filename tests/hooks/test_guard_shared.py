@@ -40,6 +40,14 @@ def test_staying_put_passes(guard, command: str) -> None:
     assert guard(command) == "allow"
 
 
+def test_a_stray_file_is_ignored_and_kept(guard, repo: Path, other_session: int) -> None:
+    stray = repo / ".git" / NOTES / "notes.txt"
+    stray.touch()
+    assert guard("git switch -c ticket/1") == "ask"
+    assert stray.exists()
+    assert (repo / ".git" / NOTES / str(other_session)).exists()
+
+
 @pytest.mark.usefixtures("other_session")
 def test_env_off_passes(guard) -> None:
     assert guard("git switch -c ticket/1", env={"PYTHON_DEV_GUARD": "off"}) == "allow"
