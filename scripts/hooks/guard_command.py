@@ -87,6 +87,31 @@ MOVES_BRANCH = re.compile(
 )
 
 
+HEREDOC = re.compile(
+    r"^(?P<head>[^\n]*<<-?\s*(?P<quote>['\"]?)(?P<tag>\w+)(?P=quote)[^\n]*)\n"
+    r"(?P<body>.*?)^\s*(?P=tag)[ \t]*$",
+    re.DOTALL | re.MULTILINE,
+)
+RUNS_TEXT = re.compile(r"\||\b(bash|sh|zsh|ksh|fish|eval|source|exec|xargs|python\d?)\b")
+SUBSTITUTES = re.compile(r"\$\(|`")
+
+
+def without_written_text(command: str) -> str:
+    """The command without the heredoc bodies that are only written down, never run.
+
+    A body stays in when its own line pipes on or names a shell, or when the heredoc is
+    unquoted and the body holds a substitution. In doubt the body stays, and is read.
+    """
+
+    def head_or_all(found: re.Match[str]) -> str:
+        runs = RUNS_TEXT.search(found["head"]) or (
+            not found["quote"] and SUBSTITUTES.search(found["body"])
+        )
+        return found[0] if runs else found["head"]
+
+    return HEREDOC.sub(head_or_all, command)
+
+
 def is_shell_tool(name: str) -> bool:
     name = name.lower()
     return not name or "bash" in name or "shell" in name or "terminal" in name or name == "run"
