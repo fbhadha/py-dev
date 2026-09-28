@@ -135,6 +135,8 @@ def main() -> int:
         f"repowise change gate: {scope.get('analyzed', 0)} file(s) analysed, "
         f"{len(introduced)} introduced, {len(worsened)} worsened, {unchanged} pre-existing"
     )
+    if config is not None:
+        print(f"  rules in force: {RULES}")
     changed = introduced + worsened
     failing = held(changed, is_test_related_path)
     for finding in failing:

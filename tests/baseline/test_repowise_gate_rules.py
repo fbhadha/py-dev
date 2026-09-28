@@ -56,3 +56,14 @@ def test_changed_paths(gate: ModuleType) -> None:
         SimpleNamespace(head_path="src/b.py", base_path="src/b.py"),
     ]
     assert gate.changed_paths(changes) == ["src/a.py", "src/b.py", "src/gone.py"]
+
+
+def test_rules_in_force_printed(check, committed, rules) -> None:
+    rules(OFF_IN_SRC)
+    committed({"src/x.py": SWALLOWS})
+    assert "rules in force: .repowise/health-rules.json" in check(SCRIPT, "main..HEAD").stdout
+
+
+def test_no_rules_file_prints_no_rules_line(check, committed) -> None:
+    committed({"src/x.py": SWALLOWS})
+    assert "rules in force" not in check(SCRIPT, "main..HEAD").stdout
