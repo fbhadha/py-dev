@@ -127,6 +127,16 @@ def note_session(pid: int) -> None:
             (folder / str(pid)).touch()
 
 
+def other_sessions(pid: int) -> list[int]:
+    """The live harness processes noted here, other than `pid`; a dead one's note is deleted."""
+    folder = sessions_dir()
+    found: list[int] = []
+    with contextlib.suppress(OSError):
+        if folder is not None:
+            found = [int(note.name) for note in folder.iterdir() if note.name.isdecimal()]
+    return sorted(other for other in found if other != pid)
+
+
 def normalize_repo(ref: str, default_host: str = "github.com") -> str:
     """'host/owner/repo' from a URL, an ssh address, 'host/owner/repo' or 'owner/repo'."""
     ref = re.sub(r"\.git/?$", "", ref.strip().strip("'\""))
