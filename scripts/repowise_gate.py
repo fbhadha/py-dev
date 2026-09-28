@@ -28,8 +28,12 @@ from __future__ import annotations
 
 import argparse
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
+from pathlib import Path
 from typing import Any
+
+# Repowise's own rules file, written by a person: a rule switched off for a path.
+RULES = ".repowise/health-rules.json"
 
 # Repowise's reasons for skipping a file that has no code health to compare.
 # Any other reason (parse_failed, too_large, one a later version adds) fails closed.
