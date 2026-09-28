@@ -113,7 +113,8 @@ def check_upstream(upstream: dict[str, Any], *, latest: bool, workdir: Path) -> 
             actual_plugin = None
         if actual_plugin != upstream["plugin"]:
             problems.append(
-                f"{repo}: its plugin is named {actual_plugin!r}; the persona gives users /{upstream['plugin']}:<skill>"
+                f"{repo}: its plugin is named {actual_plugin!r}; "
+                f"the persona gives users /{upstream['plugin']}:<skill>"
             )
         else:
             print(f"  ok  plugin name {actual_plugin}")
