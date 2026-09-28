@@ -22,8 +22,10 @@ These rules apply to everything written for it: a ticket, a handoff, the prompt 
    - This: "Open `py-design`'s `references/edge-cases.md`, heading `## The categories`. Take the category names from its table."
 5. The artifact says when to stop, what to report, and that a failed step means stop, never improvise.
    - Not this: "Make sure the checks pass."
-   - This: "Run `uv run pytest -m "not eval"`. If it fails: stop."
-     "Report the command and the last 20 lines of its output. Change nothing else."
+   - This: "3. Run `uv run pytest -m "not eval"`."
+     "If step 3 fails: stop."
+     "Report the command and the last 20 lines of its output."
+     "Change nothing else."
 6. A word outside `CONTEXT.md` carries its definition beside it.
    - Not this: "Build it at the seam."
    - This: "Build it at the seam (the public function the test calls)."

@@ -81,5 +81,9 @@ uv run pytest tests/<tier>/test_<module>.py
 uv run pytest -m "not eval"
 ```
 
-If a command fails: stop. Report the command and the last 20 lines of its output. Change nothing else.
+If a command fails:
+
+1. Stop.
+2. Report the command and the last 20 lines of its output.
+3. Change nothing else.
 ````
