@@ -230,8 +230,8 @@ def check_references(doc: Path) -> list[str]:
     rel = doc.relative_to(ROOT)
     text = doc.read_text(encoding="utf-8")
     invocations = upstream_invocations()
-    if invocations is None:
-        return []  # no reference can be judged without upstream.json
+    if invocations is None:  # no reference can be judged without upstream.json
+        return missing_pack_sections(doc, text)
     upstream = set(invocations)
     local = {d.name for d in (ROOT / "skills").iterdir() if d.is_dir()}
     headings = len(re.findall(r"^## \d+\.", text, re.M))
