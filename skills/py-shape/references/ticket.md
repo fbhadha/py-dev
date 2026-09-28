@@ -1,6 +1,6 @@
 # Ticket template
 
-A ticket is one session of work with a plan exact enough that the person or session building it decides nothing new. Every file is checked to exist when the ticket is written (or marked new), and `py-build` checks the plan against the code again before the first line. Fill every section; a quick ticket has a short plan and a short edge-case list, never absent ones.
+A ticket is one session of work with a plan exact enough that the person or session building it decides nothing new. It is written for the floor reader: follow the six rules under `## The six rules` in `py-shape`'s `references/floor-reader.md`. Every file is checked to exist when the ticket is written (or marked new), and `py-build` checks the plan against the code again before the first line. Fill every section; a quick ticket has a short plan and a short edge-case list, never absent ones.
 
 ````markdown
 # <id>: <what the ticket makes true, as an imperative: "Load orders from the CSV export">
@@ -20,7 +20,7 @@ Each one testable; each names the test that proves it.
 
 ## Edge cases
 
-Listed by `py-design`'s `references/edge-cases.md`. Categories: <the ones gone through>. Skipped: <each skipped category, with one line of why>.
+Listed by `py-design`'s `references/edge-cases.md`, heading `## The categories`: take the category names from its table. Categories: <the ones gone through>. Skipped: <each skipped category, with one line of why>.
 
 | Edge case | Category | Decision | Expected value from | Test |
 |---|---|---|---|---|
@@ -30,14 +30,30 @@ Listed by `py-design`'s `references/edge-cases.md`. Categories: <the ones gone t
 
 Why this order: <the planning rule: walking skeleton, riskiest first, prefactor first>.
 
-1. **Prefactor** (only if needed): what moves and why the change is easier after it. No behaviour change; the suite is green before and after.
+1. **Prefactor** (only if needed)
+   - What moves: <the code that moves, and the file it moves to>
+   - Why: <why the change is easier after it>
+   - Behaviour: no change
+   - Done when: `uv run pytest -m "not eval"` is green before and after
 2. **<Slice name>**
-   - Test first: `tests/<tier>/test_<module>.py::test_<behaviour>` (and the edge-case tests this slice owns, from the table); seam: <the public function or port>; expected value from: <spec line, worked example, fixture>; paths and keys it uses from: <file, the line's text>.
-   - Code: `src/<package>/<layer>/<module>.py` (new | changed): `<signature>`; paths and keys from: <file, the line's text>.
-   - Done when: that test is green; `uv run ruff check <files>` and `uv run mypy` are clean.
+   - Test first: `tests/<tier>/test_<module>.py::test_<behaviour>`
+     - Seam: <the public function or port>
+     - Expected value from: <spec line, worked example, fixture>
+     - Paths and keys from: <file, the line's text>
+     - Edge-case tests this slice owns: <each test from the table, one per line>
+   - Code: `src/<package>/<layer>/<module>.py` (new | changed)
+     - Signature: `<signature>`
+     - Paths and keys from: <file, the line's text>
+   - Done when:
+     - `uv run pytest tests/<tier>/test_<module>.py` is green
+     - `uv run ruff check <files>` is clean
+     - `uv run mypy` is clean
 3. **<Next slice>** ...
-4. **Wire it**: the composition root `src/<package>/entrypoints/<module>.py`; the one integration test.
-5. **Docs**: the how-to, the `CONTEXT.md` term or the ADR this touched, or "none".
+4. **Wire it**
+   - Code: the composition root `src/<package>/entrypoints/<module>.py`
+   - Test: the one integration test
+5. **Docs**
+   - File: <the how-to, the `CONTEXT.md` term or the ADR this touched, one per line; or "none">
 
 ## Files
 
@@ -64,4 +80,10 @@ Each with its mitigation. A one-way door here names its ADR, or the ticket is no
 uv run pytest tests/<tier>/test_<module>.py
 uv run pytest -m "not eval"
 ```
+
+If a command fails:
+
+1. Stop.
+2. Report the command and the last 20 lines of its output.
+3. Change nothing else.
 ````
