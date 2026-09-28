@@ -2,6 +2,8 @@
 session is live in the same folder. A worktree is its own checkout (ticket #41)."""
 
 import os
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
