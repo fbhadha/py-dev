@@ -92,7 +92,9 @@ def check_agent(agent_md: Path) -> list[str]:
     fm = frontmatter(agent_md)
     if isinstance(fm, str):
         return [f"{rel}: {fm}"]
-    return [f"{rel}: frontmatter needs '{key}'" for key in ("name", "description") if not fm.get(key)]
+    return [
+        f"{rel}: frontmatter needs '{key}'" for key in ("name", "description") if not fm.get(key)
+    ]
 
 
 def check_rendered_agents() -> list[str]:
@@ -106,6 +108,7 @@ def check_rendered_agents() -> list[str]:
         print("ok  com.github.copilot/agents/*.agent.md (rendered from agents/)")
         return []
     return [line.strip() for line in result.stdout.splitlines() if line.strip()]
+
 
 PERSONA = ROOT / "agents" / "python-dev.md"
 PERSONA_MAX_CHARS = 14_000  # about 3,900 tokens at 3.6 characters per token, loaded every turn
@@ -137,7 +140,9 @@ def check_persona_budget() -> list[str]:
 
 
 REF_RE = re.compile(r"`?((?:templates|references|scripts)/[A-Za-z0-9_.-]+\.[a-z]+)`?")
-CALL_RE = re.compile(r"(Skill|File|User types) `([a-z][a-z0-9-]+)`|Skill tool with \"([a-z][a-z0-9-]+)\"")
+CALL_RE = re.compile(
+    r"(Skill|File|User types) `([a-z][a-z0-9-]+)`|Skill tool with \"([a-z][a-z0-9-]+)\""
+)
 STEP_RE = re.compile(r"\b[Ss]tep (\d+)\b")
 SECTION_RE = re.compile(r"\bsection (\d+)\b")
 PACK_SECTIONS = (
@@ -192,7 +197,9 @@ def check_references(doc: Path) -> list[str]:
             if name not in local | upstream:
                 problems.append(f"{rel}: calls skill `{name}`, not in skills/ or upstream.json")
             elif verb == "User types" and invocations.get(name) != "user":
-                problems.append(f"{rel}: gives the user `{name}` to type, but the agent can start it itself: Skill `{name}`")
+                problems.append(
+                    f"{rel}: gives the user `{name}` to type, but the agent can start it itself: Skill `{name}`"
+                )
             elif verb in ("Skill", "") and invocations.get(name) == "user":
                 problems.append(
                     f"{rel}: calls `{name}` as a Skill, which no harness allows: only a person can "
@@ -201,7 +208,9 @@ def check_references(doc: Path) -> list[str]:
         pattern = STEP_RE if "py-intake" in str(rel) else SECTION_RE
         for num in pattern.findall(line):
             if headings and int(num) > headings:
-                problems.append(f"{rel}: refers to {pattern.pattern[3:-3]} {num}; only {headings} exist")
+                problems.append(
+                    f"{rel}: refers to {pattern.pattern[3:-3]} {num}; only {headings} exist"
+                )
     if doc.parent.name.startswith("pack-"):
         for section in PACK_SECTIONS:
             if section not in text:
@@ -270,7 +279,9 @@ def main() -> int:
             problems.append("plugin.json and .claude-plugin/plugin.json name differ")
     copilot_market = parsed.get(".github/plugin/marketplace.json")
     if marketplace is not None and copilot_market is not None and marketplace != copilot_market:
-        problems.append(".github/plugin/marketplace.json must be identical to .claude-plugin/marketplace.json")
+        problems.append(
+            ".github/plugin/marketplace.json must be identical to .claude-plugin/marketplace.json"
+        )
 
     if problems:
         print("\nPLUGIN CHECK FAILED:")
