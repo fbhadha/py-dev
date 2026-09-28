@@ -286,12 +286,18 @@ def check_manifests_agree(parsed: dict[str, dict[str, Any]]) -> list[str]:
             problems.append(f"manifest versions differ: {versions}")
         if plugin.get("name") != copilot.get("name"):
             problems.append("plugin.json and .claude-plugin/plugin.json name differ")
+    return problems
+
+
+def check_marketplaces_identical(parsed: dict[str, dict[str, Any]]) -> list[str]:
+    """Copilot's marketplace file says what Claude Code's says."""
+    marketplace = parsed.get(".claude-plugin/marketplace.json")
     copilot_market = parsed.get(".github/plugin/marketplace.json")
     if marketplace is not None and copilot_market is not None and marketplace != copilot_market:
-        problems.append(
+        return [
             ".github/plugin/marketplace.json must be identical to .claude-plugin/marketplace.json"
-        )
-    return problems
+        ]
+    return []
 
 
 def main() -> int:
