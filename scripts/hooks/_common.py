@@ -129,19 +129,22 @@ def note_session(pid: int) -> None:
 
 def other_sessions(pid: int) -> list[int]:
     """The live harness processes noted here, other than `pid`; a dead one's note is deleted."""
-    folder = sessions_dir()
     live: list[int] = []
     with contextlib.suppress(OSError):
+        folder = sessions_dir()
         notes = [] if folder is None else [n for n in folder.iterdir() if n.name.isdecimal()]
         for note in notes:
-            if int(note.name) == pid:
+            other = int(note.name)
+            if other == pid:
                 continue
             try:
-                with contextlib.suppress(PermissionError):  # alive, and someone else's
-                    os.kill(int(note.name), 0)  # signal 0 sends nothing; it only checks
-                live.append(int(note.name))
-            except ProcessLookupError:
+                os.kill(other, 0)  # signal 0 sends nothing; it only checks
+            except ProcessLookupError:  # dead
                 note.unlink(missing_ok=True)
+                continue
+            except PermissionError:  # alive, and another user's
+                pass
+            live.append(other)
     return sorted(live)
 
 
