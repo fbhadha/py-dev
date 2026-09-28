@@ -60,7 +60,7 @@ def render(source: Path) -> str:
     for line in match.group(1).splitlines():
         key, _, value = line.partition(":")
         fields[key.strip()] = value.strip()
-    body = text[match.end():]
+    body = text[match.end() :]
     for old, new in PATH_SUBS:
         body = body.replace(old, new)
     first_turn = fields.get("initialPrompt", "").strip('"')
@@ -79,7 +79,9 @@ def render(source: Path) -> str:
     )
     out.append("")
     if first_turn:
-        out.append(f"Your first turn, before anything else: {first_turn[0].lower() + first_turn[1:]}")
+        out.append(
+            f"Your first turn, before anything else: {first_turn[0].lower() + first_turn[1:]}"
+        )
         out.append("")
     out.append(body.lstrip("\n"))
     return "\n".join(out).rstrip("\n") + "\n"

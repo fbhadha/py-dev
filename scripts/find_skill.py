@@ -15,7 +15,8 @@ finds it.
 Usage:
     python3 find_skill.py wayfinder
     python3 find_skill.py grilling tdd code-review      # one path per line
-    python3 find_skill.py --typed wayfinder             # the line to type, e.g. /mattpocock-skills:wayfinder
+    python3 find_skill.py --typed wayfinder             # the line to type, e.g.
+                                                        # /mattpocock-skills:wayfinder
     python3 find_skill.py --door-check [--no-cache]     # every skill in upstream.json; a clean
                                                         # result is cached for a day
 
