@@ -32,7 +32,7 @@ PLUGIN_ROOT = Path(__file__).resolve().parent.parent.parent
 PROJECT_ENV = ("COPILOT_PROJECT_DIR", "CLAUDE_PROJECT_DIR")
 
 
-def enter_project(payload: dict) -> None:
+def enter_project(payload: dict[str, Any]) -> None:
     """Change into the session's project: the payload's cwd, else the harness's project variable."""
     for candidate in (payload.get("cwd"), *(os.environ.get(name) for name in PROJECT_ENV)):
         if isinstance(candidate, str) and candidate and Path(candidate).is_dir():
@@ -55,11 +55,11 @@ def read_payload() -> dict:
     return data if isinstance(data, dict) else {}
 
 
-def tool_name(payload: dict) -> str:
+def tool_name(payload: dict[str, Any]) -> str:
     return str(payload.get("tool_name") or payload.get("toolName") or "")
 
 
-def tool_args(payload: dict) -> dict:
+def tool_args(payload: dict[str, Any]) -> dict:
     for key in ("tool_input", "toolArgs", "tool_args"):
         args = payload.get(key)
         if isinstance(args, str):
@@ -72,7 +72,7 @@ def tool_args(payload: dict) -> dict:
     return {}
 
 
-def session_id(payload: dict) -> str:
+def session_id(payload: dict[str, Any]) -> str:
     raw = str(payload.get("session_id") or payload.get("sessionId") or "default")
     return re.sub(r"[^A-Za-z0-9_.-]", "_", raw)[:80]
 
