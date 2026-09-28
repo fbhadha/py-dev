@@ -24,6 +24,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 MAIN_BRANCHES = {"main", "master", "trunk"}
 OFF_VALUES = {"off", "0", "false", "no"}
