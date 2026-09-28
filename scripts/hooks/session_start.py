@@ -13,6 +13,7 @@ Exits 0 silently on any error of its own.
 from __future__ import annotations
 
 import json
+import os
 import sys
 
 import _common as c

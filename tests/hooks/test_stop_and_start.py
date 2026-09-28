@@ -64,11 +64,13 @@ def test_session_start_names_the_branch_from_the_payload_cwd(session_start: dict
     assert "Branch: main" in session_start["additionalContext"]
 
 
-def test_session_start_names_another_session(hook, repo: Path) -> None:
+@pytest.mark.parametrize("env", [{}, {"PYTHON_DEV_GUARD": "off"}], ids=["guard on", "guard off"])
+def test_session_start_names_another_session(hook, repo: Path, env: dict[str, str]) -> None:
     notes = repo / ".git" / "python-dev-sessions"
     notes.mkdir()
     (notes / str(os.getppid())).touch()
-    out = hook("session_start.py", {"sessionId": "s", "cwd": str(repo)}, outside=True).stdout
+    payload = {"sessionId": "s", "cwd": str(repo)}
+    out = hook("session_start.py", payload, outside=True, env=env).stdout
     assert "Another session is live in this folder" in json.loads(out)["additionalContext"]
 
 
