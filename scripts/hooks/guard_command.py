@@ -77,6 +77,9 @@ PUSH_TARGET = re.compile(r"\bgit\b[^|;&]*\bpush\b(?:\s+-\S+)*\s+(\S+)")
 SHAPING = "shaping/"
 PRODUCT = re.compile(r"^(src|tests)/")
 COMMIT_ALL = re.compile(GIT + r"\bcommit\b[^|;&]*\s-(?:-all|[a-zA-Z]*a[a-zA-Z]*)\b")
+MOVES_BRANCH = re.compile(
+    GIT + r"\b(switch|checkout)\b|" + GIT + r"\bbranch\b[^|;&]*\s(-m|-M|--move)\b"
+)
 
 
 def is_shell_tool(name: str) -> bool:
