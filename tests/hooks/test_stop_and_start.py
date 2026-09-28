@@ -6,6 +6,7 @@ guard, the branch from the payload's cwd and the plugin's scripts folder.
 """
 
 import json
+import os
 from pathlib import Path
 
 import pytest
