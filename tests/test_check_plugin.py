@@ -91,22 +91,24 @@ BROKEN_FACTS = [
     ),
     pytest.param(
         append(PY_REVIEW, "Skill `no-such-skill`"),
-        "calls skill `no-such-skill`, not in skills/ or upstream.json",
+        f"  - {PY_REVIEW}: calls skill `no-such-skill`, not in skills/ or upstream.json\n",
         id="a-skill-that-does-not-exist",
     ),
     pytest.param(
         append(PY_REVIEW, "Skill `wayfinder`"),
-        "calls `wayfinder` as a Skill, which no harness allows",
+        f"  - {PY_REVIEW}: calls `wayfinder` as a Skill, which no harness allows: only a person "
+        "can start it, so give the user the line (User types `wayfinder`)\n",
         id="a-user-only-skill-called-as-a-skill",
     ),
     pytest.param(
         append(PY_REVIEW, "User types `py-build`"),
-        "gives the user `py-build` to type",
+        f"  - {PY_REVIEW}: gives the user `py-build` to type, but the agent can start it itself: "
+        "Skill `py-build`\n",
         id="a-model-skill-given-to-the-user",
     ),
     pytest.param(
         append(PY_REVIEW, "`references/no-such-file.md`"),
-        "names `references/no-such-file.md`, which does not exist",
+        f"  - {PY_REVIEW}: names `references/no-such-file.md`, which does not exist\n",
         id="a-file-that-does-not-exist",
     ),
     pytest.param(
