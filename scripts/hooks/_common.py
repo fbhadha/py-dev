@@ -108,6 +108,24 @@ def git_lines(*args: str) -> list[str]:
     return [line.strip() for line in result.stdout.splitlines() if line.strip()]
 
 
+SESSIONS = "python-dev-sessions"
+
+
+def sessions_dir() -> Path | None:
+    """Where this checkout's session notes live, inside its own git folder; None outside a repo."""
+    found = git_lines("rev-parse", "--absolute-git-dir")
+    return Path(found[0]) / SESSIONS if found else None
+
+
+def note_session(pid: int) -> None:
+    """Leave a note that the harness process `pid` has a session in this checkout."""
+    folder = sessions_dir()
+    with contextlib.suppress(OSError):
+        if folder is not None:
+            folder.mkdir(exist_ok=True)
+            (folder / str(pid)).touch()
+
+
 def normalize_repo(ref: str, default_host: str = "github.com") -> str:
     """'host/owner/repo' from a URL, an ssh address, 'host/owner/repo' or 'owner/repo'."""
     ref = re.sub(r"\.git/?$", "", ref.strip().strip("'\""))
