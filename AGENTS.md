@@ -15,7 +15,7 @@ The `python-dev` agent runs this loop for you: pick it in the agent picker (`cop
 ## Read first
 
 - `CONTEXT.md`: the words this repo uses. Use them; do not invent synonyms.
-- `docs/architecture.md`: the layering rules and the composition root. The import-linter contract in `pyproject.toml` enforces them. The live map of modules and callers is Repowise, below.
+- `docs/architecture.md`: the layering rules and the composition root. The live map of modules and callers is Repowise, below.
 - `docs/howto/`: one file per kind of addition (a shape). Build by the matching how-to; if none matches, it is a new shape and needs the interview first.
 - `docs/adr/`: decisions already taken. Repowise binds each to the paths it governs and warns you when you edit one. Do not reopen a decision without a new ADR.
 - `docs/research/`: what was checked outside this repo and when, one dated, cited note per question. Facts, not decisions; a decision is an ADR.
