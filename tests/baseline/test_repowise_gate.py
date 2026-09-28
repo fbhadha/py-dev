@@ -5,8 +5,6 @@ Expected values: the script's exit codes (its docstring) and the edge-case table
 issues #19 and #27.
 """
 
-import importlib.util
-from collections.abc import Callable
 from pathlib import Path
 from types import ModuleType
 
@@ -22,34 +20,6 @@ NOTES = {"NOTES.md": "# notes\n"}
 # One primitive_obsession and one dry_violation; the first needs a file of 60 lines.
 WIDE = "def five(a, b, c, d, e):\n    return a\n" + "V = 0\n" * 60
 NOT_HELD = "2 finding(s) in test files not held (dry_violation, primitive_obsession)"
-
-
-@pytest.fixture
-def gate(root: Path) -> ModuleType:
-    """The script as a module, for the functions a subprocess cannot reach."""
-    spec = importlib.util.spec_from_file_location("repowise_gate", root / SCRIPT)
-    assert spec is not None
-    assert spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-@pytest.fixture
-def committed(repo: Path, git) -> Callable[[dict[str, str | None]], None]:
-    """Commit these files on a new branch; a file whose content is None is deleted."""
-
-    def call(files: dict[str, str | None]) -> None:
-        git("switch", "-q", "-c", "ticket/19")
-        for name, content in files.items():
-            if content is None:
-                (repo / name).unlink()
-            else:
-                (repo / name).write_text(content, encoding="utf-8")
-        git("add", "-A")
-        git("commit", "-q", "-m", "change")
-
-    return call
 
 
 @pytest.mark.parametrize(
