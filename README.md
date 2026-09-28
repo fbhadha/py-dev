@@ -95,6 +95,7 @@ The skills are shared; they are plain `SKILL.md` folders every harness reads. Wh
 | The turn cannot end red | The stop hook runs ruff on the files the session changed and blocks until it is clean. | A turn ending mid-mess |
 | No ticket, no code | In a repo intake set up, the hook asks before an edit to `src/`, `tests/` or any `.py` outside `prototypes/` when the branch is not `ticket/`, `prototype/` or `intake/`; its reason tells the agent to open the ticket first. | The agent coding straight from a chat message, which is what the default agent does |
 | Shaping never builds | On a `shaping/` branch the command hook asks before a commit that carries `src/` or `tests/` files, and before an edit to them. | Product code written inside a grill or a wayfinder map, the failure Matt's own docs report most |
+| One session per folder | While another session is live in the same checkout, the command hook asks before `git switch`, `git checkout` or `git branch -m`. A worktree is its own checkout and never asks. | Two sessions moving the branch under each other |
 
 Plus the never list: force-push, hard reset, rebase, `--amend`, `--no-verify` and force-deleting a branch are denied outright, on any branch.
 

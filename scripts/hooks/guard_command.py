@@ -15,6 +15,11 @@ Also asked: a commit on a `shaping/` branch that carries files under src/ or
 tests/ (staged, or modified when the commit has -a). Shaping decides; a ticket
 builds; the reason says so and names the files.
 
+Also asked: a command that moves the branch (`git switch`, `git checkout`,
+`git branch -m`) while another session is live in the same checkout. Each session
+is known by its harness's process id, noted in the checkout's own git folder; a
+dead process's note is deleted. A worktree is its own checkout and never asks.
+
 Also asked: anything that sends content to a repo other than this project's
 `origin`. A `gh` or `glab` command with `-R`/`--repo` naming another repo, a
 `gh api` call that writes under another repo's path, a gist, or a `git push` to
