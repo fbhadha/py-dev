@@ -83,7 +83,8 @@ BROKEN_FACTS = [
     ),
     pytest.param(
         change_json(".github/plugin/marketplace.json", lambda data: data.update(x=1)),
-        "must be identical to .claude-plugin/marketplace.json",
+        "  - .github/plugin/marketplace.json must be identical to "
+        ".claude-plugin/marketplace.json\n",
         id="the-two-marketplaces-differ",
     ),
     pytest.param(
