@@ -28,6 +28,16 @@ def test_moving_the_branch_asks(guard, command: str) -> None:
     assert guard(command) == "ask"
 
 
+def test_dead_session_passes_and_its_note_goes(guard, repo: Path) -> None:
+    ended = subprocess.Popen([sys.executable, "-c", "pass"])
+    ended.wait()
+    note = repo / ".git" / NOTES / str(ended.pid)
+    note.parent.mkdir(exist_ok=True)
+    note.touch()
+    assert guard("git switch -c ticket/1") == "allow"
+    assert not note.exists()
+
+
 def test_guard_leaves_a_note(guard, repo: Path) -> None:
     assert guard("git status") == "allow"
     assert (repo / ".git" / NOTES / str(os.getpid())).exists()
