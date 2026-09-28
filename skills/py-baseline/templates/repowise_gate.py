@@ -28,8 +28,12 @@ from __future__ import annotations
 
 import argparse
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
+from pathlib import Path
 from typing import Any
+
+# Repowise's own rules file, written by a person: a rule switched off for a path.
+RULES = ".repowise/health-rules.json"
 
 # Repowise's reasons for skipping a file that has no code health to compare.
 # Any other reason (parse_failed, too_large, one a later version adds) fails closed.
@@ -61,6 +65,25 @@ def held(findings: list[dict[str, Any]], is_test: Callable[[str], bool]) -> list
     ]
 
 
+def changed_paths(changes: Iterable[Any]) -> list[str]:
+    """Every path the change names, old and new, sorted, each once."""
+    return sorted(
+        {path for change in changes for path in (change.head_path, change.base_path) if path}
+    )
+
+
+def rules_config(rules: Any, source: Any, revspec: str | None) -> dict[str, Any] | None:
+    """The repo's rules for the paths the change names; None when the repo has no rules file."""
+    if not Path(RULES).is_file() or not rules.has_overrides():
+        return None
+    try:
+        changes = source.resolve(revspec).changes
+    except ValueError:  # an unknown revision; the review reports it
+        changes = ()
+    config: dict[str, Any] = rules.to_analyzer_config(changed_paths(changes))
+    return config
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -76,14 +99,24 @@ def main() -> int:
     args = parser.parse_args()
 
     try:
-        from repowise.core.analysis.change_health import GitRevisionSource
+        from repowise.core.analysis.change_health import (
+            ChangeHealthDeltaService,
+            GitRevisionSource,
+            RevisionHealthAnalyzer,
+        )
         from repowise.core.analysis.change_review import ChangeReviewRequest, ChangeReviewService
+        from repowise.core.analysis.health.config import HealthConfig
         from repowise.core.test_paths import is_test_related_path
     except ImportError:
         print("repowise is not installed: uv add --group dev repowise", file=sys.stderr)
         return 2
 
-    service = ChangeReviewService(GitRevisionSource("."), repo_path=".")
+    source = GitRevisionSource(".")
+    config = rules_config(HealthConfig.load("."), source, args.revspec)
+    delta = ChangeHealthDeltaService(
+        source, repo_path=".", analyzer=RevisionHealthAnalyzer(config=config)
+    )
+    service = ChangeReviewService(source, repo_path=".", delta_service=delta)
     bundle = service.review(ChangeReviewRequest(revspec=args.revspec))
     health = bundle.lane("health")
 

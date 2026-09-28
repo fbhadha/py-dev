@@ -99,14 +99,24 @@ def main() -> int:
     args = parser.parse_args()
 
     try:
-        from repowise.core.analysis.change_health import GitRevisionSource
+        from repowise.core.analysis.change_health import (
+            ChangeHealthDeltaService,
+            GitRevisionSource,
+            RevisionHealthAnalyzer,
+        )
         from repowise.core.analysis.change_review import ChangeReviewRequest, ChangeReviewService
+        from repowise.core.analysis.health.config import HealthConfig
         from repowise.core.test_paths import is_test_related_path
     except ImportError:
         print("repowise is not installed: uv add --group dev repowise", file=sys.stderr)
         return 2
 
-    service = ChangeReviewService(GitRevisionSource("."), repo_path=".")
+    source = GitRevisionSource(".")
+    config = rules_config(HealthConfig.load("."), source, args.revspec)
+    delta = ChangeHealthDeltaService(
+        source, repo_path=".", analyzer=RevisionHealthAnalyzer(config=config)
+    )
+    service = ChangeReviewService(source, repo_path=".", delta_service=delta)
     bundle = service.review(ChangeReviewRequest(revspec=args.revspec))
     health = bundle.lane("health")
 
