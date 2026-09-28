@@ -168,10 +168,6 @@ def upstream_invocations() -> dict[str, str] | None:
     return {name: how for up in data["upstreams"] for name, how in up.get("skills", {}).items()}
 
 
-def upstream_names() -> set[str]:
-    return set(upstream_invocations() or {})
-
-
 def resolve_ref(ref: str, here: Path, line: str, upstream: set[str]) -> bool:
     """A templates/, references/ or scripts/ path must exist here, in py-baseline, or upstream."""
     candidates = [here / ref, ROOT / "skills" / "py-baseline" / ref, ROOT / ref]
@@ -218,6 +214,18 @@ def check_numbers(rel: Path, line: str, headings: int) -> list[str]:
     return problems
 
 
+def missing_pack_sections(doc: Path, text: str) -> list[str]:
+    """A pack's skill carries every template section; any other document has none to carry."""
+    if not doc.parent.name.startswith("pack-"):
+        return []
+    rel = doc.relative_to(ROOT)
+    return [
+        f"{rel}: pack is missing the template section `{section}`"
+        for section in PACK_SECTIONS
+        if section not in text
+    ]
+
+
 def check_references(doc: Path) -> list[str]:
     """Every file, skill, step and section a document names must exist."""
     problems: list[str] = []
@@ -235,11 +243,7 @@ def check_references(doc: Path) -> list[str]:
                 problems.append(f"{rel}: names `{ref}`, which does not exist")
         problems += check_calls(rel, line, local, invocations)
         problems += check_numbers(rel, line, headings)
-    if doc.parent.name.startswith("pack-"):
-        for section in PACK_SECTIONS:
-            if section not in text:
-                problems.append(f"{rel}: pack is missing the template section `{section}`")
-    return problems
+    return problems + missing_pack_sections(doc, text)
 
 
 def load_json() -> tuple[dict[str, dict[str, Any]], list[str]]:
