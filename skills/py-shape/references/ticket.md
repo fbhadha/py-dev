@@ -75,4 +75,6 @@ Each with its mitigation. A one-way door here names its ADR, or the ticket is no
 uv run pytest tests/<tier>/test_<module>.py
 uv run pytest -m "not eval"
 ```
+
+If a command fails: stop. Report the command and the last 20 lines of its output. Change nothing else.
 ````
