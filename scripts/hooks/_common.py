@@ -47,7 +47,7 @@ def plugin_version() -> str:
         return "unknown"
 
 
-def read_payload() -> dict:
+def read_payload() -> dict[str, Any]:
     try:
         data = json.load(sys.stdin)
     except ValueError:
@@ -59,7 +59,7 @@ def tool_name(payload: dict[str, Any]) -> str:
     return str(payload.get("tool_name") or payload.get("toolName") or "")
 
 
-def tool_args(payload: dict[str, Any]) -> dict:
+def tool_args(payload: dict[str, Any]) -> dict[str, Any]:
     for key in ("tool_input", "toolArgs", "tool_args"):
         args = payload.get(key)
         if isinstance(args, str):
