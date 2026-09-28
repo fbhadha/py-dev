@@ -143,7 +143,7 @@ def main(argv: list[str]) -> int:
         for manifest in manifests:
             data = json.loads(manifest.read_text(encoding="utf-8"))
             for upstream in data["upstreams"]:
-                problems += check_upstream(upstream, latest, Path(tmp))
+                problems += check_upstream(upstream, latest=latest, workdir=Path(tmp))
     if problems:
         print("\nUPSTREAM CHECK " + ("DRIFT (latest)" if latest else "FAILED") + ":")
         for p in problems:
