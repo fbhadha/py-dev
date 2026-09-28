@@ -65,6 +65,25 @@ def held(findings: list[dict[str, Any]], is_test: Callable[[str], bool]) -> list
     ]
 
 
+def changed_paths(changes: Iterable[Any]) -> list[str]:
+    """Every path the change names, old and new, sorted, each once."""
+    return sorted(
+        {path for change in changes for path in (change.head_path, change.base_path) if path}
+    )
+
+
+def rules_config(rules: Any, source: Any, revspec: str | None) -> dict[str, Any] | None:
+    """The repo's rules for the paths the change names; None when the repo has no rules file."""
+    if not Path(RULES).is_file() or not rules.has_overrides():
+        return None
+    try:
+        changes = source.resolve(revspec).changes
+    except ValueError:  # an unknown revision; the review reports it
+        changes = ()
+    config: dict[str, Any] = rules.to_analyzer_config(changed_paths(changes))
+    return config
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
