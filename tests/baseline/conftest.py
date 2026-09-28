@@ -1,24 +1,9 @@
-"""Fixtures the change gate's test files share: the script as a module, a committed change."""
+"""Fixtures the change gate's test files share: a committed change."""
 
-import importlib.util
 from collections.abc import Callable
 from pathlib import Path
-from types import ModuleType
 
 import pytest
-
-SCRIPT = "scripts/repowise_gate.py"
-
-
-@pytest.fixture
-def gate(root: Path) -> ModuleType:
-    """The script as a module, for the functions a subprocess cannot reach."""
-    spec = importlib.util.spec_from_file_location("repowise_gate", root / SCRIPT)
-    assert spec is not None
-    assert spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
 
 
 @pytest.fixture

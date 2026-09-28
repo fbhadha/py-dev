@@ -86,7 +86,8 @@ def rules_config(rules: Any, source: Any, revspec: str | None) -> dict[str, Any]
     return config
 
 
-def main() -> int:
+def arguments() -> argparse.Namespace:
+    """The revisions to compare, and whether a run Repowise could not analyse passes."""
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
@@ -98,7 +99,11 @@ def main() -> int:
         action="store_true",
         help="exit 0 instead of 3 when Repowise could not analyse the change",
     )
-    args = parser.parse_args()
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = arguments()
 
     try:
         from repowise.core.analysis.change_health import (

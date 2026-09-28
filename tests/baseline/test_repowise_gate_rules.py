@@ -6,7 +6,6 @@ issue #56. The rule name is the one the gate prints for SWALLOWS.
 
 from collections.abc import Callable
 from pathlib import Path
-from types import ModuleType, SimpleNamespace
 
 import pytest
 
@@ -47,15 +46,6 @@ def test_rules(check, committed, rules, text: str, exit_code: int) -> None:
 def test_unknown_revision_with_rules_fails_closed(check, rules) -> None:
     rules(OFF_IN_SRC)
     assert check(SCRIPT, "nosuchref..HEAD").returncode == 3
-
-
-def test_changed_paths(gate: ModuleType) -> None:
-    changes = [
-        SimpleNamespace(head_path="src/b.py", base_path="src/a.py"),
-        SimpleNamespace(head_path=None, base_path="src/gone.py"),
-        SimpleNamespace(head_path="src/b.py", base_path="src/b.py"),
-    ]
-    assert gate.changed_paths(changes) == ["src/a.py", "src/b.py", "src/gone.py"]
 
 
 def test_rules_in_force_printed(check, committed, rules) -> None:

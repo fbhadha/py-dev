@@ -2,11 +2,12 @@
 
 Drives this repo's copy under scripts/; the last test proves it is the template.
 Expected values: the script's exit codes (its docstring) and the edge-case tables of
-issues #19 and #27.
+issues #19, #27 and #56.
 """
 
+import importlib.util
 from pathlib import Path
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 
 import pytest
 from repowise.core.test_paths import is_test_related_path
@@ -20,6 +21,17 @@ NOTES = {"NOTES.md": "# notes\n"}
 # One primitive_obsession and one dry_violation; the first needs a file of 60 lines.
 WIDE = "def five(a, b, c, d, e):\n    return a\n" + "V = 0\n" * 60
 NOT_HELD = "2 finding(s) in test files not held (dry_violation, primitive_obsession)"
+
+
+@pytest.fixture
+def gate(root: Path) -> ModuleType:
+    """The script as a module, for the functions a subprocess cannot reach."""
+    spec = importlib.util.spec_from_file_location("repowise_gate", root / SCRIPT)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 @pytest.mark.parametrize(
@@ -99,6 +111,15 @@ def test_missed_file_fails_closed(gate: ModuleType, payload: dict) -> None:
 def test_held(gate: ModuleType, finding: dict[str, str], kept: bool) -> None:
     worsened = {**finding, "change_kind": "worsened"}
     assert gate.held([worsened], is_test_related_path) == ([worsened] if kept else [])
+
+
+def test_changed_paths(gate: ModuleType) -> None:
+    changes = [
+        SimpleNamespace(head_path="src/b.py", base_path="src/a.py"),
+        SimpleNamespace(head_path=None, base_path="src/gone.py"),
+        SimpleNamespace(head_path="src/b.py", base_path="src/b.py"),
+    ]
+    assert gate.changed_paths(changes) == ["src/a.py", "src/b.py", "src/gone.py"]
 
 
 def test_copy_matches_template(root: Path) -> None:
