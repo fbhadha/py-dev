@@ -30,7 +30,11 @@ Listed by `py-design`'s `references/edge-cases.md`, heading `## The categories`:
 
 Why this order: <the planning rule: walking skeleton, riskiest first, prefactor first>.
 
-1. **Prefactor** (only if needed): what moves and why the change is easier after it. No behaviour change; the suite is green before and after.
+1. **Prefactor** (only if needed)
+   - What moves: <the code that moves, and the file it moves to>
+   - Why: <why the change is easier after it>
+   - Behaviour: no change
+   - Done when: `uv run pytest -m "not eval"` is green before and after
 2. **<Slice name>**
    - Test first: `tests/<tier>/test_<module>.py::test_<behaviour>`
      - Seam: <the public function or port>
