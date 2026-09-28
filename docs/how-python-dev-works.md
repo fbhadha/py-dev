@@ -73,3 +73,38 @@ The agent writes for a manager: the answer first, each choice in one short parag
 | Why something is the way it is | `docs/design/python-dev-agent.md` and `docs/adr/` in this repository |
 
 Before a release: `python scripts/render_agents.py`, `python scripts/check_plugin.py`, `uv run pytest -m "not eval"`, `python scripts/check_pack_examples.py`, `python scripts/check_upstream_skills.py`, `claude plugin validate --strict .`, and [the smoke test](smoke-test.md) with a real model on each harness.
+
+## 7. Skills only you can start
+
+| Skill | When the agent gives you the line | What you type |
+|---|---|---|
+| `setup-matt-pocock-skills` | intake, once per repo, at the tracker step | `/mattpocock-skills:setup-matt-pocock-skills` |
+| `wayfinder` | an idea too big for one session; then the first message of every session on its map | `/mattpocock-skills:wayfinder <the idea>`; later `/mattpocock-skills:wayfinder <map> <handoff path>` |
+| `improve-codebase-architecture` | after the health step, when you want the refactor | `/mattpocock-skills:improve-codebase-architecture <worst file>` |
+| `triage` | issues from other people | `/mattpocock-skills:triage what needs my attention?` |
+| `wait-what` | any time a message did not land; the agent mentions it once a session | `/mattpocock-skills:wait-what` |
+| `teach` | learning a topic over several sessions, in a new session opened in `~/learning/<topic>/`, never the repo | `/mattpocock-skills:teach <topic>` |
+
+The line comes from `scripts/find_skill.py --typed <name>`. As checked on 2026-09-23 with Copilot CLI 1.0.88 and a scripted model: the `mattpocock-skills:` prefix is required there (the bare `/wayfinder` answers "Unknown command"), the line works with python-dev selected and as the start prompt (`copilot --agent python-dev:python-dev -i "/mattpocock-skills:wayfinder ..."`), and it is expanded only in an interactive session: `copilot -p` sends it to the model as plain text, whose skill tool then answers "Skill not found" (the behaviour in [github/copilot-cli#4438](https://github.com/github/copilot-cli/issues/4438)). Claude Code takes the prefixed line, and the bare one when no other command has that name. VS Code prefixes a plugin's skills with its name; use the Chat view, because the Agents window cannot start these skills yet ([microsoft/vscode#331477](https://github.com/microsoft/vscode/issues/331477)). Matt's skills installed with `npx skills add` instead of as a plugin have no prefix, and `--typed` prints the bare line.
+
+His retired flow skills (`grill-with-docs`, `to-spec`, `to-tickets`, `implement`, `handoff`) still run if you type them. The agent first says which of its steps replaces each and what his leaves out (its view and pushback, the plan in each ticket, the plan check, the gates and the merge question), recommends its own, and follows his if you still want it.
+
+## 8. When Repowise runs
+
+Repowise is the one store for everything derived from the code: structure, callers, blast radius, health, dead code, change risk, doc drift, which ADR governs which file. Its MCP server puts every tool definition in context on every turn, used or not; how much that costs depends on the harness (caching and deferred tool loading soften it) and nobody here has measured it. The CLI costs only what a call returns, and behaves the same everywhere. The agent never uses the MCP server. Instead the persona names the only moments Repowise runs, and the command for each:
+
+| Moment | Command |
+|---|---|
+| Session start, when the index is behind HEAD | `DO_NOT_TRACK=1 uv run repowise init --no-prose --no-editor-setup --no-save-key -y` (never `update`: it writes editor files no flag stops) |
+| Before editing, once per ticket | `uv run repowise risk -t <f1> -t <f2> ...` for every file the ticket touches; `why <file>` only for a file that call marks governed or bug-magnet |
+| Before naming something new | `uv run repowise search <name>` |
+| Before review | `scripts/repowise_gate.py`, `repowise risk <range>`, `repowise impacted-tests <range>` |
+| Any command that prints pages | `uv run repowise distill <command>`: keeps failures and summaries, drops the pass parade, keeps the exit code |
+| Health, on request | `health --refactoring-targets`, `dead-code --safe-only`, `doc-drift`, `decision health` |
+| Orientation, at intake | `context`, `health`, `dead-code`, `decision candidates`, `doc-drift` |
+
+Never for browsing: to find or read code the agent greps and opens the file. Decisions are written only as ADR files in `docs/adr/`, bound to paths by `scripts/adr_sync.py`; Repowise reads them, nothing writes to it. Repowise is AGPL-3.0 and a development tool only; the templates set `DO_NOT_TRACK=1`.
+
+## 9. Context cost
+
+What a harness loads every turn from this plugin is the persona and nine skill descriptions, about 4,500 tokens at 3.6 characters per token (persona ~3,700, descriptions ~800), plus the guard line from the session-start hook. 0.11.0 spends about 700 more tokens a turn than 0.10.0 on the loop, the explaining and the pushback, which the 10,000-character ceiling had squeezed out, 0.11.1 about 400 more on the line it gives you for a skill of Matt's that only a person can start, 0.12.0 about 25 more on two clauses about edge cases, and 0.13.0 about 100 more on two clauses (every literal from a file open in this slice; you are the author); CI fails at 14,000, so it cannot creep further without a choice. Skill bodies load only when a skill runs (`py-intake`, the largest, about 7,700 tokens, once per repo; `py-shape` about 2,600, once per idea; `py-build` about 1,700, once per ticket); `references/` files only when a skill opens them. Matt's skills add their descriptions when installed. Google's four are installed only in ADK repos. The rest of the session's overhead is what the persona reads and runs before real work, and each of those is bounded: session start reads `AGENTS.md` only (`CONTEXT.md`, the tracker file and a how-to are opened when a step needs them); the index is refreshed only when `repowise status` says it is behind HEAD; the upstream door check caches a clean result for a day; one `risk` call covers every file a ticket touches; test, pre-commit and log output goes through `repowise distill`, which drops the passing noise and keeps the failures; intake's orientation reads at most three entry points. Every step is a numbered instruction or a command, so a smaller model can follow it; what a smaller model does worse is the judgement in the review's Craft axis and in grilling, and the mechanical checks do not get weaker.
