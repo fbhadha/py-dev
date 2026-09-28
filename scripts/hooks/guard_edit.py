@@ -76,7 +76,7 @@ def is_product(rel: str) -> bool:
     return rel.startswith(("src/", "tests/")) or rel.endswith(".py")
 
 
-def check(payload: dict) -> tuple[str, str] | None:
+def check(payload: dict[str, Any]) -> tuple[str, str] | None:
     """("ask", reason) when this edit writes product code off a build branch; else None."""
     if c.guard_off():
         return None
