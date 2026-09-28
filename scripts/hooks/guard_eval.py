@@ -32,7 +32,7 @@ REASON = (
 )
 
 
-def is_eval_author(payload: dict) -> bool:
+def is_eval_author(payload: dict[str, Any]) -> bool:
     kind = str(
         payload.get("agent_type") or payload.get("agentType") or payload.get("agent_name") or ""
     )
