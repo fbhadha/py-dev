@@ -103,7 +103,8 @@ def check_upstream(upstream: dict[str, Any], *, latest: bool, workdir: Path) -> 
     skills = index_skills(dest / upstream["skills_dir"])
     problems: list[str] = []
     if upstream.get("plugin"):
-        # The persona gives the user `/<plugin>:<skill>` for a user-invoked skill; a renamed plugin breaks every line.
+        # The persona gives the user `/<plugin>:<skill>` for a user-invoked skill;
+        # a renamed plugin breaks every line.
         try:
             actual_plugin = json.loads(
                 (dest / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8")
