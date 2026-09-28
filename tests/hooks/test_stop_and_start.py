@@ -6,6 +6,7 @@ guard, the branch from the payload's cwd and the plugin's scripts folder.
 """
 
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -61,6 +62,20 @@ def test_session_start_names_the_guard(session_start: dict) -> None:
 
 def test_session_start_names_the_branch_from_the_payload_cwd(session_start: dict) -> None:
     assert "Branch: main" in session_start["additionalContext"]
+
+
+@pytest.mark.parametrize("env", [{}, {"PYTHON_DEV_GUARD": "off"}], ids=["guard on", "guard off"])
+def test_session_start_names_another_session(hook, repo: Path, env: dict[str, str]) -> None:
+    notes = repo / ".git" / "python-dev-sessions"
+    notes.mkdir()
+    (notes / str(os.getppid())).touch()
+    payload = {"sessionId": "s", "cwd": str(repo)}
+    out = hook("session_start.py", payload, outside=True, env=env).stdout
+    assert "Another session is live in this folder" in json.loads(out)["additionalContext"]
+
+
+def test_session_start_alone_names_no_session(session_start: dict) -> None:
+    assert "Another session is live in this folder" not in session_start["additionalContext"]
 
 
 def test_session_start_names_the_plugin_scripts(session_start: dict, root: Path) -> None:

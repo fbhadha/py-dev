@@ -18,6 +18,8 @@ not the project, so every hook calls enter_project() before its first git call.
 
 from __future__ import annotations
 
+import contextlib
+import functools
 import json
 import os
 import re
@@ -81,11 +83,27 @@ def guard_off() -> bool:
     return os.environ.get("PYTHON_DEV_GUARD", "").strip().lower() in OFF_VALUES
 
 
-def repo_root() -> Path | None:
+@functools.cache
+def checkout() -> tuple[Path, Path] | None:
+    """This checkout's folder and its own git folder, from one git call; None outside a repo.
+
+    Asked once per hook run: a hook is one short process in one project.
+    """
     result = subprocess.run(
-        ["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True, check=False
+        ["git", "rev-parse", "--show-toplevel", "--absolute-git-dir"],
+        capture_output=True,
+        text=True,
+        check=False,
     )
-    return Path(result.stdout.strip()) if result.returncode == 0 else None
+    lines = result.stdout.splitlines()
+    if result.returncode != 0 or len(lines) != 2:  # the two paths asked for
+        return None
+    return Path(lines[0]), Path(lines[1])
+
+
+def repo_root() -> Path | None:
+    found = checkout()
+    return found[0] if found else None
 
 
 def current_branch() -> str:
@@ -106,6 +124,45 @@ def git_lines(*args: str) -> list[str]:
     if result.returncode != 0:
         return []
     return [line.strip() for line in result.stdout.splitlines() if line.strip()]
+
+
+SESSIONS = "python-dev-sessions"
+
+
+def sessions_dir() -> Path | None:
+    """Where this checkout's session notes live, inside its own git folder; None outside a repo."""
+    found = checkout()
+    return found[1] / SESSIONS if found else None
+
+
+def note_session(pid: int) -> None:
+    """Leave a note that the harness process `pid` has a session in this checkout."""
+    with contextlib.suppress(OSError):
+        folder = sessions_dir()
+        if folder is not None:
+            folder.mkdir(exist_ok=True)
+            (folder / str(pid)).touch()
+
+
+def other_sessions(pid: int) -> list[int]:
+    """The live harness processes noted here, other than `pid`; a dead one's note is deleted."""
+    live: list[int] = []
+    with contextlib.suppress(OSError):
+        folder = sessions_dir()
+        notes = [] if folder is None else [n for n in folder.iterdir() if n.name.isdecimal()]
+        for note in notes:
+            other = int(note.name)
+            if other == pid:
+                continue
+            try:
+                os.kill(other, 0)  # signal 0 sends nothing; it only checks
+            except ProcessLookupError:  # dead
+                note.unlink(missing_ok=True)
+            except PermissionError:  # alive, and another user's
+                live.append(other)
+            else:
+                live.append(other)
+    return sorted(live)
 
 
 def normalize_repo(ref: str, default_host: str = "github.com") -> str:

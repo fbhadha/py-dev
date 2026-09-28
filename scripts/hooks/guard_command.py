@@ -15,6 +15,11 @@ Also asked: a commit on a `shaping/` branch that carries files under src/ or
 tests/ (staged, or modified when the commit has -a). Shaping decides; a ticket
 builds; the reason says so and names the files.
 
+Also asked: a command that moves the branch (`git switch`, `git checkout`,
+`git branch -m`) while another session is live in the same checkout. Each session
+is known by its harness's process id, noted in the checkout's own git folder; a
+dead process's note is deleted. A worktree is its own checkout and never asks.
+
 Also asked: anything that sends content to a repo other than this project's
 `origin`. A `gh` or `glab` command with `-R`/`--repo` naming another repo, a
 `gh api` call that writes under another repo's path, a gist, or a `git push` to
@@ -30,6 +35,7 @@ Reads either harness's payload. Any failure exits 0 with no output.
 
 from __future__ import annotations
 
+import os
 import re
 import sys
 from typing import Any
@@ -76,6 +82,9 @@ PUSH_TARGET = re.compile(r"\bgit\b[^|;&]*\bpush\b(?:\s+-\S+)*\s+(\S+)")
 SHAPING = "shaping/"
 PRODUCT = re.compile(r"^(src|tests)/")
 COMMIT_ALL = re.compile(GIT + r"\bcommit\b[^|;&]*\s-(?:-all|[a-zA-Z]*a[a-zA-Z]*)\b")
+MOVES_BRANCH = re.compile(
+    GIT + r"\b(switch|checkout)\b|" + GIT + r"\bbranch\b[^|;&]*\s(-m|-M|--move)\b"
+)
 
 
 def is_shell_tool(name: str) -> bool:
@@ -194,6 +203,21 @@ def main_reason(command: str, branch: str) -> str | None:
     )
 
 
+def shared_reason(command: str) -> str | None:
+    """Why this command asks: it moves the branch while another session is live here."""
+    if not MOVES_BRANCH.search(command):
+        return None
+    others = c.other_sessions(os.getppid())
+    if not others:
+        return None
+    return (
+        f"python-dev: another session is live in this folder ({len(others)} other), and "
+        "this command moves the branch for both. Approve only if that session is finished. "
+        "Otherwise work in a folder of your own: "
+        "git worktree add ../<folder> -b <branch> origin/main"
+    )
+
+
 def decide(payload: dict[str, Any]) -> tuple[str, str] | None:
     """(decision, reason) for this tool call, or None to let it through."""
     name = c.tool_name(payload)
@@ -207,9 +231,13 @@ def decide(payload: dict[str, Any]) -> tuple[str, str] | None:
         return "deny", reason
     if c.guard_off() or c.repo_root() is None:
         return None
+    c.note_session(os.getppid())
     branch = c.current_branch()
     asked = (
-        leaving_reason(command) or shaping_reason(command, branch) or main_reason(command, branch)
+        leaving_reason(command)
+        or shaping_reason(command, branch)
+        or main_reason(command, branch)
+        or shared_reason(command)
     )
     return ("ask", asked) if asked else None
 
