@@ -79,7 +79,7 @@ def index_skills(skills_dir: Path) -> dict[str, Path]:
     return found
 
 
-def check_reference(upstream: dict, dest: Path) -> list[str]:
+def check_reference(upstream: dict[str, Any], dest: Path) -> list[str]:
     """Every term the plugin links to is a file `<dir>/<term>.md` in the reference repo."""
     problems: list[str] = []
     for term in upstream["terms"]:
