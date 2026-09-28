@@ -152,8 +152,8 @@ def main() -> int:
 
     if failing:
         print(
-            "\nFix the findings above, or explain in the PR why the shape is right "
-            "and get a reviewer to agree."
+            f"\nFix the findings above, or switch the rule off for that path in {RULES}, "
+            "in a change a reviewer approves."
         )
         return 1
     return 0
