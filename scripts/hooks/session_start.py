@@ -32,6 +32,14 @@ def main() -> int:
             "to product code off a ticket branch asks first; force-push, hard reset, rebase, "
             "amend and --no-verify are denied; the turn cannot end with red ruff."
         )
+        c.note_session(os.getppid())
+        others = c.other_sessions(os.getppid())
+        if others:
+            text += (
+                f" Another session is live in this folder ({len(others)} other): a command "
+                "that moves the branch asks first. Work in a folder of your own: "
+                "git worktree add ../<folder> -b <branch> origin/main."
+            )
         json.dump(
             {
                 "additionalContext": text,
