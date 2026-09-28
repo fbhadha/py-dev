@@ -52,7 +52,8 @@ Why this order: <the planning rule: walking skeleton, riskiest first, prefactor 
 4. **Wire it**
    - Code: the composition root `src/<package>/entrypoints/<module>.py`
    - Test: the one integration test
-5. **Docs**: the how-to, the `CONTEXT.md` term or the ADR this touched, or "none".
+5. **Docs**
+   - File: <the how-to, the `CONTEXT.md` term or the ADR this touched, one per line; or "none">
 
 ## Files
 
