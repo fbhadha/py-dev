@@ -48,6 +48,15 @@ def test_a_stray_file_is_ignored_and_kept(guard, repo: Path, other_session: int)
     assert (repo / ".git" / NOTES / str(other_session)).exists()
 
 
+def test_another_users_session_counts_as_live(guard, repo: Path) -> None:
+    """Process 1 always exists and is the system's: signalling it is refused, not 'no such'."""
+    note = repo / ".git" / NOTES / "1"
+    note.parent.mkdir(exist_ok=True)
+    note.touch()
+    assert guard("git switch -c ticket/1") == "ask"
+    assert note.exists()
+
+
 @pytest.mark.usefixtures("other_session")
 def test_env_off_passes(guard) -> None:
     assert guard("git switch -c ticket/1", env={"PYTHON_DEV_GUARD": "off"}) == "allow"

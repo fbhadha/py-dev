@@ -120,8 +120,8 @@ def sessions_dir() -> Path | None:
 
 def note_session(pid: int) -> None:
     """Leave a note that the harness process `pid` has a session in this checkout."""
-    folder = sessions_dir()
     with contextlib.suppress(OSError):
+        folder = sessions_dir()
         if folder is not None:
             folder.mkdir(exist_ok=True)
             (folder / str(pid)).touch()
