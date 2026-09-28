@@ -27,6 +27,8 @@ jobs:
           enable-cache: true
       - run: uv sync --frozen
       - name: pre-commit on the changed files
+        env:
+          SKIP: no-commit-to-branch   # it guards a developer's machine; on a push to main it can only fail
         run: |
           BASE="${{ github.event.pull_request.base.sha || github.event.before }}"
           uv run pre-commit run --show-diff-on-failure --from-ref "$BASE" --to-ref HEAD

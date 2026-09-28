@@ -26,7 +26,8 @@ commit-gate:
   stage: gate
   script:
     - BASE="${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$CI_COMMIT_BEFORE_SHA}"
-    - uv run pre-commit run --show-diff-on-failure --from-ref "$BASE" --to-ref HEAD
+    # no-commit-to-branch guards a developer's machine; on the default branch it can only fail
+    - SKIP=no-commit-to-branch uv run pre-commit run --show-diff-on-failure --from-ref "$BASE" --to-ref HEAD
     - uv run lint-imports
     - if [ -n "$CI_MERGE_REQUEST_DIFF_BASE_SHA" ]; then uv run python scripts/check_test_diff.py "$CI_MERGE_REQUEST_DIFF_BASE_SHA...HEAD"; fi
     - if [ -n "$CI_MERGE_REQUEST_DIFF_BASE_SHA" ]; then uv run python scripts/check_literals.py "$CI_MERGE_REQUEST_DIFF_BASE_SHA...HEAD"; fi
