@@ -271,7 +271,7 @@ def check_plugin_manifest(plugin: dict[str, Any], skill_files: list[Path]) -> li
 
 
 def check_manifests_agree(parsed: dict[str, dict[str, Any]]) -> list[str]:
-    """The manifests carry one name and one version; the two marketplace files are identical."""
+    """The three manifests carry one name and one version."""
     problems: list[str] = []
     plugin = parsed.get(".claude-plugin/plugin.json")
     marketplace = parsed.get(".claude-plugin/marketplace.json")
