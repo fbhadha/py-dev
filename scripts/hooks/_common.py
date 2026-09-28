@@ -18,6 +18,7 @@ not the project, so every hook calls enter_project() before its first git call.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import re

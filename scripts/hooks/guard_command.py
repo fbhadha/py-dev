@@ -30,6 +30,7 @@ Reads either harness's payload. Any failure exits 0 with no output.
 
 from __future__ import annotations
 
+import os
 import re
 import sys
 from typing import Any
