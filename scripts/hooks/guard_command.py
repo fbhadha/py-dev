@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import re
 import sys
+from typing import Any
 
 import _common as c
 import guard_edit
