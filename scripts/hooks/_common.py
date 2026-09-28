@@ -130,8 +130,8 @@ SESSIONS = "python-dev-sessions"
 
 def sessions_dir() -> Path | None:
     """Where this checkout's session notes live, inside its own git folder; None outside a repo."""
-    found = git_lines("rev-parse", "--absolute-git-dir")
-    return Path(found[0]) / SESSIONS if found else None
+    found = checkout()
+    return found[1] / SESSIONS if found else None
 
 
 def note_session(pid: int) -> None:
