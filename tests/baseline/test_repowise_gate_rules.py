@@ -67,3 +67,10 @@ def test_rules_in_force_printed(check, committed, rules) -> None:
 def test_no_rules_file_prints_no_rules_line(check, committed) -> None:
     committed({"src/x.py": SWALLOWS})
     assert "rules in force" not in check(SCRIPT, "main..HEAD").stdout
+
+
+def test_message_names_rules_file(check, committed) -> None:
+    committed({"src/x.py": SWALLOWS})
+    stdout = check(SCRIPT, "main..HEAD").stdout
+    assert RULES in stdout
+    assert "explain in the PR" not in stdout

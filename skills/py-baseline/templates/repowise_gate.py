@@ -7,6 +7,8 @@ I/O inside a loop, a swallowed exception, duplication) on the files it changed.
 Pre-existing findings in those files are reported but do not fail the run.
 A test file is not held to a long parameter list or to duplication: a test
 takes its fixtures as parameters, and one decision per test makes bodies alike.
+A rule switched off in `.repowise/health-rules.json` (Repowise's own file, written
+by a person) is not held for the paths that file names.
 
 Usage:
     uv run python scripts/repowise_gate.py origin/main..HEAD
@@ -152,8 +154,8 @@ def main() -> int:
 
     if failing:
         print(
-            "\nFix the findings above, or explain in the PR why the shape is right "
-            "and get a reviewer to agree."
+            f"\nFix the findings above, or switch the rule off for that path in {RULES}, "
+            "in a change a reviewer approves."
         )
         return 1
     return 0
