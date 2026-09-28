@@ -2,7 +2,7 @@
 name: py-eval
 description: Scenario author for an agent's eval. Reads one targets file and writes the eval set and config that Google ADK's simulated user plays, with a persona from a fixed list and never the agent's own wording. Reads and writes under tests/evals/ only; runs nothing. Dispatched by py-build's eval step with a path and nothing else; not for general delegation.
 tools: Read, Write
-model: inherit
+model: haiku
 hooks:
   PreToolUse:
     - matcher: "Read|Write|Edit|MultiEdit|NotebookEdit|Grep|Glob|Bash"
