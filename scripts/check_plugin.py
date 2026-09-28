@@ -156,17 +156,16 @@ PACK_SECTIONS = (
 )
 
 
-def upstream_invocations() -> dict[str, str]:
-    """Every upstream skill we name, with how it starts.
+def upstream_invocations() -> dict[str, str] | None:
+    """Every upstream skill we name, with how it starts, or None when the file does not parse.
 
-    `model` (the Skill tool) or `user` (a person types it).
+    `model` (the Skill tool) or `user` (a person types it). `load_json` reports the broken file.
     """
-    data = json.loads((ROOT / "upstream.json").read_text(encoding="utf-8"))
+    try:
+        data = json.loads((ROOT / "upstream.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
     return {name: how for up in data["upstreams"] for name, how in up.get("skills", {}).items()}
-
-
-def upstream_names() -> set[str]:
-    return set(upstream_invocations())
 
 
 def resolve_ref(ref: str, here: Path, line: str, upstream: set[str]) -> bool:
@@ -213,12 +212,26 @@ def check_numbers(rel: Path, line: str, headings: int) -> list[str]:
     return problems
 
 
+def missing_pack_sections(doc: Path, text: str) -> list[str]:
+    """A pack's skill carries every template section; any other document has none to carry."""
+    if not doc.parent.name.startswith("pack-"):
+        return []
+    rel = doc.relative_to(ROOT)
+    return [
+        f"{rel}: pack is missing the template section `{section}`"
+        for section in PACK_SECTIONS
+        if section not in text
+    ]
+
+
 def check_references(doc: Path) -> list[str]:
     """Every file, skill, step and section a document names must exist."""
     problems: list[str] = []
     rel = doc.relative_to(ROOT)
     text = doc.read_text(encoding="utf-8")
     invocations = upstream_invocations()
+    if invocations is None:  # no reference can be judged without upstream.json
+        return missing_pack_sections(doc, text)
     upstream = set(invocations)
     local = {d.name for d in (ROOT / "skills").iterdir() if d.is_dir()}
     headings = len(re.findall(r"^## \d+\.", text, re.M))
@@ -228,11 +241,7 @@ def check_references(doc: Path) -> list[str]:
                 problems.append(f"{rel}: names `{ref}`, which does not exist")
         problems += check_calls(rel, line, local, invocations)
         problems += check_numbers(rel, line, headings)
-    if doc.parent.name.startswith("pack-"):
-        for section in PACK_SECTIONS:
-            if section not in text:
-                problems.append(f"{rel}: pack is missing the template section `{section}`")
-    return problems
+    return problems + missing_pack_sections(doc, text)
 
 
 def load_json() -> tuple[dict[str, dict[str, Any]], list[str]]:
