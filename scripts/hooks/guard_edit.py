@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+from typing import Any
 
 import _common as c
 
@@ -49,7 +50,7 @@ def is_edit_tool(name: str) -> bool:
     return name.strip().lower() in EDIT_TOOLS
 
 
-def edited_paths(args: dict) -> list[str]:
+def edited_paths(args: dict[str, Any]) -> list[str]:
     if str(args.get("command", "")).lower() == "view":
         return []  # str_replace_editor's read mode
     paths = [str(args[key]) for key in PATH_KEYS if isinstance(args.get(key), str) and args[key]]
@@ -75,7 +76,7 @@ def is_product(rel: str) -> bool:
     return rel.startswith(("src/", "tests/")) or rel.endswith(".py")
 
 
-def check(payload: dict) -> tuple[str, str] | None:
+def check(payload: dict[str, Any]) -> tuple[str, str] | None:
     """("ask", reason) when this edit writes product code off a build branch; else None."""
     if c.guard_off():
         return None
