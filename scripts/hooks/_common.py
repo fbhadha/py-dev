@@ -82,11 +82,27 @@ def guard_off() -> bool:
     return os.environ.get("PYTHON_DEV_GUARD", "").strip().lower() in OFF_VALUES
 
 
-def repo_root() -> Path | None:
+@functools.cache
+def checkout() -> tuple[Path, Path] | None:
+    """This checkout's folder and its own git folder, from one git call; None outside a repo.
+
+    Asked once per hook run: a hook is one short process in one project.
+    """
     result = subprocess.run(
-        ["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True, check=False
+        ["git", "rev-parse", "--show-toplevel", "--absolute-git-dir"],
+        capture_output=True,
+        text=True,
+        check=False,
     )
-    return Path(result.stdout.strip()) if result.returncode == 0 else None
+    lines = result.stdout.splitlines()
+    if result.returncode != 0 or len(lines) != 2:  # noqa: PLR2004 - the two paths asked for
+        return None
+    return Path(lines[0]), Path(lines[1])
+
+
+def repo_root() -> Path | None:
+    found = checkout()
+    return found[0] if found else None
 
 
 def current_branch() -> str:
