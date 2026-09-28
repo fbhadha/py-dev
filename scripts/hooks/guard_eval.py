@@ -49,7 +49,7 @@ def allowed(path: str, root: Path) -> bool:
     return rel is not None and rel.startswith(ALLOWED)
 
 
-def check(payload: dict) -> tuple[str, str] | None:
+def check(payload: dict[str, Any]) -> tuple[str, str] | None:
     """("deny", reason) when the eval author reaches outside tests/evals/; else None."""
     if not is_eval_author(payload):
         return None
