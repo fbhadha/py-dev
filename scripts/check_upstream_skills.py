@@ -91,7 +91,7 @@ def check_reference(upstream: dict[str, Any], dest: Path) -> list[str]:
     return problems
 
 
-def check_upstream(upstream: dict, latest: bool, workdir: Path) -> list[str]:
+def check_upstream(upstream: dict[str, Any], *, latest: bool, workdir: Path) -> list[str]:
     repo = upstream["repo"]
     ref = upstream["default_branch"] if latest else upstream["commit"]
     dest = workdir / repo.replace("/", "__")
