@@ -7,6 +7,8 @@ I/O inside a loop, a swallowed exception, duplication) on the files it changed.
 Pre-existing findings in those files are reported but do not fail the run.
 A test file is not held to a long parameter list or to duplication: a test
 takes its fixtures as parameters, and one decision per test makes bodies alike.
+A rule switched off in `.repowise/health-rules.json` (Repowise's own file, written
+by a person) is not held for the paths that file names.
 
 Usage:
     uv run python scripts/repowise_gate.py origin/main..HEAD
@@ -28,8 +30,12 @@ from __future__ import annotations
 
 import argparse
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
+from pathlib import Path
 from typing import Any
+
+# Repowise's own rules file, written by a person: a rule switched off for a path.
+RULES = ".repowise/health-rules.json"
 
 # Repowise's reasons for skipping a file that has no code health to compare.
 # Any other reason (parse_failed, too_large, one a later version adds) fails closed.
@@ -61,7 +67,27 @@ def held(findings: list[dict[str, Any]], is_test: Callable[[str], bool]) -> list
     ]
 
 
-def main() -> int:
+def changed_paths(changes: Iterable[Any]) -> list[str]:
+    """Every path the change names, old and new, sorted, each once."""
+    return sorted(
+        {path for change in changes for path in (change.head_path, change.base_path) if path}
+    )
+
+
+def rules_config(rules: Any, source: Any, revspec: str | None) -> dict[str, Any] | None:
+    """The repo's rules for the paths the change names; None when the repo has no rules file."""
+    if not Path(RULES).is_file() or not rules.has_overrides():
+        return None
+    try:
+        changes = source.resolve(revspec).changes
+    except ValueError:  # an unknown revision; the review reports it
+        changes = ()
+    config: dict[str, Any] = rules.to_analyzer_config(changed_paths(changes))
+    return config
+
+
+def arguments() -> argparse.Namespace:
+    """The revisions to compare, and whether a run Repowise could not analyse passes."""
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
@@ -73,17 +99,31 @@ def main() -> int:
         action="store_true",
         help="exit 0 instead of 3 when Repowise could not analyse the change",
     )
-    args = parser.parse_args()
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = arguments()
 
     try:
-        from repowise.core.analysis.change_health import GitRevisionSource
+        from repowise.core.analysis.change_health import (
+            ChangeHealthDeltaService,
+            GitRevisionSource,
+            RevisionHealthAnalyzer,
+        )
         from repowise.core.analysis.change_review import ChangeReviewRequest, ChangeReviewService
+        from repowise.core.analysis.health.config import HealthConfig
         from repowise.core.test_paths import is_test_related_path
     except ImportError:
         print("repowise is not installed: uv add --group dev repowise", file=sys.stderr)
         return 2
 
-    service = ChangeReviewService(GitRevisionSource("."), repo_path=".")
+    source = GitRevisionSource(".")
+    config = rules_config(HealthConfig.load("."), source, args.revspec)
+    delta = ChangeHealthDeltaService(
+        source, repo_path=".", analyzer=RevisionHealthAnalyzer(config=config)
+    )
+    service = ChangeReviewService(source, repo_path=".", delta_service=delta)
     bundle = service.review(ChangeReviewRequest(revspec=args.revspec))
     health = bundle.lane("health")
 
@@ -102,6 +142,8 @@ def main() -> int:
         f"repowise change gate: {scope.get('analyzed', 0)} file(s) analysed, "
         f"{len(introduced)} introduced, {len(worsened)} worsened, {unchanged} pre-existing"
     )
+    if config is not None:
+        print(f"  rules in force: {RULES}")
     changed = introduced + worsened
     failing = held(changed, is_test_related_path)
     for finding in failing:
@@ -117,8 +159,8 @@ def main() -> int:
 
     if failing:
         print(
-            "\nFix the findings above, or explain in the PR why the shape is right "
-            "and get a reviewer to agree."
+            f"\nFix the findings above, or switch the rule off for that path in {RULES}, "
+            "in a change a reviewer approves."
         )
         return 1
     return 0

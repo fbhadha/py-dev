@@ -35,7 +35,7 @@ The plugin's hooks run in the session on Copilot CLI and Claude Code, in your pr
 | `docs/agents/mode.md`, `issue-tracker.md`, `domain.md` | Guide-mode settings; where tickets live and the commands for them; where the glossary and ADRs live. | Intake. |
 | `pyproject.toml` tool tables, `.pre-commit-config.yaml`, CI | The checks: ruff, mypy strict, import-linter, module length, secrets at commit on changed lines; tests, README commands and the Repowise change gate in CI. | Intake, from `skills/py-baseline/templates/`. |
 | `scripts/repowise_gate.py`, `adr_sync.py`, `run_readme_blocks.py`, `check_test_diff.py`, `check_literals.py`, `check_eval_report.py` | The six scripts we maintain: fail CI when a diff makes a touched file worse; bind ADRs to paths; execute the README's command blocks so it cannot rot; refuse a weakened test, a literal typed from memory (a path that names nothing, a key not in `.env.example`), and an agent changed without a fresh eval report. | Intake copies them; nobody edits them in the target repo. |
-| `.repowise/` | Repowise's index. Gitignored; rebuilt anywhere in seconds. | Repowise. |
+| `.repowise/` | Repowise's index. Gitignored, except `health-rules.json`; rebuilt anywhere in seconds. | Repowise. |
 
 ### Where the how-tos come from
 

@@ -2,13 +2,12 @@
 
 Drives this repo's copy under scripts/; the last test proves it is the template.
 Expected values: the script's exit codes (its docstring) and the edge-case tables of
-issues #19 and #27.
+issues #19, #27 and #56.
 """
 
 import importlib.util
-from collections.abc import Callable
 from pathlib import Path
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 
 import pytest
 from repowise.core.test_paths import is_test_related_path
@@ -33,23 +32,6 @@ def gate(root: Path) -> ModuleType:
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
-
-
-@pytest.fixture
-def committed(repo: Path, git) -> Callable[[dict[str, str | None]], None]:
-    """Commit these files on a new branch; a file whose content is None is deleted."""
-
-    def call(files: dict[str, str | None]) -> None:
-        git("switch", "-q", "-c", "ticket/19")
-        for name, content in files.items():
-            if content is None:
-                (repo / name).unlink()
-            else:
-                (repo / name).write_text(content, encoding="utf-8")
-        git("add", "-A")
-        git("commit", "-q", "-m", "change")
-
-    return call
 
 
 @pytest.mark.parametrize(
@@ -129,6 +111,15 @@ def test_missed_file_fails_closed(gate: ModuleType, payload: dict) -> None:
 def test_held(gate: ModuleType, finding: dict[str, str], kept: bool) -> None:
     worsened = {**finding, "change_kind": "worsened"}
     assert gate.held([worsened], is_test_related_path) == ([worsened] if kept else [])
+
+
+def test_changed_paths(gate: ModuleType) -> None:
+    changes = [
+        SimpleNamespace(head_path="src/b.py", base_path="src/a.py"),
+        SimpleNamespace(head_path=None, base_path="src/gone.py"),
+        SimpleNamespace(head_path="src/b.py", base_path="src/b.py"),
+    ]
+    assert gate.changed_paths(changes) == ["src/a.py", "src/b.py", "src/gone.py"]
 
 
 def test_copy_matches_template(root: Path) -> None:

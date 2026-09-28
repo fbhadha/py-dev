@@ -51,7 +51,7 @@ Two layers. Line-level tools run at commit on the changed files. Repowise (`docs
 | New lines without a test | `diff-cover` at 90% on the lines the change added, in CI | CI |
 | Layering | `import-linter` layers contract, whole program: CI and before review, `--hook-stage manual` locally; never in the commit hook, where it would block every commit on a brownfield repo | CI; review |
 | Types | `mypy --strict` on the staged `src/` files (`follow_imports = silent`), the whole of `src/` in the health step | commit; health |
-| A change made a touched file worse (new nesting, god class, I/O in a loop, duplication, swallowed exception) | `scripts/repowise_gate.py`: `ChangeReviewService.review()` on `origin/main..HEAD`, fails when `introduced_total > 0` | CI |
+| A change made a touched file worse (new nesting, god class, I/O in a loop, duplication, swallowed exception) | `scripts/repowise_gate.py`: `ChangeReviewService.review()` on `origin/main..HEAD`, fails when `introduced_total > 0`; applies `.repowise/health-rules.json` when the repo has one | CI |
 | Health score, ranking, what to refactor first, trend | `repowise health`, `--refactoring-targets`, `--trend` (its own history; nothing written to docs) | health |
 | Duplication | `repowise health` (`dry_violation`) | health |
 | Dead code | `repowise dead-code --safe-only` fails on unreachable files; unused exports are listed, never fail | health |
