@@ -319,9 +319,9 @@ def main() -> int:
 
     problems += check_rendered_agents()
     problems += check_persona_budget()
-    if "upstream.json" in parsed:  # unreadable: reported above, and no reference can be judged
-        for doc in [*skill_files, *agent_files]:
-            problems += check_references(doc)
+    # upstream.json unreadable: reported by load_json, and no reference can be judged without it
+    for doc in [*skill_files, *agent_files] if "upstream.json" in parsed else []:
+        problems += check_references(doc)
 
     plugin = parsed.get(".claude-plugin/plugin.json")
     if plugin is not None:
