@@ -207,6 +207,7 @@ def decide(payload: dict[str, Any]) -> tuple[str, str] | None:
         return "deny", reason
     if c.guard_off() or c.repo_root() is None:
         return None
+    c.note_session(os.getppid())
     branch = c.current_branch()
     asked = (
         leaving_reason(command) or shaping_reason(command, branch) or main_reason(command, branch)
