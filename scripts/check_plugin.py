@@ -316,38 +316,9 @@ def main() -> int:
         problems += check_references(doc)
 
     plugin = parsed.get(".claude-plugin/plugin.json")
-    marketplace = parsed.get(".claude-plugin/marketplace.json")
     if plugin is not None:
-        listed = sorted(Path(p).name for p in plugin.get("skills", []))
-        present = sorted(p.parent.name for p in skill_files)
-        if listed != present:
-            problems.append(
-                f"plugin.json skills {listed} do not match the folders under skills/ {present}"
-            )
-    copilot = parsed.get("plugin.json")
-    if plugin is not None:
-        version = plugin.get("version")
-        persona = PERSONA.read_text(encoding="utf-8")
-        if f"python-dev {version}" not in persona:
-            problems.append(
-                f"agents/python-dev.md must name `python-dev {version}` (its status line); "
-                "bump it with the manifests"
-            )
-    if plugin is not None and marketplace is not None and copilot is not None:
-        versions = {
-            ".claude-plugin/plugin.json": plugin.get("version"),
-            "plugin.json": copilot.get("version"),
-            ".claude-plugin/marketplace.json": (marketplace.get("metadata") or {}).get("version"),
-        }
-        if len(set(versions.values())) != 1:
-            problems.append(f"manifest versions differ: {versions}")
-        if plugin.get("name") != copilot.get("name"):
-            problems.append("plugin.json and .claude-plugin/plugin.json name differ")
-    copilot_market = parsed.get(".github/plugin/marketplace.json")
-    if marketplace is not None and copilot_market is not None and marketplace != copilot_market:
-        problems.append(
-            ".github/plugin/marketplace.json must be identical to .claude-plugin/marketplace.json"
-        )
+        problems += check_plugin_manifest(plugin, skill_files)
+    problems += check_manifests_agree(parsed)
 
     if problems:
         print("\nPLUGIN CHECK FAILED:")
