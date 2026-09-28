@@ -50,7 +50,7 @@ def is_edit_tool(name: str) -> bool:
     return name.strip().lower() in EDIT_TOOLS
 
 
-def edited_paths(args: dict) -> list[str]:
+def edited_paths(args: dict[str, Any]) -> list[str]:
     if str(args.get("command", "")).lower() == "view":
         return []  # str_replace_editor's read mode
     paths = [str(args[key]) for key in PATH_KEYS if isinstance(args.get(key), str) and args[key]]
