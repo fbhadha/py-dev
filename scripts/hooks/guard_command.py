@@ -198,6 +198,21 @@ def main_reason(command: str, branch: str) -> str | None:
     )
 
 
+def shared_reason(command: str) -> str | None:
+    """Why this command asks: it moves the branch while another session is live here."""
+    if not MOVES_BRANCH.search(command):
+        return None
+    others = c.other_sessions(os.getppid())
+    if not others:
+        return None
+    return (
+        f"python-dev: another session is live in this folder ({len(others)} other), and "
+        "this command moves the branch for both. Approve only if that session is finished. "
+        "Otherwise work in a folder of your own: "
+        "git worktree add ../<folder> -b <branch> origin/main"
+    )
+
+
 def decide(payload: dict[str, Any]) -> tuple[str, str] | None:
     """(decision, reason) for this tool call, or None to let it through."""
     name = c.tool_name(payload)
