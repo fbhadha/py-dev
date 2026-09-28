@@ -115,7 +115,7 @@ BROKEN_FACTS = {
     ),
     "a-section-number-past-the-last": (
         rewrite("skills/py-shape/SKILL.md", lambda text: text + "see section 99\n"),
-        "99; only",
+        "refers to section 99; only",
     ),
     "a-pack-without-a-template-section": (
         rewrite("skills/pack-adk/SKILL.md", lambda t: t.replace("## Shapes", "## Shape list")),

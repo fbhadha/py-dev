@@ -45,4 +45,6 @@ A step that cannot name these is not planned yet; go back to the code or the gri
 - **M**: two to four slices, one layer's worth of new code plus wiring.
 - **L**: the most one session holds: five or six slices. Anything bigger is two tickets.
 
+Count the lines a formatter will rewrap in a file the plan touches: CI's `diff-cover` counts them as added, so a layout-only change to a file with no test fails the 90% check. A test that runs a copy of a script measures nothing: coverage follows the path in `[tool.coverage.run]`.
+
 Say the size when you show the breakdown; a user who sees six L tickets knows the cost before the first line.
