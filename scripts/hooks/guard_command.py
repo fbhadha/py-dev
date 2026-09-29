@@ -3,7 +3,9 @@
 
 Denied outright (no asking): force-push, hard reset, history rewrite, --no-verify,
 force-deleting a branch, setting PYTHON_DEV_GUARD inside a command, and
-`pre-commit uninstall`. These are on the persona's never list.
+`pre-commit uninstall`. These are on the persona's never list. The body of a heredoc
+that is only written down (to a file, or as a message) is not read for them; a body fed
+to a shell, piped on, or holding a substitution is.
 
 Asked (the harness prompts the human): anything that lands on main. A commit while
 main is checked out, a merge into main (checked out, or switched to in the same
@@ -85,6 +87,31 @@ COMMIT_ALL = re.compile(GIT + r"\bcommit\b[^|;&]*\s-(?:-all|[a-zA-Z]*a[a-zA-Z]*)
 MOVES_BRANCH = re.compile(
     GIT + r"\b(switch|checkout)\b|" + GIT + r"\bbranch\b[^|;&]*\s(-m|-M|--move)\b"
 )
+
+
+HEREDOC = re.compile(
+    r"^(?P<head>[^\n]*<<-?\s*(?P<quote>['\"]?)(?P<tag>\w+)(?P=quote)[^\n]*)\n"
+    r"(?P<body>.*?)^\s*(?P=tag)[ \t]*$",
+    re.DOTALL | re.MULTILINE,
+)
+RUNS_TEXT = re.compile(r"\||\b(bash|sh|zsh|ksh|fish|eval|source|exec|xargs|python\d?)\b")
+SUBSTITUTES = re.compile(r"\$\(|`")
+
+
+def without_written_text(command: str) -> str:
+    """The command without the heredoc bodies that are only written down, never run.
+
+    A body stays in when its own line pipes on or names a shell, or when the heredoc is
+    unquoted and the body holds a substitution. In doubt the body stays, and is read.
+    """
+
+    def head_or_all(found: re.Match[str]) -> str:
+        runs = RUNS_TEXT.search(found["head"]) or (
+            not found["quote"] and SUBSTITUTES.search(found["body"])
+        )
+        return found[0] if runs else found["head"]
+
+    return HEREDOC.sub(head_or_all, command)
 
 
 def is_shell_tool(name: str) -> bool:
@@ -226,7 +253,7 @@ def decide(payload: dict[str, Any]) -> tuple[str, str] | None:
     command = str(c.tool_args(payload).get("command", ""))
     if not is_shell_tool(name) or not command:
         return None
-    reason = denied(command)
+    reason = denied(without_written_text(command))
     if reason:
         return "deny", reason
     if c.guard_off() or c.repo_root() is None:
