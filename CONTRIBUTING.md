@@ -60,18 +60,4 @@ This repo carries the same baseline it installs (`uv run pre-commit install` onc
 - The six scripts the baseline copies into a repo (change gate, ADR binder, README runner, test-diff check, literal check, eval-report check) are process, not lint.
 - Verify before you write. `docs/research/` records what was checked and when.
 - A knowledge pack is `skills/pack-<domain>/` in the shape of `packs/TEMPLATE.md`, reference only.
-
-## Before a release
-
-1. Run the commands above.
-2. Run [the smoke test](docs/smoke-test.md) with a real model on each harness someone uses.
-3. Set the version in every manifest and in the persona's status line.
-4. Add a `CHANGELOG.md` entry that records the smoke test.
-
-## Why things are the way they are
-
-- [docs/how-python-dev-works.md](docs/how-python-dev-works.md): the long explainer.
-- [docs/design/python-dev-agent.md](docs/design/python-dev-agent.md): the design and every decision.
-- [docs/adr/](docs/adr/): the decisions that were hard to reverse.
-- [docs/research/](docs/research/): what was verified.
-- [CONTEXT.md](CONTEXT.md): the words.
+- Before a release: the commands above, [the smoke test](docs/smoke-test.md) with a real model on each harness someone uses, then the version in every manifest and in the persona's status line, and a `CHANGELOG.md` entry that records the smoke test.

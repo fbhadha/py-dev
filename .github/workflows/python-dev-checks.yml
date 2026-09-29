@@ -67,6 +67,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
       - run: uv sync --frozen
+      # README.md holds no ```bash ci``` block today; it stays here so one added later is run.
       - name: execute every ```bash ci``` block in README.md and CONTRIBUTING.md
         run: |
           uv run python scripts/run_readme_blocks.py README.md

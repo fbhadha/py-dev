@@ -140,7 +140,7 @@ Every pack has the same sections: what selects it, the shapes it knows, a well-k
 
 ## Guards
 
-`main` changes only by a merge you said yes to. Hooks hold the rules even when the model forgets them.
+`main` changes only by a merge you said yes to, and hooks hold that rule even when the model forgets it.
 
 | Guard | What it stops |
 |---|---|
