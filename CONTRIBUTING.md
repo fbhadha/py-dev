@@ -52,7 +52,7 @@ This repo carries the same baseline it installs (`uv run pre-commit install` onc
 
 ## Rules
 
-- `agents/python-dev.md` is the only hand-written persona. It stays under 14,000 characters, and every skill is reachable from it. CI enforces both.
+- `agents/python-dev.md` is the only hand-written persona: the loop, the voice, the pushback, the routing table and the rules that hold on every turn. It stays under 14,000 characters, and every skill is reachable from it. CI enforces both.
 - Every step list is a skill the persona's table names. Every other copy is generated, and CI fails when one is stale.
 - Call upstream skills by name, never copy them. Add the name to `upstream.json`, and bump a pin in its own commit after reading the upstream changelog.
 - One read path and one write path per kind of knowledge (ADR 0005). Anything derived from the code comes from Repowise, by CLI.
