@@ -23,10 +23,7 @@ Two packs to read first: [skills/pack-adk](skills/pack-adk/SKILL.md) and [skills
 ## What a pack must meet
 
 - [ ] Every section of the template is filled.
-- [ ] No procedures. Steps belong in a skill with a verb in its name.
-- [ ] No copy of another skill's content. Cite it.
-- [ ] Nothing a linter enforces. Turn the linter on in "Extra checks" instead.
-- [ ] Every claim about a library is checked against its current docs, with the version noted.
+- [ ] The four rules in the last paragraph of [packs/TEMPLATE.md](packs/TEMPLATE.md) hold.
 - [ ] `scripts/check_plugin.py` is green.
 - [ ] A pack that ships an example package: `scripts/check_pack_examples.py` is green.
 
