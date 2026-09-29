@@ -2,7 +2,7 @@
 
 An agent that runs the same development process on every change to a Python repo.
 
-Coding agents are fast, and they work differently every time: one day a plan and tests, the next day code straight from a chat message. python-dev is a senior engineer you select as your agent in Claude Code or GitHub Copilot. It takes every change through one lifecycle, and it calls tools that already exist to audit the code instead of reinventing them. You talk, decide, and approve each merge.
+Coding agents are fast, and they work differently every time: one day a plan and tests, the next day code straight from a chat message. python-dev is a senior engineer you select as your agent in Claude Code or GitHub Copilot: it takes every change through one lifecycle, and it calls tools that already exist to audit the code instead of reinventing them. You talk, decide, and approve each merge.
 
 ## How a change flows
 
