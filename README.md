@@ -11,7 +11,7 @@ flowchart LR
     intake[Intake:<br/>set up the repo] --> idea([Your idea])
     idea --> view[The agent's view<br/>and pushback]
     view --> grill[Grill:<br/>the open decisions]
-    grill --> ADR[Captures your decisions<br/>for future direction]
+    grill --> ADR[ADR: Captures your decisions<br/>for future direction]
     ADR --> tickets[Spec and tickets<br/>with exact plans]
     tickets --> build[Build one ticket,<br/>tests first]
     build --> review[Checks and<br/>four-axis review]
