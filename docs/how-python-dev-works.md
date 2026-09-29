@@ -73,3 +73,60 @@ The agent writes for a manager: the answer first, each choice in one short parag
 | Why something is the way it is | `docs/design/python-dev-agent.md` and `docs/adr/` in this repository |
 
 Before a release: `python scripts/render_agents.py`, `python scripts/check_plugin.py`, `uv run pytest -m "not eval"`, `python scripts/check_pack_examples.py`, `python scripts/check_upstream_skills.py`, `claude plugin validate --strict .`, and [the smoke test](smoke-test.md) with a real model on each harness.
+
+## 7. Skills only you can start
+
+| Skill | When the agent gives you the line | What you type |
+|---|---|---|
+| `setup-matt-pocock-skills` | intake, once per repo, at the tracker step | `/mattpocock-skills:setup-matt-pocock-skills` |
+| `wayfinder` | an idea too big for one session; then the first message of every session on its map | `/mattpocock-skills:wayfinder <the idea>`; later `/mattpocock-skills:wayfinder <map> <handoff path>` |
+| `improve-codebase-architecture` | after the health step, when you want the refactor | `/mattpocock-skills:improve-codebase-architecture <worst file>` |
+| `triage` | issues from other people | `/mattpocock-skills:triage what needs my attention?` |
+| `wait-what` | any time a message did not land; the agent mentions it once a session | `/mattpocock-skills:wait-what` |
+| `teach` | learning a topic over several sessions, in a new session opened in `~/learning/<topic>/`, never the repo | `/mattpocock-skills:teach <topic>` |
+
+The line comes from `scripts/find_skill.py --typed <name>`. As checked on 2026-09-23 with Copilot CLI 1.0.88 and a scripted model: the `mattpocock-skills:` prefix is required there (the bare `/wayfinder` answers "Unknown command"), the line works with python-dev selected and as the start prompt (`copilot --agent python-dev:python-dev -i "/mattpocock-skills:wayfinder ..."`), and it is expanded only in an interactive session: `copilot -p` sends it to the model as plain text, whose skill tool then answers "Skill not found" (the behaviour in [github/copilot-cli#4438](https://github.com/github/copilot-cli/issues/4438)). Claude Code takes the prefixed line, and the bare one when no other command has that name. VS Code prefixes a plugin's skills with its name; use the Chat view, because the Agents window cannot start these skills yet ([microsoft/vscode#331477](https://github.com/microsoft/vscode/issues/331477)). Matt's skills installed with `npx skills add` instead of as a plugin have no prefix, and `--typed` prints the bare line.
+
+His retired flow skills (`grill-with-docs`, `to-spec`, `to-tickets`, `implement`, `handoff`) still run if you type them. The agent first says which of its steps replaces each and what his leaves out (its view and pushback, the plan in each ticket, the plan check, the gates and the merge question), recommends its own, and follows his if you still want it.
+
+## 8. When Repowise runs
+
+Repowise is the one store for everything derived from the code: structure, callers, blast radius, health, dead code, change risk, doc drift, which ADR governs which file. Its MCP server puts every tool definition in context on every turn, used or not; how much that costs depends on the harness (caching and deferred tool loading soften it) and nobody here has measured it. The CLI costs only what a call returns, and behaves the same everywhere. The agent never uses the MCP server. Instead the persona names the only moments Repowise runs, and the command for each:
+
+| Moment | Command |
+|---|---|
+| Session start, when the index is behind HEAD | `DO_NOT_TRACK=1 uv run repowise init --no-prose --no-editor-setup --no-save-key -y` (never `update`: it writes editor files no flag stops) |
+| Before editing, once per ticket | `uv run repowise risk -t <f1> -t <f2> ...` for every file the ticket touches; `why <file>` only for a file that call marks governed or bug-magnet |
+| Before naming something new | `uv run repowise search <name>` |
+| Before review | `scripts/repowise_gate.py`, `repowise risk <range>`, `repowise impacted-tests <range>` |
+| Any command that prints pages | `uv run repowise distill <command>`: keeps failures and summaries, drops the pass parade, keeps the exit code |
+| Health, on request | `health --refactoring-targets`, `dead-code --safe-only`, `doc-drift`, `decision health` |
+| Orientation, at intake | `context`, `health`, `dead-code`, `decision candidates`, `doc-drift` |
+
+Never for browsing: to find or read code the agent greps and opens the file. Decisions are written only as ADR files in `docs/adr/`, bound to paths by `scripts/adr_sync.py`; Repowise reads them, nothing writes to it. Repowise is AGPL-3.0 and a development tool only; the templates set `DO_NOT_TRACK=1`.
+
+## 9. Context cost
+
+What a harness loads every turn from this plugin is the persona and nine skill descriptions, about 4,500 tokens at 3.6 characters per token (persona ~3,700, descriptions ~800), plus the guard line from the session-start hook. 0.11.0 spends about 700 more tokens a turn than 0.10.0 on the loop, the explaining and the pushback, which the 10,000-character ceiling had squeezed out, 0.11.1 about 400 more on the line it gives you for a skill of Matt's that only a person can start, 0.12.0 about 25 more on two clauses about edge cases, and 0.13.0 about 100 more on two clauses (every literal from a file open in this slice; you are the author); CI fails at 14,000, so it cannot creep further without a choice. Skill bodies load only when a skill runs (`py-intake`, the largest, about 7,700 tokens, once per repo; `py-shape` about 2,600, once per idea; `py-build` about 1,700, once per ticket); `references/` files only when a skill opens them. Matt's skills add their descriptions when installed. Google's four are installed only in ADK repos. The rest of the session's overhead is what the persona reads and runs before real work, and each of those is bounded: session start reads `AGENTS.md` only (`CONTEXT.md`, the tracker file and a how-to are opened when a step needs them); the index is refreshed only when `repowise status` says it is behind HEAD; the upstream door check caches a clean result for a day; one `risk` call covers every file a ticket touches; test, pre-commit and log output goes through `repowise distill`, which drops the passing noise and keeps the failures; intake's orientation reads at most three entry points. Every step is a numbered instruction or a command, so a smaller model can follow it; what a smaller model does worse is the judgement in the review's Craft axis and in grilling, and the mechanical checks do not get weaker.
+
+## 10. The guards, in full
+
+`main` changes only by a merge you said yes to. That is the whole rule, and the branch is what enforces it: the agent works on `ticket/<id>` (intake on `intake/baseline`), commits and pushes there freely, and when the ticket is done it shows you the diff summary, the commits and the check results and asks "merge to main?". Files outside `src/` and `tests/` are listed first in that summary, one sentence each, so a change to packaging, CI or the docs cannot hide in it. Mechanical layers hold the rule without the model's cooperation:
+
+| Layer | Mechanism | What it catches |
+|---|---|---|
+| The hook asks before `main` | A pre-tool hook on shell commands answers `ask` for anything that lands on `main`: a commit while `main` is checked out, a merge into it, a push to it, `gh pr merge` or `glab mr merge`. The harness's own permission prompt is the yes. On a branch nothing asks. | The agent committing to `main` by habit, or merging without you |
+| Nothing leaves the project unseen | The same hook asks for any `gh`, `glab` or `git push` aimed at a repo that is not this project's `origin`: another `-R` repo, a write through `gh api`, a gist, a push to a fork or a URL. Reads (`view`, `list`, `status`, `diff`) pass. The prompt names both repos. | Content from your repo going to a public issue, a gist or someone else's fork without your eyes on it |
+| Branch protection on the server | Set at the end of intake with your yes (`gh api`, `glab api`): no push to `main`, no merge until the CI jobs are green. | Any tool or person, hook or no hook |
+| The turn cannot end red | The stop hook runs ruff on the files the session changed and blocks until it is clean. | A turn ending mid-mess |
+| No ticket, no code | In a repo intake set up, the hook asks before an edit to `src/`, `tests/` or any `.py` outside `prototypes/` when the branch is not `ticket/`, `prototype/` or `intake/`; its reason tells the agent to open the ticket first. | The agent coding straight from a chat message, which is what the default agent does |
+| Shaping never builds | On a `shaping/` branch the command hook asks before a commit that carries `src/` or `tests/` files, and before an edit to them. | Product code written inside a grill or a wayfinder map, the failure Matt's own docs report most |
+| One session per folder | While another session is live in the same checkout, the command hook asks before `git switch`, `git checkout` or `git branch -m`. A worktree is its own checkout and never asks. | Two sessions moving the branch under each other |
+
+Plus the never list: force-push, hard reset, rebase, `--amend`, `--no-verify` and force-deleting a branch are denied outright, on any branch.
+
+The guards are on as soon as the plugin is installed, on Copilot CLI and Claude Code; a session-start hook tells the model `python-dev guards active` with the plugin version, the branch and where the plugin's scripts are, and the persona puts the state on its status line. The hooks run in your project whichever folder the harness starts them in. VS Code does not run this plugin's hooks (it expands no plugin root for them), so each hook command exits quietly there instead of denying every tool call; in VS Code the guards are your repo's pre-commit, CI and branch protection, and the status line says `guards unknown`. `PYTHON_DEV_GUARD=off` silences the ask for one session; the denies stay. The hooks fail open on any error of their own, and the pytest modules under `tests/hooks/` drive every decision in CI, in both harnesses' payload shapes, started from outside the repo the way Copilot CLI starts them.
+
+Earlier versions (0.6.0 to 0.7.0) guarded individual files with ask, record and stop hooks and a commit-msg gate. The branch does the same job with one prompt per ticket instead of one per file, and about four hundred lines less hook code; see decision 39.
+
+**Tests stay real.** Two checks in CI gate the merge: `scripts/check_test_diff.py` fails when the `tests/` diff deletes a test, adds a `skip` or `xfail`, or loses assertions, unless a commit message carries `test-override:` in your words; `diff-cover` fails when under 90% of the lines a change added are covered. The review's Craft axis reads the `tests/` diff for what a script cannot see: an assertion loosened in place, an expected value computed the way the code computes it.
