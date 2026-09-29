@@ -25,6 +25,7 @@ flowchart LR
 | Intake | Once per repo: the checks, the docs and a tracker for tickets are set up. |
 | View | The agent reads the code, then says what it would build, what it would leave out, and why. |
 | Grill | It asks you the open decisions in short rounds, each with its recommended answer. |
+| ADR | A short record of one technical decision and why it was made. |
 | Spec and tickets | The design is written down and cut into tickets (units of work). Each names its files, functions and tests. |
 | Build | One ticket per session, on its own branch. Each test is written before the code it tests. |
 | Review | Linting, type checks, tests and a review of the change. |
