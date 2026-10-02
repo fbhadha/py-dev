@@ -26,7 +26,7 @@ def on_branch(git) -> None:
         f"gh issue create --title t --body-file - <<'EOF'\nnever {RESET}\nEOF",
         "git commit -F - <<'EOF'\ndocs: say why git push --force is denied\nEOF",
         "git add . && git commit -m \"$(cat <<'EOF'\ndocs: git rebase is denied\nEOF\n)\"",
-        f'gh pr create --title "46: the guard\'s heredoc" --body "$(cat <<\'EOF\'\n{RESET}\nEOF\n)"',
+        f'gh pr create --title "46: the guard\'s rule" --body "$(cat <<\'EOF\'\n{RESET}\nEOF\n)"',
     ],
     ids=[
         "to a file",

@@ -26,9 +26,10 @@ Also asked: anything that sends content to a repo other than this project's
 a remote or URL that is not origin. Reads (`view`, `list`, `status`, `diff`) do
 not ask. The reason names both repos so the human can see what is leaving.
 
-Not read: the body of a heredoc with a quoted delimiter (`<<'EOF'`) that feeds `cat`,
-`tee`, `git`, `gh` or `glab`. That is text being written (a commit message, an issue
-body), not a command. Every other heredoc is read like the rest of the command.
+Not read: the body of a heredoc with a single-quoted delimiter (`<<'EOF'`) when the
+whole command is `git commit`, `gh issue|pr create|comment|edit` or `cat` to a file,
+with plain arguments and nothing after the closing line. That is text being written
+(a commit message, an issue body), not a command. Every other command is read whole.
 
 Edit tools are handed to guard_edit.py (no ticket, no code), so one pre-tool
 entry per harness covers both. Runs in the project named by the payload's cwd:
