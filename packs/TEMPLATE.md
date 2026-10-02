@@ -13,7 +13,7 @@ description: "Knowledge pack for <domain> repos in Python (<the libraries>). Ref
 # <Domain> pack
 
 ## Selected when
-The dependency names that select this pack.
+The dependency names that select this pack, each in backticks. `py-intake` reads this section to decide.
 
 ## Shapes
 A table: shape, the how-to it gets (`docs/howto/add-a-<shape>.md`), the seam tests drive.
