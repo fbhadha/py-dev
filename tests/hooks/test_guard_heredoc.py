@@ -21,7 +21,7 @@ def on_branch(git) -> None:
         "gh issue create --title t --body-file - <<'EOF'\nnever git reset --hard\nEOF",
         "git commit -F - <<'EOF'\ndocs: say why git push --force is denied\nEOF",
         'git add . && git commit -m "$(cat <<\'EOF\'\ndocs: git rebase is denied\nEOF\n)"',
-        "cat > body.md <<-EOF\n\tgit commit --amend is on the never list\n\tEOF",
+        "cat > body.md <<-'EOF'\n\tgit commit --amend is on the never list\n\tEOF",
     ],
     ids=["to a file", "issue body", "commit message", "substituted message", "tab-stripped"],
 )
