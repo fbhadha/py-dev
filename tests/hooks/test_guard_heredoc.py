@@ -1,7 +1,8 @@
 """The command guard and heredocs: text that is only written passes; text that runs is denied.
 
-Ticket 46. A heredoc that feeds `cat`, `tee`, `git`, `gh` or `glab` is text; the guard does
-not read it. Any other heredoc, and every word outside one, is read as before.
+Ticket 46. A heredoc with a quoted delimiter (`<<'EOF'`) that feeds `cat`, `tee`, `git`, `gh`
+or `glab` is text; the guard does not read it. Any other heredoc, and every word outside
+one, is read as before.
 """
 
 from __future__ import annotations
