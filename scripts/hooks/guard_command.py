@@ -85,6 +85,41 @@ COMMIT_ALL = re.compile(GIT + r"\bcommit\b[^|;&]*\s-(?:-all|[a-zA-Z]*a[a-zA-Z]*)
 MOVES_BRANCH = re.compile(
     GIT + r"\b(switch|checkout)\b|" + GIT + r"\bbranch\b[^|;&]*\s(-m|-M|--move)\b"
 )
+HEREDOC = re.compile(r"(?<!<)<<(?P<dash>-?)\s*(['\"])(?P<word>\w+)\2(?=[\s)]|$)(?P<after>.*)")
+TEXT_READERS = {"cat", "tee", "git", "gh", "glab"}
+
+
+def only_writes_text(before: str, after: str) -> bool:
+    """Whether a heredoc opened between `before` and `after` on one line can only become text.
+
+    Every command it feeds (the last command of `before`, split at pipes and command
+    substitutions) must be a text reader, and nothing after it may pipe or substitute.
+    """
+    if "<<" in before or re.search(r"[|(`]|<<", after):
+        return False
+    pieces = re.split(r"\||\$\(|`", re.split(r"&&|\|\||;", before)[-1])
+    return all((piece.split() or [""])[0] in TEXT_READERS for piece in pieces)
+
+
+def without_quoted_heredocs(command: str) -> str:
+    """The command without the body of each heredoc that is only written, never run.
+
+    `git commit -F - <<'EOF'` with a message that names a forbidden flag does not use the
+    flag. A quoted delimiter means the shell expands nothing in the body; an unquoted one
+    still runs `$(...)`, so its body stays. A heredoc that feeds anything but a text reader
+    (`bash <<'EOF'`, `cat <<'EOF' | sh`) stays too.
+    """
+    kept: list[str] = []
+    lines = iter(command.split("\n"))
+    for line in lines:
+        kept.append(line)
+        opened = HEREDOC.search(line)
+        if not opened or not only_writes_text(line[: opened.start()], opened["after"]):
+            continue
+        for body in lines:
+            if (body.lstrip("\t") if opened["dash"] else body) == opened["word"]:
+                break
+    return "\n".join(kept)
 
 
 def is_shell_tool(name: str) -> bool:
