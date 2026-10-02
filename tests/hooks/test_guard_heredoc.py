@@ -3,7 +3,8 @@
 Ticket 46. The guard does not read a heredoc's body when the whole command is one of a few
 exact shapes that only write text: `git commit`, `gh issue|pr create|comment|edit` or `cat`
 to a file, plain arguments, a single-quoted delimiter (`<<'EOF'`), nothing after the closing
-line. Every other command is read whole, as before.
+line. Every other command is read whole, as before; that includes `-m "$(cat <<'EOF' ...)"`,
+because macOS's bash 3.2 closes the `$(` at a bracket inside the message.
 """
 
 from __future__ import annotations
@@ -66,7 +67,7 @@ def test_heredoc_text_allowed(guard, command: str) -> None:
         f"cat <<'EOF' \\\n| sh\n{RESET}\nEOF",
         f"git commit -m \"$(cat <<'EOF'\none\nEOF) two\"; {RESET}; echo \"$(cat <<'EOF'\nEOF\n)\"",
         f"git commit -F - <<'EOF'\n{RESET}",
-        f"git commit -m \"$(cat <<'EOF'\nmsg\n)\"\n{RESET}\n: \"\nEOF\n)\"",
+        f'git commit -m "$(cat <<\'EOF\'\nmsg\n)"\n{RESET}\n: "\nEOF\n)"',
         f"git commit -m \"$(cat <<'EOF'\nnever {RESET}\nEOF\n)\"",
         f"git commit -F - <<'EOF'\nEOF\n{RESET}\nEOF",
     ],

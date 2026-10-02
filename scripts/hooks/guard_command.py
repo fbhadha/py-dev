@@ -113,10 +113,10 @@ def without_written_heredoc(command: str) -> str:
     """
     head, _, rest = command.partition("\n")
     opened = WRITES_TEXT.fullmatch(head)
-    lines = rest.rstrip("\n").split("\n")
-    if not opened or lines.index(opened["word"]) != len(lines) - 1:
+    if not opened:
         return command
-    return head
+    *body, last = rest.rstrip("\n").split("\n")
+    return head if last == opened["word"] and last not in body else command
 
 
 def is_shell_tool(name: str) -> bool:
