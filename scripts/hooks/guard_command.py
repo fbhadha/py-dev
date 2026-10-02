@@ -97,34 +97,26 @@ ARG = rf"(?:{WORD}|\"[\w ./:=@,+#'-]*\"|'[\w ./:=@,+#-]*')"
 WRITES_TEXT = re.compile(
     rf"(?:{WORD}(?: {ARG})* && )*"  # plain commands before it, each still read
     rf"(?:git commit|gh (?:issue|pr) (?:create|comment|edit)|cat(?: >)?)(?: {ARG})*"
-    rf" (?P<sub>\"\$\(cat )?<<'(?P<word>\w+)'(?: > {WORD})?"
+    rf" <<'(?P<word>\w+)'(?: > {WORD})?"
 )
-CLOSES_SUB = re.compile(rf"\)\"(?: {ARG})*")  # what may follow the body of `"$(cat <<'EOF'`
 
 
 def without_written_heredoc(command: str) -> str:
-    """The command without its heredoc's body, when the whole command only writes that text.
+    """The command's first line alone, when the rest is a heredoc that is only written.
 
     `git commit -F - <<'EOF'` with a message that names a forbidden flag does not use the
     flag. The body is dropped only when the first line is exactly one of the `WRITES_TEXT`
-    shapes, the body ends at the first line that starts with the delimiter, and nothing
-    follows it (for `"$(cat <<'EOF'`: only `)"` and plain arguments). The first line and
-    what follows the body are still read. Any other command comes back unchanged: a regex
-    cannot parse shell, so anything it does not recognise whole is read whole.
+    shapes and the delimiter is the command's last line and appears on no line before it.
+    Any other command comes back unchanged: a regex cannot parse shell, so anything it
+    does not recognise whole is read whole. That includes `-m "$(cat <<'EOF' ...)"`: bash
+    3.2 closes the `$(` at a bracket in the body and runs what follows.
     """
     head, _, rest = command.partition("\n")
     opened = WRITES_TEXT.fullmatch(head)
-    if not opened:
-        return command
     lines = rest.rstrip("\n").split("\n")
-    # bash ends a heredoc inside `$(...)` at `EOF)` too, so the first line that starts
-    # with the delimiter must be the delimiter alone.
-    end = next((n for n, line in enumerate(lines) if line.startswith(opened["word"])), None)
-    if end is None or lines[end] != opened["word"]:
+    if not opened or lines.index(opened["word"]) != len(lines) - 1:
         return command
-    tail = "\n".join(lines[end + 1 :])
-    closes = CLOSES_SUB.fullmatch(tail) if opened["sub"] else not tail
-    return f"{head}\n{tail}" if closes else command
+    return head
 
 
 def is_shell_tool(name: str) -> bool:
