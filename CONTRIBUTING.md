@@ -15,8 +15,7 @@ A knowledge pack teaches the agent one Python ecosystem: its shapes, its design 
 1. Copy the block in [packs/TEMPLATE.md](packs/TEMPLATE.md) to `skills/pack-<domain>/SKILL.md`.
 2. Fill every section.
 3. Add the path to `skills` in `.claude-plugin/plugin.json`.
-4. Add the pack, and the dependencies that select it, to the row `Packs` in [skills/py-intake/SKILL.md](skills/py-intake/SKILL.md), step 1. Without this step intake never selects the pack ([#75](https://github.com/fbhadha/py-dev/issues/75)).
-5. Run `python scripts/check_plugin.py`.
+4. Run `python scripts/check_plugin.py`.
 
 Two packs to read first: [skills/pack-adk](skills/pack-adk/SKILL.md) and [skills/pack-data-engineering](skills/pack-data-engineering/SKILL.md).
 

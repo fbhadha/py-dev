@@ -2,7 +2,7 @@
 
 A pack is a reference-only skill named `pack-<domain>` under `skills/`. It changes nothing about how the agent works; it changes what the agent knows when the repo is of a kind. `py-intake` selects packs from `pyproject.toml` dependencies; `py-design` stays the general craft reference. `pack-adk` is one: it routes into Google's own skills and adds six rules. `adk-migrate` is not a pack but a procedure, because a migration has steps.
 
-Copy this file to `skills/pack-<domain>/SKILL.md`, fill every section, add the path to `skills` in `.claude-plugin/plugin.json`, and run `python scripts/check_plugin.py`.
+The steps to write one are in [CONTRIBUTING.md](../CONTRIBUTING.md), under "Contribute a knowledge pack". The block to copy:
 
 ```markdown
 ---
@@ -13,7 +13,7 @@ description: "Knowledge pack for <domain> repos in Python (<the libraries>). Ref
 # <Domain> pack
 
 ## Selected when
-The dependency names that select this pack.
+The dependency names that select this pack, each in backticks. `py-intake` reads this section to decide.
 
 ## Shapes
 A table: shape, the how-to it gets (`docs/howto/add-a-<shape>.md`), the seam tests drive.
