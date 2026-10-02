@@ -93,6 +93,9 @@ def test_heredoc_text_allowed(guard, command: str) -> None:
         "line continuation",
         "terminator followed by a bracket",
         "no terminator",
+        "bracket closes a substitution early",
+        "substituted message is read",
+        "body ends before the last line",
     ],
 )
 def test_heredoc_that_runs_denied(guard, command: str) -> None:
