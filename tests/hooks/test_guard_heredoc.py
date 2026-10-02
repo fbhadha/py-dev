@@ -25,16 +25,16 @@ def on_branch(git) -> None:
         f"cat <<'EOF' > body.md\nnever {RESET}\nEOF\n",
         f"gh issue create --title t --body-file - <<'EOF'\nnever {RESET}\nEOF",
         "git commit -F - <<'EOF'\ndocs: say why git push --force is denied\nEOF",
-        "git add . && git commit -m \"$(cat <<'EOF'\ndocs: git rebase is denied\nEOF\n)\"",
-        f'gh pr create --title "46: the guard\'s rule" --body "$(cat <<\'EOF\'\n{RESET}\nEOF\n)"',
+        "git add . && git commit -F - <<'EOF'\ndocs: git rebase is denied\nEOF",
+        f"gh pr create --title \"46: the guard's rule\" --body-file - <<'EOF'\n{RESET}\nEOF",
     ],
     ids=[
         "to a file",
         "redirect after the opener",
         "issue body",
         "commit message",
-        "substituted message",
-        "pull request body",
+        "after another command",
+        "quoted title",
     ],
 )
 def test_heredoc_text_allowed(guard, command: str) -> None:
