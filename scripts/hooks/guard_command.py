@@ -26,6 +26,11 @@ Also asked: anything that sends content to a repo other than this project's
 a remote or URL that is not origin. Reads (`view`, `list`, `status`, `diff`) do
 not ask. The reason names both repos so the human can see what is leaving.
 
+Not read: the body of a heredoc with a single-quoted delimiter (`<<'EOF'`) when the
+whole command is `git commit`, `gh issue|pr create|comment|edit` or `cat` to a file,
+with plain arguments and nothing after the closing line. That is text being written
+(a commit message, an issue body), not a command. Every other command is read whole.
+
 Edit tools are handed to guard_edit.py (no ticket, no code), so one pre-tool
 entry per harness covers both. Runs in the project named by the payload's cwd:
 Copilot CLI starts plugin hooks in the plugin's own folder.
@@ -85,6 +90,33 @@ COMMIT_ALL = re.compile(GIT + r"\bcommit\b[^|;&]*\s-(?:-all|[a-zA-Z]*a[a-zA-Z]*)
 MOVES_BRANCH = re.compile(
     GIT + r"\b(switch|checkout)\b|" + GIT + r"\bbranch\b[^|;&]*\s(-m|-M|--move)\b"
 )
+# The only first lines whose heredoc body is not read (`without_written_heredoc`). A plain
+# word has no character the shell acts on; a quoted argument holds plain words and spaces.
+WORD = r"[\w./:=@,+-]+"
+ARG = rf"(?:{WORD}|\"[\w ./:=@,+#'-]*\"|'[\w ./:=@,+#-]*')"
+WRITES_TEXT = re.compile(
+    rf"(?:{WORD}(?: {ARG})* && )*"  # plain commands before it, each still read
+    rf"(?:git commit|gh (?:issue|pr) (?:create|comment|edit)|cat(?: >)?)(?: {ARG})*"
+    rf" <<'(?P<word>\w+)'(?: > {WORD})?"
+)
+
+
+def without_written_heredoc(command: str) -> str:
+    """The command's first line alone, when the rest is a heredoc that is only written.
+
+    `git commit -F - <<'EOF'` with a message that names a forbidden flag does not use the
+    flag. The body is dropped only when the first line is exactly one of the `WRITES_TEXT`
+    shapes and the delimiter is the command's last line and appears on no line before it.
+    Any other command comes back unchanged: a regex cannot parse shell, so anything it
+    does not recognise whole is read whole. That includes `-m "$(cat <<'EOF' ...)"`: bash
+    3.2 closes the `$(` at a bracket in the body and runs what follows.
+    """
+    head, _, rest = command.partition("\n")
+    opened = WRITES_TEXT.fullmatch(head)
+    if not opened:
+        return command
+    *body, last = rest.rstrip("\n").split("\n")
+    return head if last == opened["word"] and last not in body else command
 
 
 def is_shell_tool(name: str) -> bool:
@@ -223,7 +255,7 @@ def decide(payload: dict[str, Any]) -> tuple[str, str] | None:
     name = c.tool_name(payload)
     if guard_edit.is_edit_tool(name):
         return guard_edit.check(payload)
-    command = str(c.tool_args(payload).get("command", ""))
+    command = without_written_heredoc(str(c.tool_args(payload).get("command", "")))
     if not is_shell_tool(name) or not command:
         return None
     reason = denied(command)
