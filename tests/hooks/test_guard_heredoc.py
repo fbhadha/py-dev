@@ -66,6 +66,9 @@ def test_heredoc_text_allowed(guard, command: str) -> None:
         f"cat <<'EOF' \\\n| sh\n{RESET}\nEOF",
         f"git commit -m \"$(cat <<'EOF'\none\nEOF) two\"; {RESET}; echo \"$(cat <<'EOF'\nEOF\n)\"",
         f"git commit -F - <<'EOF'\n{RESET}",
+        f"git commit -m \"$(cat <<'EOF'\nmsg\n)\"\n{RESET}\n: \"\nEOF\n)\"",
+        f"git commit -m \"$(cat <<'EOF'\nnever {RESET}\nEOF\n)\"",
+        f"git commit -F - <<'EOF'\nEOF\n{RESET}\nEOF",
     ],
     ids=[
         "into a shell",
