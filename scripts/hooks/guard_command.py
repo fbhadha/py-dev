@@ -89,41 +89,41 @@ COMMIT_ALL = re.compile(GIT + r"\bcommit\b[^|;&]*\s-(?:-all|[a-zA-Z]*a[a-zA-Z]*)
 MOVES_BRANCH = re.compile(
     GIT + r"\b(switch|checkout)\b|" + GIT + r"\bbranch\b[^|;&]*\s(-m|-M|--move)\b"
 )
-HEREDOC = re.compile(r"(?<!<)<<(?P<dash>-?)\s*(['\"])(?P<word>\w+)\2(?=[\s)]|$)(?P<after>.*)")
-TEXT_READERS = {"cat", "tee", "git", "gh", "glab"}
+# The only first lines whose heredoc body is not read (`without_written_heredoc`). A plain
+# word has no character the shell acts on; a quoted argument holds plain words and spaces.
+WORD = r"[\w./:=@,+-]+"
+ARG = rf"(?:{WORD}|\"[\w ./:=@,+#'-]*\"|'[\w ./:=@,+#-]*')"
+WRITES_TEXT = re.compile(
+    rf"(?:{WORD}(?: {ARG})* && )*"  # plain commands before it, each still read
+    rf"(?:git commit|gh (?:issue|pr) (?:create|comment|edit)|cat(?: >)?)(?: {ARG})*"
+    rf" (?P<sub>\"\$\(cat )?<<'(?P<word>\w+)'(?: > {WORD})?"
+)
+CLOSES_SUB = re.compile(rf"\)\"(?: {ARG})*")  # what may follow the body of `"$(cat <<'EOF'`
 
 
-def only_writes_text(before: str, after: str) -> bool:
-    """Whether a heredoc opened between `before` and `after` on one line can only become text.
-
-    Every command it feeds (the last command of `before`, split at pipes and command
-    substitutions) must be a text reader, and nothing after it may pipe or substitute.
-    """
-    if "<<" in before or re.search(r"[|(`]|<<", after):
-        return False
-    pieces = re.split(r"\||\$\(|`", re.split(r"&&|\|\||;", before)[-1])
-    return all((piece.split() or [""])[0] in TEXT_READERS for piece in pieces)
-
-
-def without_quoted_heredocs(command: str) -> str:
-    """The command without the body of each heredoc that is only written, never run.
+def without_written_heredoc(command: str) -> str:
+    """The command without its heredoc's body, when the whole command only writes that text.
 
     `git commit -F - <<'EOF'` with a message that names a forbidden flag does not use the
-    flag. A quoted delimiter means the shell expands nothing in the body; an unquoted one
-    still runs `$(...)`, so its body stays. A heredoc that feeds anything but a text reader
-    (`bash <<'EOF'`, `cat <<'EOF' | sh`) stays too.
+    flag. The body is dropped only when the first line is exactly one of the `WRITES_TEXT`
+    shapes, the body ends at the first line that starts with the delimiter, and nothing
+    follows it (for `"$(cat <<'EOF'`: only `)"` and plain arguments). The first line and
+    what follows the body are still read. Any other command comes back unchanged: a regex
+    cannot parse shell, so anything it does not recognise whole is read whole.
     """
-    kept: list[str] = []
-    lines = iter(command.split("\n"))
-    for line in lines:
-        kept.append(line)
-        opened = HEREDOC.search(line)
-        if not opened or not only_writes_text(line[: opened.start()], opened["after"]):
-            continue
-        for body in lines:
-            if (body.lstrip("\t") if opened["dash"] else body) == opened["word"]:
-                break
-    return "\n".join(kept)
+    head, _, rest = command.partition("\n")
+    opened = WRITES_TEXT.fullmatch(head)
+    if not opened:
+        return command
+    lines = rest.rstrip("\n").split("\n")
+    # bash ends a heredoc inside `$(...)` at `EOF)` too, so the first line that starts
+    # with the delimiter must be the delimiter alone.
+    end = next((n for n, line in enumerate(lines) if line.startswith(opened["word"])), None)
+    if end is None or lines[end] != opened["word"]:
+        return command
+    tail = "\n".join(lines[end + 1 :])
+    closes = CLOSES_SUB.fullmatch(tail) if opened["sub"] else not tail
+    return f"{head}\n{tail}" if closes else command
 
 
 def is_shell_tool(name: str) -> bool:
