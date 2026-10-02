@@ -262,7 +262,7 @@ def decide(payload: dict[str, Any]) -> tuple[str, str] | None:
     name = c.tool_name(payload)
     if guard_edit.is_edit_tool(name):
         return guard_edit.check(payload)
-    command = without_quoted_heredocs(str(c.tool_args(payload).get("command", "")))
+    command = without_written_heredoc(str(c.tool_args(payload).get("command", "")))
     if not is_shell_tool(name) or not command:
         return None
     reason = denied(command)
