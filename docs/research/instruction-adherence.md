@@ -63,6 +63,7 @@ What this means for the plugin, read from the working tree on 2026-10-03:
 - Each step of `py-intake` already has a "done when" test in prose. A script that prints which steps hold would make resuming, and the finish step's walk, deterministic.
 - The hook that works in both harnesses for text mid-session is the one after a tool call (`PostToolUse` in Claude Code, `postToolUse` in Copilot CLI). The per-message hook works in Claude Code only.
 - `/doctor prompt-audit agents/`, run 2026-10-03 in a headless session on Sonnet: three numeric output caps flagged (`agents/python-dev.md` "never more than twenty lines", `agents/py-reviewer.md` "under 500 words", `agents/py-eval.md` "under ten lines"); every path, flag, version and upstream skill name the agents cite exists.
+- `/doctor prompt-audit skills/`, run the same way on the same day: no emphasis words (`MUST`, `NEVER`, `IMPORTANT`) anywhere in `skills/` and no conflicts across files; three findings: `skills/py-baseline/SKILL.md` contradicts itself on which module mutmut runs on in the health step, `skills/py-intake/SKILL.md` pins its Repowise facts to 0.52 while 0.53.0 is installed, and the same file's finish step tells the story of a past run. It also flagged two single paragraphs of over 250 words with nested conditions (`skills/py-review/SKILL.md` item 4, `skills/py-build/SKILL.md` the eval step).
 
 ## How this plugin measures against the findings
 
