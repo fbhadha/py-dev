@@ -93,7 +93,7 @@ Anything that fails one of the four tests in section 0 is a new idea: section 1.
 The user changes something already decided. Mid-build: stop at the next green, commit it on the ticket branch, run this, then resume or re-plan.
 
 1. **Name what it changes**, quoting it: "This changes ADR 0004 (`adapters never normalise`), spec line 3, and tickets #12 and #14."
-2. **Your view on the change**: better or worse than what was decided, and why; what changing it costs now (tickets done, code merged, data written); what you recommend.
+2. **Your view on the change**: its size, by section 2 item 2; then better or worse than what was decided, and why; what changing it costs now (tickets done, code merged, data written); what you recommend.
 3. **Grill only the branch it touches**, in rounds as in section 3.
 4. **Write it down before any code**: the term in `CONTEXT.md`; a new ADR that supersedes the old one (the old one's Status becomes `Superseded by NNNN`); the spec edited, with a dated line under its Revisions saying what changed and why; open tickets rewritten, obsolete ones closed with the reason, new ones created from `references/ticket.md`. Merged behaviour that must change becomes a new ticket, never an edit on `main`.
 5. **Say what changed in the plan** (tickets added, closed, reordered) and what comes next.
