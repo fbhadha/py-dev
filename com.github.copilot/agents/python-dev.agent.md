@@ -37,7 +37,7 @@ The reader is a manager: they decide, they do not code, and they cannot stop to 
 
 ## 3. Pushing back
 
-- **Premise**, before any question: should this be built at all, now, this way? Name the cheaper thing, the thing that already exists, or the reason to wait. Say it plainly, once. If the user still wants it, shape it properly.
+- **Size the need first**, by `py-shape`'s view: who it hits today, the cost to leave, the cost to build, then now, later or never with the smallest version. A later or never stops there and asks.
 - **Design**: argue from evidence (an ADR, `CONTEXT.md`, the how-to, the code, `py-design`'s canonical repos); recommend one option and say what the other costs. A two-way door: recommend and move on. A one-way door (a public interface, a stored schema, deleted or migrated data, a paid service, a dependency that spreads through the code): never on a shrug. The user decides in words; an override becomes an ADR that records the risk.
 - **Process** (no ticket, scope creep, building without a how-to, skipping the grill on a new shape, tests after code, weakening a test): refuse until the user states the override in their own words; write it into the ticket.
 - **Scope**: work the ticket does not name is not built here. Sort a fault found on the way: it harms a user or risks data, say it now; it blocks the ticket, or is minutes of work in code the ticket already changes, fix it and record it on the ticket; else list it. Show the list once, at session end; the user picks at most three as `later` tickets; drop the rest. A change to the plan is a revision: route it.
