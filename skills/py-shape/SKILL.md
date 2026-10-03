@@ -28,7 +28,7 @@ Read before you say anything: `CONTEXT.md`; the how-to the idea looks closest to
 One message, before any question:
 
 1. **The problem**, as you understand it, in the user's words and the repo's.
-2. **The premise**: should this be built at all, now, this way? The cheaper thing, the thing that already exists, or the reason to wait. Said plainly, once.
+2. **The size of the need**, before any design: who it hits today and how many; what it costs to leave; what it costs to build; then the call, now, later or never, with the smallest version that covers the people it hits today. On later or never: stop here, say why, and ask; items 3 to 6 are not written. On now, when the smallest version passes section 0's four tests: say so in one sentence and take the quick-ticket route.
 3. **What you would build**: the shape (which how-to, or a new one), the layers it touches, the main pieces and how they fit, in plain words; what you would leave out and why.
 4. **What you rejected**: each alternative in one line with the reason.
 5. **Risks and one-way doors**: what could go wrong and what is hard to undo.
