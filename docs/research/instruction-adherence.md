@@ -65,6 +65,24 @@ What this means for the plugin, read from the working tree on 2026-10-03:
 - `/doctor prompt-audit agents/`, run 2026-10-03 in a headless session on Sonnet: three numeric output caps flagged (`agents/python-dev.md` "never more than twenty lines", `agents/py-reviewer.md` "under 500 words", `agents/py-eval.md` "under ten lines"); every path, flag, version and upstream skill name the agents cite exists.
 - `/doctor prompt-audit skills/`, run the same way on the same day: no emphasis words (`MUST`, `NEVER`, `IMPORTANT`) anywhere in `skills/` and no conflicts across files; three findings: `skills/py-baseline/SKILL.md` contradicts itself on which module mutmut runs on in the health step, `skills/py-intake/SKILL.md` pins its Repowise facts to 0.52 while 0.53.0 is installed, and the same file's finish step tells the story of a past run. It also flagged two single paragraphs of over 250 words with nested conditions (`skills/py-review/SKILL.md` item 4, `skills/py-build/SKILL.md` the eval step).
 
+## Fourth pass: the two harnesses inside VS Code
+
+Verified 2026-10-03 by fetching each page below. The question: the user's targets are GitHub Copilot in VS Code and the Claude Code extension for VS Code; what do those two run?
+
+- VS Code's Copilot runs hooks, in Preview: "The VS Code hooks experience is in Preview." Its events are `SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `PreCompact`, `SubagentStart`, `SubagentStop` and `Stop`. `additionalContext` is documented for `SessionStart` and `PostToolUse`; the page does not say that `UserPromptSubmit` can add context. ([VS Code docs, Hooks](https://code.visualstudio.com/docs/copilot/customization/hooks))
+- It runs a plugin's hooks: "Plugin: `hooks.json` or `hooks/hooks.json`, depending on the plugin format." Claude-format hooks need a setting and lose their matchers: "Requires chat.useClaudeHooks... Local parses nested commands but ignores matcher values." Behaviour is not the same across harnesses: "Supported events, event names, matchers, command properties, tool names, payloads, and output decisions can differ." (same page)
+- Agent plugins are stable in VS Code and may carry "skills, agents, hooks, MCP servers". Three formats are recognised: Agent Plugins 1.0 (`plugin.json` with a `$schema`, hooks at `com.github.copilot/hooks/hooks.json`), Claude (`.claude-plugin/plugin.json`, hooks at `hooks/hooks.json`, `${CLAUDE_PLUGIN_ROOT}`) and Copilot (`plugin.json`, hooks at the root `hooks.json`). ([VS Code docs, Agent plugins](https://code.visualstudio.com/docs/copilot/customization/agent-plugins))
+- A custom agent's body is not a system prompt in VS Code: "the guidelines in the custom agent file body are prepended to the user chat prompt." No size limit is stated. Its frontmatter may carry `hooks` (Preview, needs `chat.useHooks`). ([VS Code docs, Custom agents](https://code.visualstudio.com/docs/copilot/customization/custom-agents))
+- Skills in VS Code load in three levels (name and description, then the `SKILL.md` body "when relevant", then files it references), appear as slash commands, and honour `user-invocable` and `disable-model-invocation`. What compaction does to a loaded skill is not documented. ([VS Code docs, Agent skills](https://code.visualstudio.com/docs/copilot/customization/agent-skills))
+- The Claude Code extension shows and manages plugins and hooks: "Select **Hooks** in the Customize section to view the hooks loaded in the session"; hooks from plugins are listed read-only. ([Claude Code docs, VS Code](https://code.claude.com/docs/en/vs-code))
+- Seen in this session, which ran in the Claude Code extension (Claude Code 2.1.283, VS Code 1.140.0) with the installed plugin 0.13.0: the session-start line arrived, the `agent` setting selected the persona, skills loaded, and the pre-tool hook denied a command.
+
+What this means for the plugin, read from the working tree on 2026-10-03:
+
+- `skills/py-intake/SKILL.md` step 9 says "The plugin's hooks do not run in VS Code", and `agents/python-dev.md` section 4 says "VS Code drops it" of the session-start line. VS Code's docs now say plugin hooks run (Preview). Which of the plugin's three manifests VS Code picks, and so which hooks file it reads, is not known until it is tried.
+- In VS Code's Copilot the persona is prepended to each user prompt. That is a weaker position than a system prompt, and it repeats the persona with every message, so its length costs more there, not less.
+- `hooks/hooks.json` gives its pre-tool hook the matcher `Bash|Edit|Write|MultiEdit|NotebookEdit`. VS Code ignores matchers, so the guard runs on every tool there; `guard_command.py` already lets a tool it does not know through.
+
 ## How this plugin measures against the findings
 
 Read from the working tree on 2026-10-03.
