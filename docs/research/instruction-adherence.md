@@ -41,6 +41,29 @@ What this means for the plugin, read from the working tree on 2026-10-03:
 - A per-message re-anchor is possible in Claude Code only. In Copilot CLI the nearest hook that can inject is `postToolUse`.
 - `agents/python-dev.md` holds 26 "never" or "do not" phrasings by a rough count.
 
+## Third pass: long procedure skills, and what GitHub Copilot offers
+
+Verified 2026-10-03 by fetching each page below. The questions: how is a long, many-step skill such as `py-intake` normally built, and which of the mechanisms above exist in Copilot?
+
+- The size limit for a skill's main file: "Keep SKILL.md body under 500 lines for optimal performance. If your content exceeds this, split it into separate files". ([Anthropic, Skill authoring best practices](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices))
+- The main file is an index, the detail is in files read on demand: "SKILL.md serves as an overview that points Claude to detailed materials as needed, like a table of contents"; "If workflows become large or complicated with many steps, consider pushing them into separate files and tell Claude to read the appropriate file based on the task at hand." (same page)
+- References go one level deep: "Keep references one level deep from SKILL.md", because "Claude may partially read files when they're referenced from other referenced files." A reference file over 100 lines gets a table of contents. (same page)
+- Long procedures carry a checklist: "For particularly complex workflows, provide a checklist that Claude can copy into its response and check off as it progresses"; "Clear steps prevent Claude from skipping critical validation." (same page)
+- Steps that must be exact become scripts: "Prefer scripts for deterministic operations"; a low-freedom step is "Run exactly this script"; scripts are "More reliable than generated code" and their contents cost no context, "Only the script's output consumes tokens". (same page)
+- Fragile steps get a validator and a loop: "Run validator → fix errors → repeat". (same page)
+- Skills are tested by watching a fresh session use them: "Create evaluations BEFORE writing extensive documentation"; "at least three evaluations"; work with one session that writes the skill and a fresh one that uses it, "Observing Claude B's behavior". "There is not currently a built-in way to run these evaluations." (same page)
+- Only what the model lacks is written down: "Default assumption: Claude is already very smart. Only add context Claude doesn't already have." (same page)
+- A Copilot custom agent's body has a ceiling: "The prompt can be a maximum of 30,000 characters." Its documented frontmatter has no `hooks` key. ([GitHub Docs, Custom agents configuration](https://docs.github.com/en/copilot/reference/custom-agents-configuration))
+- Copilot hooks that can put text in front of the model: `sessionStart` ("Only `additionalContext` is consumed") and `postToolUse` ("`additionalContext` (string) — Additional guidance appended to `textResultForLlm`"; several hooks' context is "joined with a double newline and capped at 10 KB"). The page also lists `preCompact`, `subagentStart` and `agentStop` events. Plugin hooks are read from the plugin's `hooks.json`. ([GitHub Docs, Hooks reference](https://docs.github.com/en/copilot/reference/hooks-reference))
+- Not found: how Copilot chooses a skill, whether its skill listing is cut, and what happens to a loaded skill when Copilot compacts. The concept page says only that skills are loaded "when relevant". ([GitHub Docs, About agent skills](https://docs.github.com/en/copilot/concepts/agents/about-agent-skills))
+
+What this means for the plugin, read from the working tree on 2026-10-03:
+
+- `skills/py-intake/SKILL.md` is one 27,482-character file holding eleven steps, six tables and the commands for three harnesses and three trackers. The documented pattern is a short main file (the step list as a checklist, each step's "done when" test) with one reference file per step, and scripts for the steps that must be exact.
+- Each step of `py-intake` already has a "done when" test in prose. A script that prints which steps hold would make resuming, and the finish step's walk, deterministic.
+- The hook that works in both harnesses for text mid-session is the one after a tool call (`PostToolUse` in Claude Code, `postToolUse` in Copilot CLI). The per-message hook works in Claude Code only.
+- `/doctor prompt-audit agents/`, run 2026-10-03 in a headless session on Sonnet: three numeric output caps flagged (`agents/python-dev.md` "never more than twenty lines", `agents/py-reviewer.md` "under 500 words", `agents/py-eval.md` "under ten lines"); every path, flag, version and upstream skill name the agents cite exists.
+
 ## How this plugin measures against the findings
 
 Read from the working tree on 2026-10-03.
